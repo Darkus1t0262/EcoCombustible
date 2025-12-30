@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
+import { AuthService } from '../../services/AuthService';
+import { StatsService } from '../../services/StatsService';
 
 const MenuCard = ({ title, sub, icon, color, onPress }: any) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
@@ -26,39 +28,61 @@ const KPICard = ({ label, val, icon, color }: any) => (
 );
 
 export default function DashboardScreen({ navigation }: any) {
+  const [stats, setStats] = useState({ stations: 0, auditsThisMonth: 0, pendingComplaints: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await StatsService.getDashboardStats();
+        setStats(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleLogout = async () => {
+    await AuthService.logout();
+    navigation.replace('Login');
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={{flexDirection:'row', alignItems:'center'}}>
-           <View style={{backgroundColor:COLORS.primary, padding:8, borderRadius:8, marginRight:10}}>
-             <Ionicons name="gas-pump" size={20} color="white"/>
-           </View>
-           <View>
-             <Text style={styles.headerTitle}>EcoCombustible Regulador</Text>
-             <Text style={styles.headerSub}>Panel de Supervisión</Text>
-           </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ backgroundColor: COLORS.primary, padding: 8, borderRadius: 8, marginRight: 10 }}>
+            <Ionicons name="gas-pump" size={20} color="white" />
+          </View>
+          <View>
+            <Text style={styles.headerTitle}>EcoCombustible Regulador</Text>
+            <Text style={styles.headerSub}>Supervision Dashboard</Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => navigation.replace('Login')}>
-           <Text style={{color: COLORS.error, fontWeight:'bold'}}>Salir</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Sign out</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{padding: 20}}>
-        {/* GRID */}
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
         <View style={styles.grid}>
-          <MenuCard title="Estaciones" sub="Listado y estado" icon="gas-pump" color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
-          <MenuCard title="Mapa" sub="Visualización Geo" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />
-          <MenuCard title="Auditoría" sub="Validación Remota" icon="checkmark-circle" color={COLORS.warning} onPress={() => navigation.navigate('Audit')} />
-          <MenuCard title="Denuncias" sub="Reportes" icon="alert-circle" color={COLORS.purple} onPress={() => navigation.navigate('Complaints')} />
-          <MenuCard title="Reportes" sub="Estadísticas" icon="stats-chart" color={COLORS.secondary} onPress={() => navigation.navigate('Reports')} />
+          <MenuCard title="Stations" sub="List and status" icon="gas-pump" color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
+          <MenuCard title="Map" sub="Geo view" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />
+          <MenuCard title="Audit" sub="Remote checks" icon="checkmark-circle" color={COLORS.warning} onPress={() => navigation.navigate('Audit')} />
+          <MenuCard title="Complaints" sub="Reports" icon="alert-circle" color={COLORS.purple} onPress={() => navigation.navigate('Complaints')} />
+          <MenuCard title="Reports" sub="Statistics" icon="stats-chart" color={COLORS.secondary} onPress={() => navigation.navigate('Reports')} />
         </View>
 
-        {/* KPIs */}
-        <View style={{gap: 15, marginTop: 10}}>
-           <KPICard label="Estaciones Activas" val="1220" icon="gas-pump" color={COLORS.primary} />
-           <KPICard label="Auditorías del Mes" val="160" icon="checkmark-circle" color={COLORS.success} />
-           <KPICard label="Denuncias Pendientes" val="23" icon="alert-circle" color={COLORS.error} />
-        </View>
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+        ) : (
+          <View style={{ gap: 15, marginTop: 10 }}>
+            <KPICard label="Active Stations" val={stats.stations} icon="gas-pump" color={COLORS.primary} />
+            <KPICard label="Audits This Month" val={stats.auditsThisMonth} icon="checkmark-circle" color={COLORS.success} />
+            <KPICard label="Pending Complaints" val={stats.pendingComplaints} icon="alert-circle" color={COLORS.error} />
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -77,5 +101,5 @@ const styles = StyleSheet.create({
   kpiContainer: { backgroundColor: 'white', padding: 15, borderRadius: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 1 },
   kpiTitle: { fontSize: 14, color: '#333' },
   kpiVal: { fontSize: 18, fontWeight: 'bold', marginTop: 5 },
-  kpiIcon: { padding: 8, borderRadius: 20 }
+  kpiIcon: { padding: 8, borderRadius: 20 },
 });

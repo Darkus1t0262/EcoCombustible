@@ -9,46 +9,51 @@ export default function StationListScreen({ navigation }: any) {
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const data = await StationService.getAllStations();
-    // Procesamos cada estación con tu IA antes de mostrarla
-    const processed = data.map(s => ({...s, analysis: analyzeStationBehavior(s)}));
-    setStations(processed);
-    setLoading(false);
+    try {
+      setError('');
+      setLoading(true);
+      const data = await StationService.getAllStations();
+      const processed = data.map((s) => ({ ...s, analysis: analyzeStationBehavior(s) }));
+      setStations(processed);
+    } catch (err) {
+      setError('Failed to load stations.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredStations = stations.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase())
+  const filteredStations = stations.filter((s) =>
+    `${s.name} ${s.address}`.toLowerCase().includes(search.toLowerCase())
   );
 
   const renderItem = ({ item }: any) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => navigation.navigate('StationDetail', { station: item })}
-    >
-      <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={styles.stationName}>{item.name}</Text>
         <Ionicons name="chevron-forward" size={20} color="#ccc" />
       </View>
-      
+
       <Text style={styles.address}>{item.address}</Text>
-      
+
       <View style={styles.rowInfo}>
-        <Text style={{fontSize:12}}>Precio: ${item.price}</Text>
-        <Text style={{fontSize:12}}>Stock: {item.stock} gl</Text>
+        <Text style={{ fontSize: 12 }}>Price: ${item.price}</Text>
+        <Text style={{ fontSize: 12 }}>Stock: {item.stock} gl</Text>
       </View>
 
-      {/* Etiqueta de Estado dada por la IA */}
-      <View style={[styles.badge, { backgroundColor: item.analysis.color + '20' }]}> 
-        <Ionicons name={item.analysis.status === 'Cumplimiento' ? "checkmark-circle" : "alert-circle"} size={16} color={item.analysis.color} />
-        <Text style={[styles.badgeText, { color: item.analysis.color }]}>
-          {item.analysis.status}
-        </Text>
+      <View style={[styles.badge, { backgroundColor: item.analysis.color + '20' }]}>
+        <Ionicons
+          name={item.analysis.status === 'Cumplimiento' ? 'checkmark-circle' : 'alert-circle'}
+          size={16}
+          color={item.analysis.color}
+        />
+        <Text style={[styles.badgeText, { color: item.analysis.color }]}>{item.analysis.status}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -56,28 +61,37 @@ export default function StationListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24}/></TouchableOpacity>
-        <Text style={styles.title}>Estaciones Supervisadas</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Stations</Text>
       </View>
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#666" />
-        <TextInput 
-          style={styles.input} 
-          placeholder="Buscar por nombre o zona..." 
+        <TextInput
+          style={styles.input}
+          placeholder="Search by name or area..."
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.primary} style={{marginTop: 50}} />
+        <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+      ) : error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
+            <Text style={{ color: 'white' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={filteredStations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{padding: 20}}
+          contentContainerStyle={{ padding: 20 }}
         />
       )}
     </View>
@@ -95,5 +109,8 @@ const styles = StyleSheet.create({
   address: { color: '#666', fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', gap: 15, marginBottom: 10 },
   badge: { flexDirection: 'row', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignItems: 'center', gap: 5 },
-  badgeText: { fontWeight: 'bold', fontSize: 12 }
+  badgeText: { fontWeight: 'bold', fontSize: 12 },
+  errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
+  errorText: { color: COLORS.error, marginBottom: 12 },
+  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });

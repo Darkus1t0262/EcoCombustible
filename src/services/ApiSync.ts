@@ -1,30 +1,43 @@
-import { STATIONS_DB } from '../theme/colors';
+import { getDb } from './Database';
 
-// Estructura de datos que esperamos recibir de la App "Despachador"
-export interface ExternalStationData {
+export type StationRow = {
   id: number;
   name: string;
-  stock: number; // Viene del Despachador
-  salesHistory: number[]; // Viene del Despachador
-  registeredVehicles: number; // Viene de la App Cliente
-}
+  address: string;
+  lat: number;
+  lng: number;
+  stock: number;
+  price: number;
+  officialPrice: number;
+  history: number[];
+  lastAudit: string;
+  status: string;
+};
+
+const mapStation = (row: any): StationRow => ({
+  id: row.id,
+  name: row.name,
+  address: row.address,
+  lat: row.lat,
+  lng: row.lng,
+  stock: row.stock,
+  price: row.price,
+  officialPrice: row.officialPrice,
+  history: row.history ? JSON.parse(row.history) : [],
+  lastAudit: row.lastAudit,
+  status: row.status,
+});
 
 export const StationService = {
-  // Simula la petición a la API de los otros grupos
-  getAllStations: async (): Promise<any[]> => {
-    return new Promise((resolve) => {
-      // Simulamos un retraso de red de 500ms
-      setTimeout(() => {
-        resolve(STATIONS_DB);
-      }, 500);
-    });
+  getAllStations: async (): Promise<StationRow[]> => {
+    const db = await getDb();
+    const rows = await db.getAllAsync<any>('SELECT * FROM stations ORDER BY name;');
+    return (rows ?? []).map(mapStation);
   },
 
-  // Simula obtener detalles específicos de una estación
-  getStationDetails: async (id: number) => {
-    return new Promise((resolve) => {
-      const station = STATIONS_DB.find(s => s.id === id);
-      setTimeout(() => resolve(station), 300);
-    });
-  }
+  getStationDetails: async (id: number): Promise<StationRow | null> => {
+    const db = await getDb();
+    const row = await db.getFirstAsync<any>('SELECT * FROM stations WHERE id = ?;', id);
+    return row ? mapStation(row) : null;
+  },
 };
