@@ -8,7 +8,7 @@ export type AuditItem = {
   status: string;
   priceExpected: number;
   priceReported: number;
-  dispenserOk: number;
+  dispenserOk: boolean;
   createdAt: string;
 };
 
@@ -22,7 +22,10 @@ export const AuditService = {
        JOIN stations s ON s.id = a.stationId
        ORDER BY a.createdAt DESC;`
     );
-    return rows ?? [];
+    return (rows ?? []).map((row) => ({
+      ...row,
+      dispenserOk: Boolean(row.dispenserOk),
+    }));
   },
 
   updateAuditStatus: async (auditId: number, status: 'approved' | 'rejected'): Promise<void> => {

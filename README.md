@@ -1,43 +1,40 @@
-# ⛽ EcoCombustible - App de Regulación y Control
+# EcoCombustible
 
-Aplicación móvil desarrollada en **React Native (Expo)** con **TypeScript** para el control, auditoría y detección de anomalías en estaciones de servicio de combustible en Ecuador.
+Aplicacion movil en React Native (Expo) para supervisar estaciones de combustible, auditorias, reportes y quejas.
 
-Este proyecto incluye un motor de **Inteligencia Artificial (Machine Learning)** para la detección automática de irregularidades en precios y stock.
+## Requisitos
+- Node.js LTS
+- Git
+- Expo CLI (opcional)
 
----
-
-## 📋 1. Requisitos Previos
-
-Antes de empezar, asegúrate de tener instalado en tu computadora:
-
-1.  **Node.js (Versión LTS):** [Descargar aquí](https://nodejs.org/).
-2.  **Git:** [Descargar aquí](https://git-scm.com/).
-3.  **VS Code:** Editor de código recomendado.
-4.  **En tu Celular:** Instala la app **Expo Go** (disponible en Play Store y App Store).
-
----
-
-## 🚀 2. Instalación y Configuración
-
-Sigue estos pasos si eres nuevo en el proyecto o acabas de clonar el repositorio:
-
-### Paso 1: Clonar el proyecto
-Abre tu terminal y ejecuta:
+## Instalacion
 ```bash
-git clone <https://github.com/Darkus1t0262/EcoCombustible>
-cd EcoCombustible
-
-
-Paso 2: Instalar dependencias
-Este comando descargará todas las librerías necesarias (Mapas, SQLite, Gráficos, Navegación, etc.) definidas en el package.json:
-
 npm install
+```
 
-
-npx expo install react-native-maps expo-location expo-sqlite expo-status-bar react-native-svg react-native-chart-kit react-native-safe-area-context react-native-screens @react-native-picker/picker @react-navigation/native @react-navigation/stack react-native-gesture-handler
-
-▶️ 3. Ejecutar la Aplicación
-Para iniciar el servidor de desarrollo:
+## Ejecutar en desarrollo
+```bash
 npx expo start
+```
 
+## Configuracion opcional de API
+Si vas a usar autenticacion remota, define la variable:
+```
+EXPO_PUBLIC_API_BASE_URL=https://tu-api.com
+```
 
+## Distribucion (EAS Build)
+1. Verifica identificadores en `app.json` (android.package / ios.bundleIdentifier)
+2. Inicia sesion en EAS:
+```bash
+npx eas login
+```
+3. Compila:
+```bash
+npx eas build -p android --profile production
+npx eas build -p ios --profile production
+```
+
+## Notas
+- Los reportes se generan como archivo local (PDF/CSV) y se comparten con el sistema.
+- Las fotos de quejas se guardan en el almacenamiento local de la app.

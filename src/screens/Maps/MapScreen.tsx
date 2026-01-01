@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { COLORS } from '../../theme/colors';
 import { analyzeStationBehavior } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
 
 export default function MapScreen({ navigation }: any) {
+  const mapRef = useRef<MapView | null>(null);
   const [filter, setFilter] = useState('Todas');
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLocation, setHasLocation] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -19,6 +22,27 @@ export default function MapScreen({ navigation }: any) {
       setLoading(false);
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+      setHasLocation(true);
+      const position = await Location.getCurrentPositionAsync({});
+      mapRef.current?.animateToRegion(
+        {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          latitudeDelta: 0.2,
+          longitudeDelta: 0.2,
+        },
+        500
+      );
+    };
+    loadLocation();
   }, []);
 
   const filteredStations =
@@ -55,8 +79,11 @@ export default function MapScreen({ navigation }: any) {
         </View>
       ) : (
         <MapView
+          ref={mapRef}
           style={styles.map}
           initialRegion={{ latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 }}
+          showsUserLocation={hasLocation}
+          showsMyLocationButton={hasLocation}
         >
           {filteredStations.map((s) => (
             <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} pinColor={s.analysis.color}>

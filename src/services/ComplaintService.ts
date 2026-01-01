@@ -5,6 +5,7 @@ export type ComplaintItem = {
   stationName: string;
   type: string;
   detail: string | null;
+  photoUri: string | null;
   status: string;
   createdAt: string;
 };
@@ -13,7 +14,7 @@ export const ComplaintService = {
   getComplaints: async (): Promise<ComplaintItem[]> => {
     const db = await getDb();
     const rows = await db.getAllAsync<ComplaintItem>(
-      'SELECT id, stationName, type, detail, status, createdAt FROM complaints ORDER BY createdAt DESC;'
+      'SELECT id, stationName, type, detail, photoUri, status, createdAt FROM complaints ORDER BY createdAt DESC;'
     );
     return rows ?? [];
   },
@@ -35,13 +36,14 @@ export const ComplaintService = {
     };
   },
 
-  createComplaint: async (payload: { stationName: string; type: string; detail: string }) => {
+  createComplaint: async (payload: { stationName: string; type: string; detail: string; photoUri?: string | null }) => {
     const db = await getDb();
     await db.runAsync(
-      'INSERT INTO complaints (stationName, type, detail, status, createdAt) VALUES (?, ?, ?, ?, ?);',
+      'INSERT INTO complaints (stationName, type, detail, photoUri, status, createdAt) VALUES (?, ?, ?, ?, ?, ?);',
       payload.stationName,
       payload.type,
       payload.detail,
+      payload.photoUri ?? null,
       'pending',
       new Date().toISOString()
     );

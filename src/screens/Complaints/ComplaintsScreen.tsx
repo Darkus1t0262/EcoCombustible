@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { ComplaintService } from '../../services/ComplaintService';
+import { deleteFileAsync, saveImageAsync } from '../../services/MediaStorage';
 
 export default function ComplaintsScreen({ navigation }: any) {
   const [form, setForm] = useState({ stationName: '', type: '', detail: '' });
   const [loading, setLoading] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0 });
 
   const loadStats = async () => {
@@ -28,11 +31,61 @@ export default function ComplaintsScreen({ navigation }: any) {
       stationName: form.stationName.trim(),
       type: form.type.trim(),
       detail: form.detail.trim(),
+      photoUri,
     });
     setLoading(false);
     setForm({ stationName: '', type: '', detail: '' });
+    setPhotoUri(null);
     await loadStats();
     Alert.alert('Complaint saved', 'Ticket created and queued for review.');
+  };
+
+  const requestPermission = async (source: 'camera' | 'library') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      return status === 'granted';
+    }
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    return status === 'granted';
+  };
+
+  const handlePick = async (source: 'camera' | 'library') => {
+    const ok = await requestPermission(source);
+    if (!ok) {
+      Alert.alert('Permiso requerido', 'Habilita el permiso para continuar.');
+      return;
+    }
+
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync({ quality: 0.7, mediaTypes: ImagePicker.MediaTypeOptions.Images })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.7, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    try {
+      const saved = await saveImageAsync(asset.uri);
+      await deleteFileAsync(photoUri);
+      setPhotoUri(saved);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo guardar la imagen.');
+    }
+  };
+
+  const openPicker = () => {
+    Alert.alert('Adjuntar foto', 'Selecciona una opcion', [
+      { text: 'Camara', onPress: () => handlePick('camera') },
+      { text: 'Galeria', onPress: () => handlePick('library') },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
+  const clearPhoto = async () => {
+    await deleteFileAsync(photoUri);
+    setPhotoUri(null);
   };
 
   return (
@@ -95,10 +148,21 @@ export default function ComplaintsScreen({ navigation }: any) {
           />
 
           <Text style={styles.label}>Photo Evidence (Optional)</Text>
-          <TouchableOpacity style={styles.photoBox} onPress={() => Alert.alert('Camera', 'Open device camera...')}>
-            <Ionicons name="camera" size={30} color="#ccc" />
-            <Text style={{ color: '#aaa', marginTop: 5, fontSize: 12 }}>Tap to upload image</Text>
+          <TouchableOpacity style={styles.photoBox} onPress={openPicker}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            ) : (
+              <>
+                <Ionicons name="camera" size={30} color="#ccc" />
+                <Text style={{ color: '#aaa', marginTop: 5, fontSize: 12 }}>Tap to upload image</Text>
+              </>
+            )}
           </TouchableOpacity>
+          {!!photoUri && (
+            <TouchableOpacity style={styles.removePhoto} onPress={clearPhoto}>
+              <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Remove photo</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.btn} onPress={sendComplaint} disabled={loading}>
             {loading ? (
@@ -165,6 +229,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#ccc',
   },
+  photoPreview: { width: '100%', height: '100%', borderRadius: 10 },
+  removePhoto: { alignItems: 'center', marginBottom: 20 },
   btn: {
     backgroundColor: COLORS.error,
     padding: 16,

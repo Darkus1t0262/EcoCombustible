@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 const DB_NAME = 'ecocombustible.db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
@@ -149,6 +149,7 @@ const createTablesSql = `
     stationName TEXT NOT NULL,
     type TEXT NOT NULL,
     detail TEXT,
+    photoUri TEXT,
     status TEXT NOT NULL,
     createdAt TEXT NOT NULL
   );
@@ -157,9 +158,24 @@ const createTablesSql = `
     period TEXT NOT NULL,
     format TEXT NOT NULL,
     createdAt TEXT NOT NULL,
-    sizeMb REAL NOT NULL
+    sizeMb REAL NOT NULL,
+    fileUri TEXT,
+    mimeType TEXT
   );
 `;
+
+const ensureColumn = async (
+  db: SQLite.SQLiteDatabase,
+  table: string,
+  column: string,
+  definition: string
+): Promise<void> => {
+  const rows = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table});`);
+  const exists = (rows ?? []).some((row) => row.name === column);
+  if (!exists) {
+    await db.execAsync(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+  }
+};
 
 export const initDatabase = async (): Promise<void> => {
   const db = await getDb();
@@ -167,73 +183,80 @@ export const initDatabase = async (): Promise<void> => {
 
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
   const currentVersion = versionRow?.user_version ?? 0;
-  if (currentVersion >= DB_VERSION) {
+  if (currentVersion === 0) {
+    await db.execAsync(createTablesSql);
+
+    const userCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM users;');
+    if ((userCount?.count ?? 0) === 0) {
+      await db.runAsync(
+        'INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?);',
+        'admin',
+        'admin123',
+        'Admin',
+        'supervisor'
+      );
+
+      for (const station of seedStations) {
+        await db.runAsync(
+          'INSERT INTO stations (id, name, address, lat, lng, stock, price, officialPrice, history, lastAudit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+          station.id,
+          station.name,
+          station.address,
+          station.lat,
+          station.lng,
+          station.stock,
+          station.price,
+          station.officialPrice,
+          JSON.stringify(station.history),
+          station.lastAudit,
+          station.status
+        );
+      }
+
+      for (const audit of seedAudits) {
+        await db.runAsync(
+          'INSERT INTO audits (stationId, code, status, priceExpected, priceReported, dispenserOk, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?);',
+          audit.stationId,
+          audit.code,
+          audit.status,
+          audit.priceExpected,
+          audit.priceReported,
+          audit.dispenserOk,
+          audit.createdAt
+        );
+      }
+
+      for (const complaint of seedComplaints) {
+        await db.runAsync(
+          'INSERT INTO complaints (stationName, type, detail, status, createdAt) VALUES (?, ?, ?, ?, ?);',
+          complaint.stationName,
+          complaint.type,
+          complaint.detail,
+          complaint.status,
+          complaint.createdAt
+        );
+      }
+
+      for (const report of seedReports) {
+        await db.runAsync(
+          'INSERT INTO reports (period, format, createdAt, sizeMb) VALUES (?, ?, ?, ?);',
+          report.period,
+          report.format,
+          report.createdAt,
+          report.sizeMb
+        );
+      }
+    }
+
+    await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
     return;
   }
 
-  await db.execAsync(createTablesSql);
-
-  const userCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM users;');
-  if ((userCount?.count ?? 0) === 0) {
-    await db.runAsync(
-      'INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?);',
-      'admin',
-      'admin123',
-      'Admin',
-      'supervisor'
-    );
-
-    for (const station of seedStations) {
-      await db.runAsync(
-        'INSERT INTO stations (id, name, address, lat, lng, stock, price, officialPrice, history, lastAudit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-        station.id,
-        station.name,
-        station.address,
-        station.lat,
-        station.lng,
-        station.stock,
-        station.price,
-        station.officialPrice,
-        JSON.stringify(station.history),
-        station.lastAudit,
-        station.status
-      );
-    }
-
-    for (const audit of seedAudits) {
-      await db.runAsync(
-        'INSERT INTO audits (stationId, code, status, priceExpected, priceReported, dispenserOk, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?);',
-        audit.stationId,
-        audit.code,
-        audit.status,
-        audit.priceExpected,
-        audit.priceReported,
-        audit.dispenserOk,
-        audit.createdAt
-      );
-    }
-
-    for (const complaint of seedComplaints) {
-      await db.runAsync(
-        'INSERT INTO complaints (stationName, type, detail, status, createdAt) VALUES (?, ?, ?, ?, ?);',
-        complaint.stationName,
-        complaint.type,
-        complaint.detail,
-        complaint.status,
-        complaint.createdAt
-      );
-    }
-
-    for (const report of seedReports) {
-      await db.runAsync(
-        'INSERT INTO reports (period, format, createdAt, sizeMb) VALUES (?, ?, ?, ?);',
-        report.period,
-        report.format,
-        report.createdAt,
-        report.sizeMb
-      );
-    }
+  if (currentVersion < 2) {
+    await db.execAsync(createTablesSql);
+    await ensureColumn(db, 'complaints', 'photoUri', 'TEXT');
+    await ensureColumn(db, 'reports', 'fileUri', 'TEXT');
+    await ensureColumn(db, 'reports', 'mimeType', 'TEXT');
+    await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }
-
-  await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
 };

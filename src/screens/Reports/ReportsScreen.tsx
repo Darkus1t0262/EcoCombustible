@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { ReportService, ReportItem } from '../../services/ReportService';
@@ -26,10 +26,23 @@ export default function ReportsScreen({ navigation }: any) {
   }, []);
 
   const handleCreate = async () => {
-    setCreating(true);
-    await ReportService.createReport(period, format);
-    await loadReports();
-    setCreating(false);
+    try {
+      setCreating(true);
+      await ReportService.createReport(period, format);
+      await loadReports();
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo generar el reporte.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleShare = async (report: ReportItem) => {
+    try {
+      await ReportService.shareReport(report);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo compartir el reporte.');
+    }
   };
 
   return (
@@ -88,15 +101,20 @@ export default function ReportsScreen({ navigation }: any) {
           <ActivityIndicator color={COLORS.primary} />
         ) : (
           reports.map((report) => (
-            <View key={report.id} style={styles.fileRow}>
+            <TouchableOpacity
+              key={report.id}
+              style={[styles.fileRow, !report.fileUri && styles.fileRowDisabled]}
+              onPress={() => handleShare(report)}
+              disabled={!report.fileUri}
+            >
               <View>
                 <Text style={{ fontWeight: 'bold' }}>{report.period} - {report.format}</Text>
                 <Text style={{ fontSize: 12, color: '#888' }}>
                   {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
                 </Text>
               </View>
-              <Text style={{ color: COLORS.primary }}>Download</Text>
-            </View>
+              <Text style={{ color: COLORS.primary }}>{report.fileUri ? 'Compartir' : 'No disponible'}</Text>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
@@ -116,4 +134,5 @@ const styles = StyleSheet.create({
   exportBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8 },
   generateBtn: { backgroundColor: COLORS.purple, padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   fileRow: { backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  fileRowDisabled: { opacity: 0.6 },
 });

@@ -1,4 +1,6 @@
+import { API_BASE_URL, USE_REMOTE_AUTH } from '../config/env';
 import { getDb } from './Database';
+import { SecureSession } from './SecureSession';
 
 export type SessionUser = {
   id: number;
@@ -9,6 +11,26 @@ export type SessionUser = {
 
 export const AuthService = {
   login: async (username: string, password: string): Promise<SessionUser> => {
+    if (USE_REMOTE_AUTH) {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
+
+      const data = await response.json();
+      if (!data?.user) {
+        throw new Error('Invalid response');
+      }
+
+      await SecureSession.save({ user: data.user, token: data.token });
+      return data.user as SessionUser;
+    }
+
     const db = await getDb();
     const user = await db.getFirstAsync<SessionUser>(
       'SELECT id, username, name, role FROM users WHERE username = ? AND password = ?;',
@@ -27,10 +49,16 @@ export const AuthService = {
       new Date().toISOString()
     );
 
+    await SecureSession.save({ user });
     return user;
   },
 
   getSession: async (): Promise<SessionUser | null> => {
+    const stored = await SecureSession.get();
+    if (stored?.user) {
+      return stored.user as SessionUser;
+    }
+
     const db = await getDb();
     const session = await db.getFirstAsync<SessionUser>(
       `SELECT u.id, u.username, u.name, u.role
@@ -45,5 +73,6 @@ export const AuthService = {
   logout: async (): Promise<void> => {
     const db = await getDb();
     await db.runAsync('DELETE FROM session;');
+    await SecureSession.clear();
   },
 };

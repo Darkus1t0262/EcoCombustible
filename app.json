@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EcoCombustible",
-    "slug": "EcoCombustible",
+    "slug": "ecocombustible",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,21 +13,51 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ecocombustible.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Necesitamos acceder a la camara para adjuntar evidencia.",
+        "NSPhotoLibraryUsageDescription": "Necesitamos acceder a tus fotos para adjuntar evidencia.",
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicacion para mostrar estaciones cercanas."
+      }
     },
     "android": {
+      "package": "com.ecocombustible.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
-    ]
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite seleccionar una foto como evidencia.",
+          "cameraPermission": "Permite tomar una foto como evidencia."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite mostrar tu ubicacion en el mapa."
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": ""
+    }
   }
 }
