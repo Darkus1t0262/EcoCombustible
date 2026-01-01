@@ -1,3 +1,5 @@
+import { USE_REMOTE_AUTH } from '../config/env';
+import { apiFetch } from './ApiClient';
 import { getDb } from './Database';
 
 export type StationRow = {
@@ -30,12 +32,18 @@ const mapStation = (row: any): StationRow => ({
 
 export const StationService = {
   getAllStations: async (): Promise<StationRow[]> => {
+    if (USE_REMOTE_AUTH) {
+      return await apiFetch<StationRow[]>('/stations');
+    }
     const db = await getDb();
     const rows = await db.getAllAsync<any>('SELECT * FROM stations ORDER BY name;');
     return (rows ?? []).map(mapStation);
   },
 
   getStationDetails: async (id: number): Promise<StationRow | null> => {
+    if (USE_REMOTE_AUTH) {
+      return await apiFetch<StationRow>(`/stations/${id}`);
+    }
     const db = await getDb();
     const row = await db.getFirstAsync<any>('SELECT * FROM stations WHERE id = ?;', id);
     return row ? mapStation(row) : null;

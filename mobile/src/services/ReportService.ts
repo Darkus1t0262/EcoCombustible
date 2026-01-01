@@ -1,6 +1,8 @@
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { USE_REMOTE_AUTH } from '../config/env';
+import { apiFetch, getAuthHeaders } from './ApiClient';
 import { getDb } from './Database';
 
 export type ReportItem = {
@@ -10,6 +12,7 @@ export type ReportItem = {
   createdAt: string;
   sizeMb: number;
   fileUri: string | null;
+  fileUrl?: string | null;
   mimeType: string | null;
 };
 
@@ -78,6 +81,15 @@ const buildHtml = (summary: { stations: number; auditsThisMonth: number; pending
 
 export const ReportService = {
   getReports: async (): Promise<ReportItem[]> => {
+    if (USE_REMOTE_AUTH) {
+      const remote = await apiFetch<any[]>('/reports');
+      return remote.map((report) => ({
+        ...report,
+        fileUri: report.fileUri ?? null,
+        fileUrl: report.fileUrl ?? null,
+        mimeType: report.mimeType ?? null,
+      }));
+    }
     const db = await getDb();
     const rows = await db.getAllAsync<ReportItem>(
       'SELECT id, period, format, createdAt, sizeMb, fileUri, mimeType FROM reports ORDER BY createdAt DESC;'
@@ -86,6 +98,19 @@ export const ReportService = {
   },
 
   createReport: async (period: string, format: string): Promise<ReportItem> => {
+    if (USE_REMOTE_AUTH) {
+      const created = await apiFetch<any>('/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period, format }),
+      });
+      return {
+        ...created,
+        fileUri: created.fileUri ?? null,
+        fileUrl: created.fileUrl ?? null,
+        mimeType: created.mimeType ?? null,
+      };
+    }
     const db = await getDb();
     const createdAt = new Date().toISOString();
     const summary = await buildSummary(db);
@@ -132,18 +157,34 @@ export const ReportService = {
   },
 
   shareReport: async (report: ReportItem): Promise<void> => {
-    if (!report.fileUri) {
+    let uri = report.fileUri ?? null;
+    if (!uri && report.fileUrl) {
+      if (!FileSystem.documentDirectory) {
+        throw new Error('Storage not available.');
+      }
+      const filename = `report_${report.id}_${Date.now()}`;
+      const extension = report.mimeType === 'application/pdf' ? 'pdf' : 'csv';
+      const dest = `${FileSystem.documentDirectory}reports/${filename}.${extension}`;
+      await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}reports`, { intermediates: true });
+      const headers = await getAuthHeaders();
+      const result = await FileSystem.downloadAsync(report.fileUrl, dest, { headers });
+      uri = result.uri;
+    }
+
+    if (!uri) {
       throw new Error('Report file not found.');
     }
-    const info = await FileSystem.getInfoAsync(report.fileUri);
+
+    const info = await FileSystem.getInfoAsync(uri);
     if (!info.exists) {
       throw new Error('Report file not found.');
     }
+
     const available = await Sharing.isAvailableAsync();
     if (!available) {
       throw new Error('Sharing not available.');
     }
-    await Sharing.shareAsync(report.fileUri, {
+    await Sharing.shareAsync(uri, {
       mimeType: report.mimeType ?? undefined,
       dialogTitle: 'Compartir reporte',
     });

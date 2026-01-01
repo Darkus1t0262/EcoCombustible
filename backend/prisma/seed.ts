@@ -1,0 +1,366 @@
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const seed = async () => {
+  const existingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+  if (!existingUser) {
+    const passwordHash = await bcrypt.hash('admin123', 10);
+    await prisma.user.create({
+      data: {
+        username: 'admin',
+        passwordHash,
+        name: 'Admin',
+        role: 'supervisor',
+      },
+    });
+  }
+
+  const stations = [
+    {
+      name: 'Estacion Petroecuador Norte',
+      address: 'Av. 6 de Diciembre, Quito',
+      lat: -0.1807,
+      lng: -78.4678,
+      stock: 15000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [1200, 1150, 1220, 1180, 1210],
+      lastAudit: new Date('2025-11-28'),
+      status: 'Cumplimiento',
+    },
+    {
+      name: 'Gasolinera El Oro',
+      address: 'Machala, Centro',
+      lat: -3.2581,
+      lng: -79.9551,
+      stock: 45000,
+      price: 2.58,
+      officialPrice: 2.55,
+      history: [300, 200, 4500, 100, 300],
+      lastAudit: new Date('2025-11-25'),
+      status: 'Observacion',
+    },
+    {
+      name: 'Estacion Primax Centro',
+      address: 'Guayaquil',
+      lat: -2.1962,
+      lng: -79.8862,
+      stock: 2000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [0, 0, 0, 0, 0],
+      lastAudit: new Date('2025-11-30'),
+      status: 'Infraccion',
+    },
+    {
+      name: 'Estacion Andina Sur',
+      address: 'Av. Loja, Cuenca',
+      lat: -2.8974,
+      lng: -79.0045,
+      stock: 12000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [900, 880, 910, 930, 920],
+      lastAudit: new Date('2025-11-20'),
+      status: 'Cumplimiento',
+    },
+    {
+      name: 'Gasolinera Rio Verde',
+      address: 'Esmeraldas',
+      lat: 0.9529,
+      lng: -79.6522,
+      stock: 8000,
+      price: 2.6,
+      officialPrice: 2.55,
+      history: [300, 320, 340, 310, 350],
+      lastAudit: new Date('2025-11-18'),
+      status: 'Observacion',
+    },
+    {
+      name: 'Estacion Sierra Norte',
+      address: 'Ibarra',
+      lat: 0.3392,
+      lng: -78.1222,
+      stock: 6000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [700, 680, 710, 690, 705],
+      lastAudit: new Date('2025-11-19'),
+      status: 'Cumplimiento',
+    },
+    {
+      name: 'PetroQ Oriente',
+      address: 'Tena',
+      lat: -0.9902,
+      lng: -77.8129,
+      stock: 22000,
+      price: 2.52,
+      officialPrice: 2.55,
+      history: [1400, 1500, 1350, 1420, 1480],
+      lastAudit: new Date('2025-11-22'),
+      status: 'Cumplimiento',
+    },
+    {
+      name: 'Gasolinera Litoral',
+      address: 'Manta',
+      lat: -0.9677,
+      lng: -80.7089,
+      stock: 5000,
+      price: 2.75,
+      officialPrice: 2.55,
+      history: [400, 390, 410, 395, 405],
+      lastAudit: new Date('2025-11-27'),
+      status: 'Infraccion',
+    },
+    {
+      name: 'Estacion Centro Sur',
+      address: 'Ambato',
+      lat: -1.2417,
+      lng: -78.6197,
+      stock: 9000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [0, 0, 0, 0, 0],
+      lastAudit: new Date('2025-11-21'),
+      status: 'Observacion',
+    },
+    {
+      name: 'Gasolinera Valle',
+      address: 'Latacunga',
+      lat: -0.9352,
+      lng: -78.6155,
+      stock: 11000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [1000, 1050, 980, 1200, 1150],
+      lastAudit: new Date('2025-11-23'),
+      status: 'Cumplimiento',
+    },
+    {
+      name: 'Estacion Frontera',
+      address: 'Tulcan',
+      lat: 0.8224,
+      lng: -77.7329,
+      stock: 3000,
+      price: 2.9,
+      officialPrice: 2.55,
+      history: [200, 210, 190, 205, 215],
+      lastAudit: new Date('2025-11-26'),
+      status: 'Infraccion',
+    },
+    {
+      name: 'Estacion Pacifico',
+      address: 'Salinas',
+      lat: -2.2149,
+      lng: -80.9524,
+      stock: 7000,
+      price: 2.55,
+      officialPrice: 2.55,
+      history: [650, 600, 700, 620, 680],
+      lastAudit: new Date('2025-11-24'),
+      status: 'Cumplimiento',
+    },
+  ];
+
+  for (const station of stations) {
+    const existing = await prisma.station.findFirst({ where: { name: station.name } });
+    if (!existing) {
+      await prisma.station.create({ data: station });
+    }
+  }
+
+  const stationsSeed = await prisma.station.findMany();
+  const stationMap = new Map(stationsSeed.map((s) => [s.name, s.id]));
+
+  const audits = [
+    {
+      stationName: 'Estacion Petroecuador Norte',
+      code: 'AUD-2025-156',
+      status: 'pending',
+      priceExpected: 2.55,
+      priceReported: 2.55,
+      dispenserOk: true,
+      createdAt: new Date('2025-12-01T10:20:00.000Z'),
+    },
+    {
+      stationName: 'Gasolinera El Oro',
+      code: 'AUD-2025-162',
+      status: 'approved',
+      priceExpected: 2.55,
+      priceReported: 2.58,
+      dispenserOk: false,
+      createdAt: new Date('2025-12-02T15:10:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Primax Centro',
+      code: 'AUD-2025-170',
+      status: 'pending',
+      priceExpected: 2.55,
+      priceReported: 2.55,
+      dispenserOk: true,
+      createdAt: new Date('2025-12-03T09:00:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Andina Sur',
+      code: 'AUD-2025-175',
+      status: 'pending',
+      priceExpected: 2.55,
+      priceReported: 2.55,
+      dispenserOk: true,
+      createdAt: new Date('2025-12-04T09:30:00.000Z'),
+    },
+    {
+      stationName: 'Gasolinera Rio Verde',
+      code: 'AUD-2025-181',
+      status: 'rejected',
+      priceExpected: 2.55,
+      priceReported: 2.62,
+      dispenserOk: false,
+      createdAt: new Date('2025-12-05T11:00:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Sierra Norte',
+      code: 'AUD-2025-189',
+      status: 'approved',
+      priceExpected: 2.55,
+      priceReported: 2.55,
+      dispenserOk: true,
+      createdAt: new Date('2025-12-06T10:15:00.000Z'),
+    },
+    {
+      stationName: 'Gasolinera Litoral',
+      code: 'AUD-2025-192',
+      status: 'pending',
+      priceExpected: 2.55,
+      priceReported: 2.75,
+      dispenserOk: false,
+      createdAt: new Date('2025-12-07T14:40:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Frontera',
+      code: 'AUD-2025-195',
+      status: 'pending',
+      priceExpected: 2.55,
+      priceReported: 2.9,
+      dispenserOk: false,
+      createdAt: new Date('2025-12-08T08:10:00.000Z'),
+    },
+  ];
+
+  for (const audit of audits) {
+    const exists = await prisma.audit.findFirst({ where: { code: audit.code } });
+    if (!exists) {
+      await prisma.audit.create({
+        data: {
+          stationId: stationMap.get(audit.stationName) ?? 1,
+          code: audit.code,
+          status: audit.status,
+          priceExpected: audit.priceExpected,
+          priceReported: audit.priceReported,
+          dispenserOk: audit.dispenserOk,
+          createdAt: audit.createdAt,
+        },
+      });
+    }
+  }
+
+  const complaints = [
+    {
+      stationName: 'Gasolinera El Oro',
+      type: 'Precios irregulares',
+      detail: 'El precio marcado no coincide con el publicado.',
+      status: 'pending',
+      createdAt: new Date('2025-12-02T12:00:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Primax Centro',
+      type: 'Falta de stock',
+      detail: 'No se despacha combustible en horas pico.',
+      status: 'resolved',
+      createdAt: new Date('2025-12-01T08:30:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Andina Sur',
+      type: 'Dispensador defectuoso',
+      detail: 'El dispensador 2 marca menos de lo entregado.',
+      status: 'pending',
+      createdAt: new Date('2025-12-04T16:45:00.000Z'),
+    },
+    {
+      stationName: 'Gasolinera Litoral',
+      type: 'Precio fuera de rango',
+      detail: 'Precio reportado superior al oficial.',
+      status: 'pending',
+      createdAt: new Date('2025-12-05T09:15:00.000Z'),
+    },
+    {
+      stationName: 'Estacion Frontera',
+      type: 'Sospecha de contrabando',
+      detail: 'Ventas inusuales durante la madrugada.',
+      status: 'pending',
+      createdAt: new Date('2025-12-06T22:10:00.000Z'),
+    },
+  ];
+
+  for (const complaint of complaints) {
+    const exists = await prisma.complaint.findFirst({
+      where: { stationName: complaint.stationName, createdAt: complaint.createdAt },
+    });
+    if (!exists) {
+      await prisma.complaint.create({ data: complaint });
+    }
+  }
+
+  const reports = [
+    {
+      period: 'Mes',
+      format: 'PDF',
+      createdAt: new Date('2025-11-30T18:00:00.000Z'),
+      sizeMb: 2.4,
+    },
+    {
+      period: 'Semana',
+      format: 'CSV',
+      createdAt: new Date('2025-12-02T18:00:00.000Z'),
+      sizeMb: 1.1,
+    },
+    {
+      period: 'Mes',
+      format: 'Excel',
+      createdAt: new Date('2025-12-03T18:00:00.000Z'),
+      sizeMb: 3.2,
+    },
+    {
+      period: 'Semana',
+      format: 'PDF',
+      createdAt: new Date('2025-12-07T18:00:00.000Z'),
+      sizeMb: 1.6,
+    },
+    {
+      period: 'Anio',
+      format: 'CSV',
+      createdAt: new Date('2025-12-08T18:00:00.000Z'),
+      sizeMb: 4.2,
+    },
+  ];
+
+  for (const report of reports) {
+    const exists = await prisma.report.findFirst({
+      where: { period: report.period, format: report.format, createdAt: report.createdAt },
+    });
+    if (!exists) {
+      await prisma.report.create({ data: report });
+    }
+  }
+};
+
+seed()
+  .catch((error) => {
+    console.error('Seed error:', error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

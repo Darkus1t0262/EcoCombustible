@@ -32,10 +32,16 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.*
 
 # typescript
 *.tsbuildinfo
 
 # generated native folders
-/ios
-/android
+/mobile/ios
+/mobile/android
+
+# backend runtime artifacts
+/backend/dist
+/backend/storage

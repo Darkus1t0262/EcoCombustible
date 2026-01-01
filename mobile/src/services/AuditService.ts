@@ -1,3 +1,5 @@
+import { USE_REMOTE_AUTH } from '../config/env';
+import { apiFetch } from './ApiClient';
 import { getDb } from './Database';
 
 export type AuditItem = {
@@ -14,6 +16,9 @@ export type AuditItem = {
 
 export const AuditService = {
   getAudits: async (): Promise<AuditItem[]> => {
+    if (USE_REMOTE_AUTH) {
+      return await apiFetch<AuditItem[]>('/audits');
+    }
     const db = await getDb();
     const rows = await db.getAllAsync<AuditItem>(
       `SELECT a.id, a.stationId, s.name as stationName, a.code, a.status,
@@ -29,6 +34,14 @@ export const AuditService = {
   },
 
   updateAuditStatus: async (auditId: number, status: 'approved' | 'rejected'): Promise<void> => {
+    if (USE_REMOTE_AUTH) {
+      await apiFetch(`/audits/${auditId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      return;
+    }
     const db = await getDb();
     await db.runAsync('UPDATE audits SET status = ? WHERE id = ?;', status, auditId);
 

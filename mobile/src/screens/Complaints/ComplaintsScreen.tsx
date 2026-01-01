@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { ComplaintService } from '../../services/ComplaintService';
+import { USE_REMOTE_AUTH } from '../../config/env';
 import { deleteFileAsync, saveImageAsync } from '../../services/MediaStorage';
 
 export default function ComplaintsScreen({ navigation }: any) {
@@ -33,6 +34,9 @@ export default function ComplaintsScreen({ navigation }: any) {
       detail: form.detail.trim(),
       photoUri,
     });
+    if (USE_REMOTE_AUTH) {
+      await deleteFileAsync(photoUri);
+    }
     setLoading(false);
     setForm({ stationName: '', type: '', detail: '' });
     setPhotoUri(null);

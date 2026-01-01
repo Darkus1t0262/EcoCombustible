@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 const DB_NAME = 'ecocombustible.db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
@@ -51,6 +51,123 @@ const seedStations = [
     lastAudit: '2025-11-30',
     status: 'Infraccion',
   },
+  {
+    id: 4,
+    name: 'Estacion Andina Sur',
+    address: 'Av. Loja, Cuenca',
+    lat: -2.8974,
+    lng: -79.0045,
+    stock: 12000,
+    price: 2.55,
+    officialPrice: 2.55,
+    history: [900, 880, 910, 930, 920],
+    lastAudit: '2025-11-20',
+    status: 'Cumplimiento',
+  },
+  {
+    id: 5,
+    name: 'Gasolinera Rio Verde',
+    address: 'Esmeraldas',
+    lat: 0.9529,
+    lng: -79.6522,
+    stock: 8000,
+    price: 2.6,
+    officialPrice: 2.55,
+    history: [300, 320, 340, 310, 350],
+    lastAudit: '2025-11-18',
+    status: 'Observacion',
+  },
+  {
+    id: 6,
+    name: 'Estacion Sierra Norte',
+    address: 'Ibarra',
+    lat: 0.3392,
+    lng: -78.1222,
+    stock: 6000,
+    price: 2.55,
+    officialPrice: 2.55,
+    history: [700, 680, 710, 690, 705],
+    lastAudit: '2025-11-19',
+    status: 'Cumplimiento',
+  },
+  {
+    id: 7,
+    name: 'PetroQ Oriente',
+    address: 'Tena',
+    lat: -0.9902,
+    lng: -77.8129,
+    stock: 22000,
+    price: 2.52,
+    officialPrice: 2.55,
+    history: [1400, 1500, 1350, 1420, 1480],
+    lastAudit: '2025-11-22',
+    status: 'Cumplimiento',
+  },
+  {
+    id: 8,
+    name: 'Gasolinera Litoral',
+    address: 'Manta',
+    lat: -0.9677,
+    lng: -80.7089,
+    stock: 5000,
+    price: 2.75,
+    officialPrice: 2.55,
+    history: [400, 390, 410, 395, 405],
+    lastAudit: '2025-11-27',
+    status: 'Infraccion',
+  },
+  {
+    id: 9,
+    name: 'Estacion Centro Sur',
+    address: 'Ambato',
+    lat: -1.2417,
+    lng: -78.6197,
+    stock: 9000,
+    price: 2.55,
+    officialPrice: 2.55,
+    history: [0, 0, 0, 0, 0],
+    lastAudit: '2025-11-21',
+    status: 'Observacion',
+  },
+  {
+    id: 10,
+    name: 'Gasolinera Valle',
+    address: 'Latacunga',
+    lat: -0.9352,
+    lng: -78.6155,
+    stock: 11000,
+    price: 2.55,
+    officialPrice: 2.55,
+    history: [1000, 1050, 980, 1200, 1150],
+    lastAudit: '2025-11-23',
+    status: 'Cumplimiento',
+  },
+  {
+    id: 11,
+    name: 'Estacion Frontera',
+    address: 'Tulcan',
+    lat: 0.8224,
+    lng: -77.7329,
+    stock: 3000,
+    price: 2.9,
+    officialPrice: 2.55,
+    history: [200, 210, 190, 205, 215],
+    lastAudit: '2025-11-26',
+    status: 'Infraccion',
+  },
+  {
+    id: 12,
+    name: 'Estacion Pacifico',
+    address: 'Salinas',
+    lat: -2.2149,
+    lng: -80.9524,
+    stock: 7000,
+    price: 2.55,
+    officialPrice: 2.55,
+    history: [650, 600, 700, 620, 680],
+    lastAudit: '2025-11-24',
+    status: 'Cumplimiento',
+  },
 ];
 
 const seedAudits = [
@@ -81,6 +198,51 @@ const seedAudits = [
     dispenserOk: 1,
     createdAt: '2025-12-03T09:00:00.000Z',
   },
+  {
+    stationId: 4,
+    code: 'AUD-2025-175',
+    status: 'pending',
+    priceExpected: 2.55,
+    priceReported: 2.55,
+    dispenserOk: 1,
+    createdAt: '2025-12-04T09:30:00.000Z',
+  },
+  {
+    stationId: 5,
+    code: 'AUD-2025-181',
+    status: 'rejected',
+    priceExpected: 2.55,
+    priceReported: 2.62,
+    dispenserOk: 0,
+    createdAt: '2025-12-05T11:00:00.000Z',
+  },
+  {
+    stationId: 6,
+    code: 'AUD-2025-189',
+    status: 'approved',
+    priceExpected: 2.55,
+    priceReported: 2.55,
+    dispenserOk: 1,
+    createdAt: '2025-12-06T10:15:00.000Z',
+  },
+  {
+    stationId: 8,
+    code: 'AUD-2025-192',
+    status: 'pending',
+    priceExpected: 2.55,
+    priceReported: 2.75,
+    dispenserOk: 0,
+    createdAt: '2025-12-07T14:40:00.000Z',
+  },
+  {
+    stationId: 11,
+    code: 'AUD-2025-195',
+    status: 'pending',
+    priceExpected: 2.55,
+    priceReported: 2.9,
+    dispenserOk: 0,
+    createdAt: '2025-12-08T08:10:00.000Z',
+  },
 ];
 
 const seedComplaints = [
@@ -98,12 +260,35 @@ const seedComplaints = [
     status: 'resolved',
     createdAt: '2025-12-01T08:30:00.000Z',
   },
+  {
+    stationName: 'Estacion Andina Sur',
+    type: 'Dispensador defectuoso',
+    detail: 'El dispensador 2 marca menos de lo entregado.',
+    status: 'pending',
+    createdAt: '2025-12-04T16:45:00.000Z',
+  },
+  {
+    stationName: 'Gasolinera Litoral',
+    type: 'Precio fuera de rango',
+    detail: 'Precio reportado superior al oficial.',
+    status: 'pending',
+    createdAt: '2025-12-05T09:15:00.000Z',
+  },
+  {
+    stationName: 'Estacion Frontera',
+    type: 'Sospecha de contrabando',
+    detail: 'Ventas inusuales durante la madrugada.',
+    status: 'pending',
+    createdAt: '2025-12-06T22:10:00.000Z',
+  },
 ];
 
 const seedReports = [
   { period: 'Mes', format: 'PDF', createdAt: '2025-11-30T18:00:00.000Z', sizeMb: 2.4 },
   { period: 'Semana', format: 'CSV', createdAt: '2025-12-02T18:00:00.000Z', sizeMb: 1.1 },
   { period: 'Mes', format: 'Excel', createdAt: '2025-12-03T18:00:00.000Z', sizeMb: 3.2 },
+  { period: 'Semana', format: 'PDF', createdAt: '2025-12-07T18:00:00.000Z', sizeMb: 1.6 },
+  { period: 'Anio', format: 'CSV', createdAt: '2025-12-08T18:00:00.000Z', sizeMb: 4.2 },
 ];
 
 const createTablesSql = `
@@ -183,9 +368,7 @@ export const initDatabase = async (): Promise<void> => {
 
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
   const currentVersion = versionRow?.user_version ?? 0;
-  if (currentVersion === 0) {
-    await db.execAsync(createTablesSql);
-
+  const seedData = async () => {
     const userCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM users;');
     if ((userCount?.count ?? 0) === 0) {
       await db.runAsync(
@@ -195,8 +378,12 @@ export const initDatabase = async (): Promise<void> => {
         'Admin',
         'supervisor'
       );
+    }
 
-      for (const station of seedStations) {
+    const stationRows = await db.getAllAsync<{ name: string }>('SELECT name FROM stations;');
+    const stationNames = new Set((stationRows ?? []).map((row) => row.name));
+    for (const station of seedStations) {
+      if (!stationNames.has(station.name)) {
         await db.runAsync(
           'INSERT INTO stations (id, name, address, lat, lng, stock, price, officialPrice, history, lastAudit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
           station.id,
@@ -212,8 +399,12 @@ export const initDatabase = async (): Promise<void> => {
           station.status
         );
       }
+    }
 
-      for (const audit of seedAudits) {
+    const auditRows = await db.getAllAsync<{ code: string }>('SELECT code FROM audits;');
+    const auditCodes = new Set((auditRows ?? []).map((row) => row.code));
+    for (const audit of seedAudits) {
+      if (!auditCodes.has(audit.code)) {
         await db.runAsync(
           'INSERT INTO audits (stationId, code, status, priceExpected, priceReported, dispenserOk, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?);',
           audit.stationId,
@@ -225,8 +416,17 @@ export const initDatabase = async (): Promise<void> => {
           audit.createdAt
         );
       }
+    }
 
-      for (const complaint of seedComplaints) {
+    const complaintRows = await db.getAllAsync<{ stationName: string; createdAt: string }>(
+      'SELECT stationName, createdAt FROM complaints;'
+    );
+    const complaintKeys = new Set(
+      (complaintRows ?? []).map((row) => `${row.stationName}|${row.createdAt}`)
+    );
+    for (const complaint of seedComplaints) {
+      const key = `${complaint.stationName}|${complaint.createdAt}`;
+      if (!complaintKeys.has(key)) {
         await db.runAsync(
           'INSERT INTO complaints (stationName, type, detail, status, createdAt) VALUES (?, ?, ?, ?, ?);',
           complaint.stationName,
@@ -236,8 +436,17 @@ export const initDatabase = async (): Promise<void> => {
           complaint.createdAt
         );
       }
+    }
 
-      for (const report of seedReports) {
+    const reportRows = await db.getAllAsync<{ period: string; format: string; createdAt: string }>(
+      'SELECT period, format, createdAt FROM reports;'
+    );
+    const reportKeys = new Set(
+      (reportRows ?? []).map((row) => `${row.period}|${row.format}|${row.createdAt}`)
+    );
+    for (const report of seedReports) {
+      const key = `${report.period}|${report.format}|${report.createdAt}`;
+      if (!reportKeys.has(key)) {
         await db.runAsync(
           'INSERT INTO reports (period, format, createdAt, sizeMb) VALUES (?, ?, ?, ?);',
           report.period,
@@ -247,6 +456,11 @@ export const initDatabase = async (): Promise<void> => {
         );
       }
     }
+  };
+
+  if (currentVersion === 0) {
+    await db.execAsync(createTablesSql);
+    await seedData();
 
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
     return;
@@ -257,6 +471,12 @@ export const initDatabase = async (): Promise<void> => {
     await ensureColumn(db, 'complaints', 'photoUri', 'TEXT');
     await ensureColumn(db, 'reports', 'fileUri', 'TEXT');
     await ensureColumn(db, 'reports', 'mimeType', 'TEXT');
+    await db.execAsync('PRAGMA user_version = 2;');
+  }
+
+  if (currentVersion < 3) {
+    await db.execAsync(createTablesSql);
+    await seedData();
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }
 };

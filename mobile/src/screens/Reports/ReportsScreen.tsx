@@ -100,12 +100,14 @@ export default function ReportsScreen({ navigation }: any) {
         {loading ? (
           <ActivityIndicator color={COLORS.primary} />
         ) : (
-          reports.map((report) => (
+          reports.map((report) => {
+            const canShare = Boolean(report.fileUri || report.fileUrl);
+            return (
             <TouchableOpacity
               key={report.id}
-              style={[styles.fileRow, !report.fileUri && styles.fileRowDisabled]}
+              style={[styles.fileRow, !canShare && styles.fileRowDisabled]}
               onPress={() => handleShare(report)}
-              disabled={!report.fileUri}
+              disabled={!canShare}
             >
               <View>
                 <Text style={{ fontWeight: 'bold' }}>{report.period} - {report.format}</Text>
@@ -113,9 +115,10 @@ export default function ReportsScreen({ navigation }: any) {
                   {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
                 </Text>
               </View>
-              <Text style={{ color: COLORS.primary }}>{report.fileUri ? 'Compartir' : 'No disponible'}</Text>
+              <Text style={{ color: COLORS.primary }}>{canShare ? 'Compartir' : 'No disponible'}</Text>
             </TouchableOpacity>
-          ))
+          );
+        })
         )}
       </ScrollView>
     </View>

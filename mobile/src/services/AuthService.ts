@@ -1,4 +1,5 @@
-import { API_BASE_URL, USE_REMOTE_AUTH } from '../config/env';
+import { USE_REMOTE_AUTH } from '../config/env';
+import { buildApiUrl } from './ApiClient';
 import { getDb } from './Database';
 import { SecureSession } from './SecureSession';
 
@@ -12,7 +13,7 @@ export type SessionUser = {
 export const AuthService = {
   login: async (username: string, password: string): Promise<SessionUser> => {
     if (USE_REMOTE_AUTH) {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(buildApiUrl('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

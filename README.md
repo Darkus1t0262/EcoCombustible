@@ -1,40 +1,37 @@
-# EcoCombustible
+# EcoCombustible Monorepo
 
-Aplicacion movil en React Native (Expo) para supervisar estaciones de combustible, auditorias, reportes y quejas.
+Repositorio monorepo con:
+- `mobile/`: app Expo (React Native)
+- `backend/`: API y base de datos
 
 ## Requisitos
 - Node.js LTS
 - Git
-- Expo CLI (opcional)
 
 ## Instalacion
 ```bash
-npm install
+npm install --prefix mobile
+npm install --prefix backend
 ```
 
-## Ejecutar en desarrollo
+## Ejecutar
 ```bash
-npx expo start
+npm run mobile:start
+npm run backend:dev
 ```
 
-## Configuracion opcional de API
-Si vas a usar autenticacion remota, define la variable:
-```
-EXPO_PUBLIC_API_BASE_URL=https://tu-api.com
-```
+## Configuracion
+- Mobile: `mobile/.env.example`
+- Backend: `backend/.env.example`
 
-## Distribucion (EAS Build)
-1. Verifica identificadores en `app.json` (android.package / ios.bundleIdentifier)
-2. Inicia sesion en EAS:
+## Backend (Prisma)
 ```bash
-npx eas login
-```
-3. Compila:
-```bash
-npx eas build -p android --profile production
-npx eas build -p ios --profile production
+npm run backend:prisma -- --version
+npm --prefix backend run db:migrate
+npm --prefix backend run db:seed
 ```
 
-## Notas
-- Los reportes se generan como archivo local (PDF/CSV) y se comparten con el sistema.
-- Las fotos de quejas se guardan en el almacenamiento local de la app.
+## Postgres local (opcional)
+```bash
+docker compose -f backend/docker-compose.yml up -d
+```
