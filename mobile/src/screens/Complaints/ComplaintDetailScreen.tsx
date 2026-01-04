@@ -151,6 +151,22 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
               <Text style={styles.actionText}>Ver estacion</Text>
             </TouchableOpacity>
           )}
+          {!!complaint.vehicleId && (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: COLORS.secondary }]}
+              onPress={() => navigation.navigate('VehicleDetail', { vehicleId: complaint.vehicleId })}
+            >
+              <Text style={styles.actionText}>Ver vehiculo</Text>
+            </TouchableOpacity>
+          )}
+          {!!complaint.transactionId && (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: COLORS.purple }]}
+              onPress={() => navigation.navigate('TransactionDetail', { transactionId: complaint.transactionId })}
+            >
+              <Text style={styles.actionText}>Ver transaccion</Text>
+            </TouchableOpacity>
+          )}
           {complaint.status !== 'resolved' && (
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: COLORS.success }]}
