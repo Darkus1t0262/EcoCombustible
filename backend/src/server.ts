@@ -245,6 +245,52 @@ const analyzeStation = (station: {
   };
 };
 
+const analyzeTransaction = (
+  transaction: { liters: number; vehicle?: { capacityLiters: number } },
+  history: number[]
+) => {
+  const capacity = transaction.vehicle?.capacityLiters ?? 0;
+  if (capacity > 0 && transaction.liters > capacity * 1.05) {
+    return {
+      status: 'Infraccion',
+      score: 95,
+      message: 'Consumo supera la capacidad declarada del vehiculo.',
+      zScore: null,
+    };
+  }
+
+  if (history.length < 3) {
+    return {
+      status: 'Observacion',
+      score: 55,
+      message: 'Historial insuficiente para evaluar consumo del vehiculo.',
+      zScore: null,
+    };
+  }
+
+  const mean = history.reduce((acc, value) => acc + value, 0) / history.length;
+  const variance = history.reduce((acc, value) => acc + Math.pow(value - mean, 2), 0) / history.length;
+  const stdDev = Math.sqrt(variance);
+  const zScore = stdDev === 0 ? 0 : (transaction.liters - mean) / stdDev;
+  const score = Math.min(100, Math.round(Math.abs(zScore) * 18));
+
+  if (Math.abs(zScore) >= 2.5) {
+    return {
+      status: 'Observacion',
+      score: Math.max(score, 70),
+      message: 'Consumo atipico respecto al historial del vehiculo.',
+      zScore,
+    };
+  }
+
+  return {
+    status: 'Cumplimiento',
+    score: Math.max(score, 20),
+    message: 'Consumo dentro del rango esperado para el vehiculo.',
+    zScore,
+  };
+};
+
 const optionalString = () =>
   z.preprocess(
     (value) =>
@@ -271,6 +317,13 @@ const formatComplaint = (complaint: any) => ({
   createdAt: complaint.createdAt?.toISOString?.() ?? complaint.createdAt,
   occurredAt: complaint.occurredAt ? complaint.occurredAt.toISOString() : null,
   resolvedAt: complaint.resolvedAt ? complaint.resolvedAt.toISOString() : null,
+});
+
+const formatTransaction = (transaction: any, analysis: any) => ({
+  ...transaction,
+  occurredAt: transaction.occurredAt?.toISOString?.() ?? transaction.occurredAt,
+  createdAt: transaction.createdAt?.toISOString?.() ?? transaction.createdAt,
+  analysis,
 });
 
 fastify.get('/health', async () => ({ status: 'ok' }));
@@ -337,6 +390,140 @@ fastify.get('/stations/:id', { preHandler: [fastify.authenticate] }, async (requ
     return reply.code(404).send({ error: 'Not found' });
   }
   return { ...station, history: station.history ?? [], analysis: analyzeStation(station) };
+});
+
+fastify.get('/vehicles', { preHandler: [fastify.authenticate] }, async () => {
+  const vehicles = await prisma.vehicle.findMany({ orderBy: { plate: 'asc' } });
+  return vehicles.map((vehicle) => ({
+    ...vehicle,
+    createdAt: vehicle.createdAt.toISOString(),
+  }));
+});
+
+fastify.get('/vehicles/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
+  const params = paramsSchema.parse(request.params);
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: Number(params.id) } });
+  if (!vehicle) {
+    return reply.code(404).send({ error: 'Not found' });
+  }
+  return { ...vehicle, createdAt: vehicle.createdAt.toISOString() };
+});
+
+fastify.get('/vehicles/:id/transactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
+  const params = paramsSchema.parse(request.params);
+  const vehicleId = Number(params.id);
+  const transactions = await prisma.transaction.findMany({
+    where: { vehicleId },
+    include: { station: true, vehicle: true },
+    orderBy: { occurredAt: 'desc' },
+  });
+  const history = transactions.map((t) => t.liters);
+  return transactions.map((transaction) =>
+    formatTransaction(transaction, analyzeTransaction(transaction, history))
+  );
+});
+
+fastify.get('/transactions', { preHandler: [fastify.authenticate] }, async () => {
+  const transactions = await prisma.transaction.findMany({
+    include: { station: true, vehicle: true },
+    orderBy: { occurredAt: 'desc' },
+  });
+  const historyByVehicle = new Map<number, number[]>();
+  for (const tx of transactions) {
+    const list = historyByVehicle.get(tx.vehicleId) ?? [];
+    list.push(tx.liters);
+    historyByVehicle.set(tx.vehicleId, list);
+  }
+  return transactions.map((transaction) => {
+    const history = historyByVehicle.get(transaction.vehicleId) ?? [];
+    return formatTransaction(transaction, analyzeTransaction(transaction, history));
+  });
+});
+
+fastify.get('/transactions/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
+  const params = paramsSchema.parse(request.params);
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: Number(params.id) },
+    include: { station: true, vehicle: true },
+  });
+  if (!transaction) {
+    return reply.code(404).send({ error: 'Not found' });
+  }
+  const history = await prisma.transaction.findMany({
+    where: { vehicleId: transaction.vehicleId },
+    orderBy: { occurredAt: 'desc' },
+  });
+  const litersHistory = history.map((item) => item.liters);
+  return formatTransaction(transaction, analyzeTransaction(transaction, litersHistory));
+});
+
+fastify.post('/transactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const payloadSchema = z.object({
+    stationId: optionalNumber(),
+    stationName: optionalString(),
+    vehiclePlate: z.string().min(2),
+    vehicleModel: optionalString(),
+    capacityLiters: optionalNumber(),
+    fuelType: optionalString(),
+    ownerName: optionalString(),
+    liters: z.coerce.number().positive(),
+    unitPrice: z.coerce.number().positive(),
+    paymentMethod: optionalString(),
+    reportedBy: optionalString(),
+    occurredAt: optionalDate(),
+  });
+
+  const payload = payloadSchema.parse(request.body);
+  let stationId = payload.stationId ? Math.trunc(payload.stationId) : null;
+  if (!stationId && payload.stationName) {
+    const station = await prisma.station.findFirst({ where: { name: payload.stationName } });
+    stationId = station?.id ?? null;
+  }
+  if (!stationId) {
+    return reply.code(400).send({ error: 'Station not found.' });
+  }
+
+  let vehicle = await prisma.vehicle.findFirst({ where: { plate: payload.vehiclePlate } });
+  if (!vehicle) {
+    if (!payload.vehicleModel || !payload.capacityLiters || !payload.fuelType) {
+      return reply.code(400).send({ error: 'Vehicle data required for new plate.' });
+    }
+    vehicle = await prisma.vehicle.create({
+      data: {
+        plate: payload.vehiclePlate,
+        model: payload.vehicleModel,
+        capacityLiters: payload.capacityLiters,
+        fuelType: payload.fuelType,
+        ownerName: payload.ownerName ?? null,
+      },
+    });
+  }
+
+  const occurredAt = payload.occurredAt ?? new Date();
+  const transaction = await prisma.transaction.create({
+    data: {
+      stationId,
+      vehicleId: vehicle.id,
+      liters: payload.liters,
+      unitPrice: payload.unitPrice,
+      totalAmount: Number((payload.liters * payload.unitPrice).toFixed(2)),
+      paymentMethod: payload.paymentMethod ?? null,
+      reportedBy: payload.reportedBy ?? null,
+      occurredAt,
+    },
+  });
+
+  const history = await prisma.transaction.findMany({
+    where: { vehicleId: vehicle.id },
+    orderBy: { occurredAt: 'desc' },
+  });
+  const litersHistory = history.map((item) => item.liters);
+  return reply
+    .code(201)
+    .send(formatTransaction({ ...transaction, vehicle }, analyzeTransaction({ ...transaction, vehicle }, litersHistory)));
 });
 
 fastify.get('/audits', { preHandler: [fastify.authenticate] }, async () => {
@@ -406,10 +593,12 @@ fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (reque
     vehiclePlate: optionalString(),
     vehicleModel: optionalString(),
     fuelType: optionalString(),
+    vehicleId: optionalNumber(),
     liters: optionalNumber(),
     unitPrice: optionalNumber(),
     totalAmount: optionalNumber(),
     occurredAt: optionalDate(),
+    transactionId: optionalNumber(),
   });
 
   let payload: z.infer<typeof payloadSchema>;
@@ -448,10 +637,12 @@ fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (reque
       vehiclePlate: payload.vehiclePlate ?? null,
       vehicleModel: payload.vehicleModel ?? null,
       fuelType: payload.fuelType ?? null,
+      vehicleId: payload.vehicleId === undefined ? null : Math.trunc(payload.vehicleId),
       liters: payload.liters ?? null,
       unitPrice: payload.unitPrice ?? null,
       totalAmount: payload.totalAmount ?? null,
       occurredAt: payload.occurredAt ?? null,
+      transactionId: payload.transactionId === undefined ? null : Math.trunc(payload.transactionId),
       photoUrl,
       status: 'pending',
     },

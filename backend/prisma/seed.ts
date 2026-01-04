@@ -174,6 +174,124 @@ const seed = async () => {
   const stationsSeed = await prisma.station.findMany();
   const stationMap = new Map(stationsSeed.map((s) => [s.name, s.id]));
 
+  const vehicles = [
+    {
+      plate: 'PBA-1024',
+      model: 'Toyota Hilux 2019',
+      capacityLiters: 120,
+      fuelType: 'Diesel',
+      ownerName: 'Andrea G.',
+    },
+    {
+      plate: 'ABC-5531',
+      model: 'Chevrolet D-Max 2021',
+      capacityLiters: 95,
+      fuelType: 'Diesel',
+      ownerName: 'Carlos D.',
+    },
+    {
+      plate: 'GQX-2287',
+      model: 'Kia Sportage 2018',
+      capacityLiters: 60,
+      fuelType: 'Extra',
+      ownerName: 'Maria V.',
+    },
+    {
+      plate: 'PCE-7740',
+      model: 'Hyundai H1 2020',
+      capacityLiters: 75,
+      fuelType: 'Diesel',
+      ownerName: 'Luis P.',
+    },
+  ];
+
+  for (const vehicle of vehicles) {
+    const exists = await prisma.vehicle.findFirst({ where: { plate: vehicle.plate } });
+    if (!exists) {
+      await prisma.vehicle.create({ data: vehicle });
+    }
+  }
+
+  const vehiclesSeed = await prisma.vehicle.findMany();
+  const vehicleMap = new Map(vehiclesSeed.map((v) => [v.plate, v.id]));
+
+  const transactions = [
+    {
+      vehiclePlate: 'PBA-1024',
+      stationName: 'Estacion Frontera',
+      liters: 180,
+      unitPrice: 2.6,
+      paymentMethod: 'Efectivo',
+      reportedBy: 'cliente',
+      occurredAt: new Date('2025-12-06T21:50:00.000Z'),
+    },
+    {
+      vehiclePlate: 'ABC-5531',
+      stationName: 'Estacion Centro Sur',
+      liters: 95,
+      unitPrice: 2.55,
+      paymentMethod: 'Tarjeta',
+      reportedBy: 'sistema',
+      occurredAt: new Date('2025-12-07T02:15:00.000Z'),
+    },
+    {
+      vehiclePlate: 'GQX-2287',
+      stationName: 'Gasolinera El Oro',
+      liters: 40,
+      unitPrice: 2.58,
+      paymentMethod: 'Efectivo',
+      reportedBy: 'cliente',
+      occurredAt: new Date('2025-12-02T11:45:00.000Z'),
+    },
+    {
+      vehiclePlate: 'PCE-7740',
+      stationName: 'Estacion Andina Sur',
+      liters: 70,
+      unitPrice: 2.55,
+      paymentMethod: 'Credito',
+      reportedBy: 'despachador',
+      occurredAt: new Date('2025-12-04T15:20:00.000Z'),
+    },
+  ];
+
+  for (const tx of transactions) {
+    const vehicleId = vehicleMap.get(tx.vehiclePlate);
+    const stationId = stationMap.get(tx.stationName);
+    if (!vehicleId || !stationId) {
+      continue;
+    }
+    const exists = await prisma.transaction.findFirst({
+      where: { vehicleId, occurredAt: tx.occurredAt },
+    });
+    if (!exists) {
+      await prisma.transaction.create({
+        data: {
+          vehicleId,
+          stationId,
+          liters: tx.liters,
+          unitPrice: tx.unitPrice,
+          totalAmount: Number((tx.liters * tx.unitPrice).toFixed(2)),
+          paymentMethod: tx.paymentMethod,
+          reportedBy: tx.reportedBy,
+          occurredAt: tx.occurredAt,
+        },
+      });
+    }
+  }
+
+  const transactionsSeed = await prisma.transaction.findMany();
+  const transactionMap = new Map(
+    transactionsSeed.map((t) => [`${t.vehicleId}|${t.occurredAt.toISOString()}`, t.id])
+  );
+
+  const txKey = (plate: string, iso: string) => {
+    const vehicleId = vehicleMap.get(plate);
+    if (!vehicleId) {
+      return undefined;
+    }
+    return transactionMap.get(`${vehicleId}|${new Date(iso).toISOString()}`);
+  };
+
   const audits = [
     {
       stationName: 'Estacion Petroecuador Norte',
@@ -359,6 +477,8 @@ const seed = async () => {
       vehiclePlate: 'PBA-1024',
       vehicleModel: 'Toyota Hilux 2019',
       fuelType: 'Diesel',
+      vehicleId: vehicleMap.get('PBA-1024'),
+      transactionId: txKey('PBA-1024', '2025-12-06T21:50:00.000Z'),
       liters: 180,
       unitPrice: 2.6,
       totalAmount: 468,
@@ -387,6 +507,8 @@ const seed = async () => {
       vehiclePlate: 'ABC-5531',
       vehicleModel: 'Chevrolet D-Max 2021',
       fuelType: 'Diesel',
+      vehicleId: vehicleMap.get('ABC-5531'),
+      transactionId: txKey('ABC-5531', '2025-12-07T02:15:00.000Z'),
       liters: 95,
       unitPrice: 2.55,
       totalAmount: 242.25,
@@ -426,10 +548,12 @@ const seed = async () => {
           vehiclePlate: complaint.vehiclePlate ?? null,
           vehicleModel: complaint.vehicleModel ?? null,
           fuelType: complaint.fuelType ?? null,
+          vehicleId: complaint.vehicleId ?? null,
           liters: complaint.liters ?? null,
           unitPrice: complaint.unitPrice ?? null,
           totalAmount: complaint.totalAmount ?? null,
           occurredAt: complaint.occurredAt ?? null,
+          transactionId: complaint.transactionId ?? null,
           photoUrl: complaint.photoUrl ?? null,
           status: complaint.status,
           resolvedAt: complaint.resolvedAt ?? null,
