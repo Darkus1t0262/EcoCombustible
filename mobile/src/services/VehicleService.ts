@@ -33,6 +33,48 @@ export type VehicleTransaction = {
   };
 };
 
+const buildAnalysis = (liters: number, capacity: number | null, history: number[]) => {
+  if (capacity && liters > capacity * 1.05) {
+    return {
+      status: 'Infraccion',
+      score: 95,
+      message: 'Consumo supera la capacidad declarada del vehiculo.',
+      zScore: null,
+    };
+  }
+
+  if (history.length < 3) {
+    return {
+      status: 'Observacion',
+      score: 55,
+      message: 'Historial insuficiente para evaluar consumo del vehiculo.',
+      zScore: null,
+    };
+  }
+
+  const mean = history.reduce((acc, value) => acc + value, 0) / history.length;
+  const variance = history.reduce((acc, value) => acc + Math.pow(value - mean, 2), 0) / history.length;
+  const stdDev = Math.sqrt(variance);
+  const zScore = stdDev === 0 ? 0 : (liters - mean) / stdDev;
+  const score = Math.min(100, Math.round(Math.abs(zScore) * 18));
+
+  if (Math.abs(zScore) >= 2.5) {
+    return {
+      status: 'Observacion',
+      score: Math.max(score, 70),
+      message: 'Consumo atipico respecto al historial del vehiculo.',
+      zScore,
+    };
+  }
+
+  return {
+    status: 'Cumplimiento',
+    score: Math.max(score, 20),
+    message: 'Consumo dentro del rango esperado para el vehiculo.',
+    zScore,
+  };
+};
+
 const normalizeTransaction = (item: any): VehicleTransaction => ({
   id: item.id,
   stationId: item.stationId,
@@ -81,6 +123,7 @@ export const VehicleService = {
     const db = await getDb();
     const rows = await db.getAllAsync<any>(
       `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
+              v.capacityLiters as capacityLiters,
               t.liters, t.unitPrice, t.totalAmount, t.paymentMethod, t.reportedBy, t.occurredAt, t.createdAt
        FROM transactions t
        JOIN stations s ON s.id = t.stationId
@@ -89,6 +132,10 @@ export const VehicleService = {
        ORDER BY t.occurredAt DESC;`,
       id
     );
-    return (rows ?? []).map(normalizeTransaction);
+    const history = (rows ?? []).map((row: any) => row.liters);
+    return (rows ?? []).map((row: any) => ({
+      ...normalizeTransaction(row),
+      analysis: buildAnalysis(row.liters, row.capacityLiters ?? null, history),
+    }));
   },
 };

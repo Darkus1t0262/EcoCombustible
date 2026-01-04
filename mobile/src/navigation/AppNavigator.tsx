@@ -11,6 +11,8 @@ import StationListScreen from '../screens/Stations/StationListScreen';
 import StationDetailScreen from '../screens/Stations/StationDetailScreen';
 import ComplaintsScreen from '../screens/Complaints/ComplaintsScreen';
 import ComplaintDetailScreen from '../screens/Complaints/ComplaintDetailScreen';
+import VehicleDetailScreen from '../screens/Vehicles/VehicleDetailScreen';
+import TransactionDetailScreen from '../screens/Transactions/TransactionDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
@@ -56,6 +58,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Audit" component={AuditScreen} />
         <Stack.Screen name="Complaints" component={ComplaintsScreen} />
         <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} />
+        <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+        <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
