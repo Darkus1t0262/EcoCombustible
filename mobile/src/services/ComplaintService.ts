@@ -14,10 +14,12 @@ export type ComplaintItem = {
   vehiclePlate?: string | null;
   vehicleModel?: string | null;
   fuelType?: string | null;
+  vehicleId?: number | null;
   liters?: number | null;
   unitPrice?: number | null;
   totalAmount?: number | null;
   occurredAt?: string | null;
+  transactionId?: number | null;
   photoUri?: string | null;
   photoUrl?: string | null;
   status: string;
@@ -38,10 +40,12 @@ const normalizeComplaint = (item: any): ComplaintItem => ({
   vehiclePlate: item.vehiclePlate ?? null,
   vehicleModel: item.vehicleModel ?? null,
   fuelType: item.fuelType ?? null,
+  vehicleId: item.vehicleId ?? null,
   liters: item.liters ?? null,
   unitPrice: item.unitPrice ?? null,
   totalAmount: item.totalAmount ?? null,
   occurredAt: item.occurredAt ?? null,
+  transactionId: item.transactionId ?? null,
   photoUri: item.photoUri ?? null,
   photoUrl: item.photoUrl ?? null,
   status: item.status,
@@ -64,8 +68,8 @@ export const ComplaintService = {
     const db = await getDb();
     const rows = await db.getAllAsync<any>(
       `SELECT id, stationName, stationId, type, detail, source, reporterName, reporterRole,
-              vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
-              photoUri, status, createdAt, resolvedAt, resolutionNote
+              vehiclePlate, vehicleModel, fuelType, vehicleId, liters, unitPrice, totalAmount, occurredAt,
+              transactionId, photoUri, status, createdAt, resolvedAt, resolutionNote
        FROM complaints
        ORDER BY createdAt DESC;`
     );
@@ -88,8 +92,8 @@ export const ComplaintService = {
     const db = await getDb();
     const row = await db.getFirstAsync<any>(
       `SELECT id, stationName, stationId, type, detail, source, reporterName, reporterRole,
-              vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
-              photoUri, status, createdAt, resolvedAt, resolutionNote
+              vehiclePlate, vehicleModel, fuelType, vehicleId, liters, unitPrice, totalAmount, occurredAt,
+              transactionId, photoUri, status, createdAt, resolvedAt, resolutionNote
        FROM complaints
        WHERE id = ?;`,
       id

@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 const DB_NAME = 'ecocombustible.db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
@@ -388,6 +388,52 @@ const seedComplaints = [
   },
 ];
 
+const seedVehicles = [
+  { plate: 'PBA-1024', model: 'Toyota Hilux 2019', capacityLiters: 120, fuelType: 'Diesel', ownerName: 'Andrea G.' },
+  { plate: 'ABC-5531', model: 'Chevrolet D-Max 2021', capacityLiters: 95, fuelType: 'Diesel', ownerName: 'Carlos D.' },
+  { plate: 'GQX-2287', model: 'Kia Sportage 2018', capacityLiters: 60, fuelType: 'Extra', ownerName: 'Maria V.' },
+  { plate: 'PCE-7740', model: 'Hyundai H1 2020', capacityLiters: 75, fuelType: 'Diesel', ownerName: 'Luis P.' },
+];
+
+const seedTransactions = [
+  {
+    stationId: 11,
+    vehiclePlate: 'PBA-1024',
+    liters: 180,
+    unitPrice: 2.6,
+    paymentMethod: 'Efectivo',
+    reportedBy: 'cliente',
+    occurredAt: '2025-12-06T21:50:00.000Z',
+  },
+  {
+    stationId: 9,
+    vehiclePlate: 'ABC-5531',
+    liters: 95,
+    unitPrice: 2.55,
+    paymentMethod: 'Tarjeta',
+    reportedBy: 'sistema',
+    occurredAt: '2025-12-07T02:15:00.000Z',
+  },
+  {
+    stationId: 2,
+    vehiclePlate: 'GQX-2287',
+    liters: 40,
+    unitPrice: 2.58,
+    paymentMethod: 'Efectivo',
+    reportedBy: 'cliente',
+    occurredAt: '2025-12-02T11:45:00.000Z',
+  },
+  {
+    stationId: 4,
+    vehiclePlate: 'PCE-7740',
+    liters: 70,
+    unitPrice: 2.55,
+    paymentMethod: 'Credito',
+    reportedBy: 'despachador',
+    occurredAt: '2025-12-04T15:20:00.000Z',
+  },
+];
+
 const seedReports = [
   { period: 'Mes', format: 'PDF', createdAt: '2025-11-30T18:00:00.000Z', sizeMb: 2.4 },
   { period: 'Semana', format: 'CSV', createdAt: '2025-12-02T18:00:00.000Z', sizeMb: 1.1 },
@@ -446,15 +492,40 @@ const createTablesSql = `
     vehiclePlate TEXT,
     vehicleModel TEXT,
     fuelType TEXT,
+    vehicleId INTEGER,
     liters REAL,
     unitPrice REAL,
     totalAmount REAL,
     occurredAt TEXT,
+    transactionId INTEGER,
     photoUri TEXT,
     status TEXT NOT NULL,
     resolvedAt TEXT,
     resolutionNote TEXT,
     createdAt TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS vehicles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plate TEXT NOT NULL UNIQUE,
+    model TEXT NOT NULL,
+    capacityLiters REAL NOT NULL,
+    fuelType TEXT NOT NULL,
+    ownerName TEXT,
+    createdAt TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    stationId INTEGER NOT NULL,
+    vehicleId INTEGER NOT NULL,
+    liters REAL NOT NULL,
+    unitPrice REAL NOT NULL,
+    totalAmount REAL NOT NULL,
+    paymentMethod TEXT,
+    reportedBy TEXT,
+    occurredAt TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (stationId) REFERENCES stations(id),
+    FOREIGN KEY (vehicleId) REFERENCES vehicles(id)
   );
   CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -519,6 +590,58 @@ export const initDatabase = async (): Promise<void> => {
       }
     }
 
+    const vehicleRows = await db.getAllAsync<{ plate: string }>('SELECT plate FROM vehicles;');
+    const vehiclePlates = new Set((vehicleRows ?? []).map((row) => row.plate));
+    for (const vehicle of seedVehicles) {
+      if (!vehiclePlates.has(vehicle.plate)) {
+        await db.runAsync(
+          'INSERT INTO vehicles (plate, model, capacityLiters, fuelType, ownerName, createdAt) VALUES (?, ?, ?, ?, ?, ?);',
+          vehicle.plate,
+          vehicle.model,
+          vehicle.capacityLiters,
+          vehicle.fuelType,
+          vehicle.ownerName ?? null,
+          new Date().toISOString()
+        );
+      }
+    }
+
+    const vehicleData = await db.getAllAsync<{ id: number; plate: string }>('SELECT id, plate FROM vehicles;');
+    const vehicleMap = new Map((vehicleData ?? []).map((row) => [row.plate, row.id]));
+
+    const txRows = await db.getAllAsync<{ id: number; vehicleId: number; occurredAt: string }>(
+      'SELECT id, vehicleId, occurredAt FROM transactions;'
+    );
+    const txKeys = new Set((txRows ?? []).map((row) => `${row.vehicleId}|${row.occurredAt}`));
+    for (const tx of seedTransactions) {
+      const vehicleId = vehicleMap.get(tx.vehiclePlate);
+      if (!vehicleId) {
+        continue;
+      }
+      const key = `${vehicleId}|${tx.occurredAt}`;
+      if (!txKeys.has(key)) {
+        await db.runAsync(
+          `INSERT INTO transactions
+           (stationId, vehicleId, liters, unitPrice, totalAmount, paymentMethod, reportedBy, occurredAt, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          tx.stationId,
+          vehicleId,
+          tx.liters,
+          tx.unitPrice,
+          Number((tx.liters * tx.unitPrice).toFixed(2)),
+          tx.paymentMethod ?? null,
+          tx.reportedBy ?? null,
+          tx.occurredAt,
+          tx.occurredAt
+        );
+      }
+    }
+
+    const txData = await db.getAllAsync<{ id: number; vehicleId: number; occurredAt: string }>(
+      'SELECT id, vehicleId, occurredAt FROM transactions;'
+    );
+    const txMap = new Map((txData ?? []).map((row) => [`${row.vehicleId}|${row.occurredAt}`, row.id]));
+
     const auditRows = await db.getAllAsync<{ code: string }>('SELECT code FROM audits;');
     const auditCodes = new Set((auditRows ?? []).map((row) => row.code));
     for (const audit of seedAudits) {
@@ -544,13 +667,16 @@ export const initDatabase = async (): Promise<void> => {
     );
     for (const complaint of seedComplaints) {
       const key = `${complaint.stationName}|${complaint.createdAt}`;
+      const vehicleId = complaint.vehiclePlate ? vehicleMap.get(complaint.vehiclePlate) : null;
+      const transactionId =
+        vehicleId && complaint.occurredAt ? txMap.get(`${vehicleId}|${complaint.occurredAt}`) : null;
       if (!complaintKeys.has(key)) {
         await db.runAsync(
           `INSERT INTO complaints (
              stationName, stationId, type, detail, source, reporterName, reporterRole,
-             vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
-             photoUri, status, resolvedAt, resolutionNote, createdAt
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+             vehiclePlate, vehicleModel, fuelType, vehicleId, liters, unitPrice, totalAmount, occurredAt,
+             transactionId, photoUri, status, resolvedAt, resolutionNote, createdAt
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           complaint.stationName,
           complaint.stationId ?? null,
           complaint.type,
@@ -561,10 +687,12 @@ export const initDatabase = async (): Promise<void> => {
           complaint.vehiclePlate ?? null,
           complaint.vehicleModel ?? null,
           complaint.fuelType ?? null,
+          vehicleId ?? null,
           complaint.liters ?? null,
           complaint.unitPrice ?? null,
           complaint.totalAmount ?? null,
           complaint.occurredAt ?? null,
+          transactionId ?? null,
           complaint.photoUri ?? null,
           complaint.status,
           complaint.resolvedAt ?? null,
@@ -637,6 +765,14 @@ export const initDatabase = async (): Promise<void> => {
 
   if (currentVersion < 5) {
     await db.execAsync(createTablesSql);
+    await seedData();
+    await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
+  }
+
+  if (currentVersion < 6) {
+    await db.execAsync(createTablesSql);
+    await ensureColumn(db, 'complaints', 'vehicleId', 'INTEGER');
+    await ensureColumn(db, 'complaints', 'transactionId', 'INTEGER');
     await seedData();
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }
