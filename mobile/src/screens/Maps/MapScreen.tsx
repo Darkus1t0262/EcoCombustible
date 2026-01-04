@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { COLORS } from '../../theme/colors';
-import { analyzeStationBehavior } from '../../services/DecisionEngine';
+import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
 
@@ -13,11 +13,15 @@ export default function MapScreen({ navigation }: any) {
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLocation, setHasLocation] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<any | null>(null);
 
   useEffect(() => {
     const load = async () => {
       const data = await StationService.getAllStations();
-      const processed = data.map((s) => ({ ...s, analysis: analyzeStationBehavior(s) }));
+      const processed = data.map((s) => ({
+        ...s,
+        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
+      }));
       setStations(processed);
       setLoading(false);
     };
@@ -86,15 +90,19 @@ export default function MapScreen({ navigation }: any) {
           showsMyLocationButton={hasLocation}
         >
           {filteredStations.map((s) => (
-            <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} pinColor={s.analysis.color}>
-              <Callout onPress={() => navigation.navigate('StationDetail', { stationId: s.id })}>
-                <View style={{ width: 220, padding: 5 }}>
-                  <Text style={{ fontWeight: 'bold' }}>{s.name}</Text>
-                  <Text style={{ color: s.analysis.color, fontWeight: 'bold', marginVertical: 5 }}>{s.analysis.status}</Text>
-                  <Text style={{ fontSize: 10 }}>Stock: {s.stock} gal</Text>
-                  <Text style={{ fontSize: 10 }}>Precio: ${s.price}</Text>
-                  <Text style={{ fontSize: 10, marginTop: 4 }}>AI: {s.analysis.msg}</Text>
-                  <Text style={{ fontSize: 10, color: '#666', marginTop: 6 }}>Tap para ver detalle</Text>
+            <Marker
+              key={s.id}
+              coordinate={{ latitude: s.lat, longitude: s.lng }}
+              pinColor={s.analysis.color}
+              onPress={() => setSelectedStation(s)}
+            >
+              <Callout tooltip>
+                <View style={styles.callout}>
+                  <Text style={styles.calloutTitle}>{s.name}</Text>
+                  <Text style={[styles.calloutStatus, { color: s.analysis.color }]}>{s.analysis.status}</Text>
+                  <Text style={styles.calloutText}>Stock: {s.stock} gal</Text>
+                  <Text style={styles.calloutText}>Precio: ${s.price}</Text>
+                  <Text style={styles.calloutText}>Analisis: {s.analysis.message}</Text>
                 </View>
               </Callout>
             </Marker>
@@ -117,6 +125,31 @@ export default function MapScreen({ navigation }: any) {
           <Text style={styles.legText}>Violation</Text>
         </View>
       </View>
+
+      {!!selectedStation && (
+        <View style={styles.detailCard}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.detailTitle}>{selectedStation.name}</Text>
+            <TouchableOpacity onPress={() => setSelectedStation(null)}>
+              <Ionicons name="close" size={18} color="#666" />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
+            {selectedStation.analysis.status}
+          </Text>
+          <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
+            <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
+            onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
+          >
+            <Text style={styles.detailBtnText}>Ver detalle</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -134,4 +167,25 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
   legText: { fontSize: 10 },
+  callout: { width: 220, backgroundColor: 'white', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#E6E6E6' },
+  calloutTitle: { fontWeight: 'bold', marginBottom: 4, color: '#111' },
+  calloutStatus: { fontWeight: 'bold', marginBottom: 4 },
+  calloutText: { fontSize: 11, color: '#333' },
+  detailCard: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 110,
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    elevation: 6,
+  },
+  detailTitle: { fontWeight: 'bold', fontSize: 16, color: '#111' },
+  detailStatus: { fontWeight: 'bold', marginTop: 6 },
+  detailText: { fontSize: 12, color: '#444', marginTop: 6 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  detailMeta: { fontSize: 12, color: '#555' },
+  detailBtn: { marginTop: 12, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  detailBtnText: { color: 'white', fontWeight: 'bold' },
 });

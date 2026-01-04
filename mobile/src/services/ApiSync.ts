@@ -14,6 +14,12 @@ export type StationRow = {
   history: number[];
   lastAudit: string;
   status: string;
+  analysis?: {
+    status: string;
+    score?: number;
+    message?: string;
+    zScore?: number | null;
+  };
 };
 
 const mapStation = (row: any): StationRow => ({
@@ -28,6 +34,7 @@ const mapStation = (row: any): StationRow => ({
   history: row.history ? JSON.parse(row.history) : [],
   lastAudit: row.lastAudit,
   status: row.status,
+  analysis: row.analysis ?? undefined,
 });
 
 export const StationService = {

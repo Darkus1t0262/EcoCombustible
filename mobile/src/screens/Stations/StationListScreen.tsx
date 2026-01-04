@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Activity
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
-import { analyzeStationBehavior } from '../../services/DecisionEngine';
+import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 
 export default function StationListScreen({ navigation }: any) {
   const [stations, setStations] = useState<any[]>([]);
@@ -20,7 +20,10 @@ export default function StationListScreen({ navigation }: any) {
       setError('');
       setLoading(true);
       const data = await StationService.getAllStations();
-      const processed = data.map((s) => ({ ...s, analysis: analyzeStationBehavior(s) }));
+      const processed = data.map((s) => ({
+        ...s,
+        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
+      }));
       setStations(processed);
     } catch (err) {
       setError('Failed to load stations.');

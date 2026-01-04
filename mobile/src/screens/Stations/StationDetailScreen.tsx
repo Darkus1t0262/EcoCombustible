@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
-import { analyzeStationBehavior } from '../../services/DecisionEngine';
+import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
+import { USE_REMOTE_AUTH } from '../../config/env';
 
 export default function StationDetailScreen({ route, navigation }: any) {
   const { stationId } = route.params;
@@ -14,7 +15,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
     const load = async () => {
       const data = await StationService.getStationDetails(stationId);
       if (data) {
-        setStation({ ...data, analysis: analyzeStationBehavior(data) });
+        setStation({ ...data, analysis: normalizeAnalysis(data.analysis ?? analyzeStationBehavior(data)) });
       }
       setLoading(false);
     };
@@ -56,13 +57,15 @@ export default function StationDetailScreen({ route, navigation }: any) {
             <Ionicons name="analytics" size={24} color={station.analysis.color} />
             <Text style={{ fontWeight: 'bold', color: station.analysis.color, fontSize: 18 }}>{station.analysis.status}</Text>
           </View>
-          <Text style={{ color: '#555' }}>{station.analysis.msg}</Text>
+          <Text style={{ color: '#555' }}>{station.analysis.message}</Text>
         </View>
 
         <View style={styles.card}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={styles.sectionTitle}>Inventory and Sales</Text>
-            <Text style={{ fontSize: 10, color: COLORS.primary }}>Source: Local DB</Text>
+            <Text style={{ fontSize: 10, color: COLORS.primary }}>
+              Source: {USE_REMOTE_AUTH ? 'API' : 'Local DB'}
+            </Text>
           </View>
 
           <View style={styles.row}>
@@ -79,11 +82,17 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <View style={styles.card}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={styles.sectionTitle}>Vehicle Flow</Text>
-            <Text style={{ fontSize: 10, color: COLORS.purple }}>Source: Local DB</Text>
+            <Text style={styles.sectionTitle}>Sales Trend</Text>
+            <Text style={{ fontSize: 10, color: COLORS.purple }}>Source: History</Text>
           </View>
-          <Text style={styles.value}>1,240 vehicles/day</Text>
-          <Text style={styles.label}>Registered on platform</Text>
+          <Text style={styles.value}>
+            {Array.isArray(station.history) && station.history.length > 0
+              ? `${Math.round(
+                  station.history.reduce((acc: number, val: number) => acc + Number(val), 0) / station.history.length
+                )} gal/dia`
+              : 'Sin historial'}
+          </Text>
+          <Text style={styles.label}>Promedio de ventas recientes</Text>
         </View>
 
         <TouchableOpacity style={[styles.btn, { backgroundColor: COLORS.warning }]} onPress={() => navigation.navigate('Audit')}>

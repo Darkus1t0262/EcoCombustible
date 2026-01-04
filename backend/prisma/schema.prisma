@@ -30,6 +30,7 @@ model Station {
   status        String
   audits        Audit[]
   complaints    Complaint[]
+  transactions  Transaction[]
 }
 
 model Audit {
@@ -57,10 +58,14 @@ model Complaint {
   vehiclePlate   String?
   vehicleModel   String?
   fuelType       String?
+  vehicleId      Int?
+  vehicle        Vehicle? @relation(fields: [vehicleId], references: [id])
   liters         Float?
   unitPrice      Float?
   totalAmount    Float?
   occurredAt     DateTime?
+  transactionId  Int?
+  transaction    Transaction? @relation(fields: [transactionId], references: [id])
   photoUrl       String?
   status         String
   resolvedAt     DateTime?
@@ -76,4 +81,32 @@ model Report {
   sizeMb    Float
   fileUrl   String?
   mimeType  String?
+}
+
+model Vehicle {
+  id             Int           @id @default(autoincrement())
+  plate          String        @unique
+  model          String
+  capacityLiters Float
+  fuelType       String
+  ownerName      String?
+  createdAt      DateTime      @default(now())
+  transactions   Transaction[]
+  complaints     Complaint[]
+}
+
+model Transaction {
+  id           Int       @id @default(autoincrement())
+  stationId    Int
+  station      Station   @relation(fields: [stationId], references: [id])
+  vehicleId    Int
+  vehicle      Vehicle   @relation(fields: [vehicleId], references: [id])
+  liters       Float
+  unitPrice    Float
+  totalAmount  Float
+  paymentMethod String?
+  reportedBy   String?
+  occurredAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  complaints   Complaint[]
 }

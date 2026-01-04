@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 const DB_NAME = 'ecocombustible.db';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
@@ -243,6 +243,42 @@ const seedAudits = [
     dispenserOk: 0,
     createdAt: '2025-12-08T08:10:00.000Z',
   },
+  {
+    stationId: 10,
+    code: 'AUD-2025-201',
+    status: 'approved',
+    priceExpected: 2.55,
+    priceReported: 2.55,
+    dispenserOk: 1,
+    createdAt: '2025-12-09T12:00:00.000Z',
+  },
+  {
+    stationId: 9,
+    code: 'AUD-2025-205',
+    status: 'rejected',
+    priceExpected: 2.55,
+    priceReported: 2.7,
+    dispenserOk: 0,
+    createdAt: '2025-12-10T16:30:00.000Z',
+  },
+  {
+    stationId: 5,
+    code: 'AUD-2025-208',
+    status: 'approved',
+    priceExpected: 2.55,
+    priceReported: 2.55,
+    dispenserOk: 1,
+    createdAt: '2025-12-11T09:10:00.000Z',
+  },
+  {
+    stationId: 12,
+    code: 'AUD-2025-211',
+    status: 'pending',
+    priceExpected: 2.55,
+    priceReported: 2.55,
+    dispenserOk: 1,
+    createdAt: '2025-12-12T14:30:00.000Z',
+  },
 ];
 
 const seedComplaints = [
@@ -308,6 +344,47 @@ const seedComplaints = [
     occurredAt: '2025-12-06T21:50:00.000Z',
     status: 'pending',
     createdAt: '2025-12-06T22:10:00.000Z',
+  },
+  {
+    stationName: 'Estacion Sierra Norte',
+    stationId: 6,
+    type: 'Dispensador sin calibracion',
+    detail: 'La bomba 3 reporta menos volumen.',
+    source: 'despachador',
+    reporterName: 'Mario C.',
+    reporterRole: 'despachador',
+    status: 'pending',
+    createdAt: '2025-12-07T10:40:00.000Z',
+  },
+  {
+    stationName: 'Estacion Centro Sur',
+    stationId: 9,
+    type: 'Venta fuera de horario',
+    detail: 'Transaccion registrada a las 02:15.',
+    source: 'sistema',
+    reporterRole: 'sistema',
+    vehiclePlate: 'ABC-5531',
+    vehicleModel: 'Chevrolet D-Max 2021',
+    fuelType: 'Diesel',
+    liters: 95,
+    unitPrice: 2.55,
+    totalAmount: 242.25,
+    occurredAt: '2025-12-07T02:15:00.000Z',
+    status: 'pending',
+    createdAt: '2025-12-07T02:20:00.000Z',
+  },
+  {
+    stationName: 'Gasolinera Valle',
+    stationId: 10,
+    type: 'Falta de factura',
+    detail: 'El cliente no recibio comprobante.',
+    source: 'cliente',
+    reporterName: 'Jorge R.',
+    reporterRole: 'cliente',
+    status: 'resolved',
+    resolvedAt: '2025-12-08T11:30:00.000Z',
+    resolutionNote: 'Se emitio factura posterior.',
+    createdAt: '2025-12-08T09:05:00.000Z',
   },
 ];
 
@@ -554,6 +631,12 @@ export const initDatabase = async (): Promise<void> => {
     await ensureColumn(db, 'complaints', 'occurredAt', 'TEXT');
     await ensureColumn(db, 'complaints', 'resolvedAt', 'TEXT');
     await ensureColumn(db, 'complaints', 'resolutionNote', 'TEXT');
+    await seedData();
+    await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
+  }
+
+  if (currentVersion < 5) {
+    await db.execAsync(createTablesSql);
     await seedData();
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }
