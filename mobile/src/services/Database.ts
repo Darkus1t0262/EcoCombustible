@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 const DB_NAME = 'ecocombustible.db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export const getDb = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
@@ -248,36 +248,64 @@ const seedAudits = [
 const seedComplaints = [
   {
     stationName: 'Gasolinera El Oro',
+    stationId: 2,
     type: 'Precios irregulares',
     detail: 'El precio marcado no coincide con el publicado.',
+    source: 'cliente',
+    reporterName: 'Maria V.',
+    reporterRole: 'cliente',
     status: 'pending',
     createdAt: '2025-12-02T12:00:00.000Z',
   },
   {
     stationName: 'Estacion Primax Centro',
+    stationId: 3,
     type: 'Falta de stock',
     detail: 'No se despacha combustible en horas pico.',
+    source: 'cliente',
+    reporterName: 'Carlos D.',
+    reporterRole: 'cliente',
     status: 'resolved',
+    resolvedAt: '2025-12-02T18:10:00.000Z',
+    resolutionNote: 'Se coordino reabastecimiento.',
     createdAt: '2025-12-01T08:30:00.000Z',
   },
   {
     stationName: 'Estacion Andina Sur',
+    stationId: 4,
     type: 'Dispensador defectuoso',
     detail: 'El dispensador 2 marca menos de lo entregado.',
+    source: 'despachador',
+    reporterName: 'Luis P.',
+    reporterRole: 'despachador',
     status: 'pending',
     createdAt: '2025-12-04T16:45:00.000Z',
   },
   {
     stationName: 'Gasolinera Litoral',
+    stationId: 8,
     type: 'Precio fuera de rango',
     detail: 'Precio reportado superior al oficial.',
+    source: 'sistema',
+    reporterRole: 'sistema',
     status: 'pending',
     createdAt: '2025-12-05T09:15:00.000Z',
   },
   {
     stationName: 'Estacion Frontera',
-    type: 'Sospecha de contrabando',
-    detail: 'Ventas inusuales durante la madrugada.',
+    stationId: 11,
+    type: 'Consumo inusual',
+    detail: 'Carga fuera de rango para el vehiculo.',
+    source: 'cliente',
+    reporterName: 'Andrea G.',
+    reporterRole: 'cliente',
+    vehiclePlate: 'PBA-1024',
+    vehicleModel: 'Toyota Hilux 2019',
+    fuelType: 'Diesel',
+    liters: 180,
+    unitPrice: 2.6,
+    totalAmount: 468,
+    occurredAt: '2025-12-06T21:50:00.000Z',
     status: 'pending',
     createdAt: '2025-12-06T22:10:00.000Z',
   },
@@ -332,10 +360,23 @@ const createTablesSql = `
   CREATE TABLE IF NOT EXISTS complaints (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     stationName TEXT NOT NULL,
+    stationId INTEGER,
     type TEXT NOT NULL,
     detail TEXT,
+    source TEXT,
+    reporterName TEXT,
+    reporterRole TEXT,
+    vehiclePlate TEXT,
+    vehicleModel TEXT,
+    fuelType TEXT,
+    liters REAL,
+    unitPrice REAL,
+    totalAmount REAL,
+    occurredAt TEXT,
     photoUri TEXT,
     status TEXT NOT NULL,
+    resolvedAt TEXT,
+    resolutionNote TEXT,
     createdAt TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS reports (
@@ -428,11 +469,29 @@ export const initDatabase = async (): Promise<void> => {
       const key = `${complaint.stationName}|${complaint.createdAt}`;
       if (!complaintKeys.has(key)) {
         await db.runAsync(
-          'INSERT INTO complaints (stationName, type, detail, status, createdAt) VALUES (?, ?, ?, ?, ?);',
+          `INSERT INTO complaints (
+             stationName, stationId, type, detail, source, reporterName, reporterRole,
+             vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
+             photoUri, status, resolvedAt, resolutionNote, createdAt
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           complaint.stationName,
+          complaint.stationId ?? null,
           complaint.type,
-          complaint.detail,
+          complaint.detail ?? null,
+          complaint.source ?? null,
+          complaint.reporterName ?? null,
+          complaint.reporterRole ?? null,
+          complaint.vehiclePlate ?? null,
+          complaint.vehicleModel ?? null,
+          complaint.fuelType ?? null,
+          complaint.liters ?? null,
+          complaint.unitPrice ?? null,
+          complaint.totalAmount ?? null,
+          complaint.occurredAt ?? null,
+          complaint.photoUri ?? null,
           complaint.status,
+          complaint.resolvedAt ?? null,
+          complaint.resolutionNote ?? null,
           complaint.createdAt
         );
       }
@@ -476,6 +535,25 @@ export const initDatabase = async (): Promise<void> => {
 
   if (currentVersion < 3) {
     await db.execAsync(createTablesSql);
+    await seedData();
+    await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
+  }
+
+  if (currentVersion < 4) {
+    await db.execAsync(createTablesSql);
+    await ensureColumn(db, 'complaints', 'stationId', 'INTEGER');
+    await ensureColumn(db, 'complaints', 'source', 'TEXT');
+    await ensureColumn(db, 'complaints', 'reporterName', 'TEXT');
+    await ensureColumn(db, 'complaints', 'reporterRole', 'TEXT');
+    await ensureColumn(db, 'complaints', 'vehiclePlate', 'TEXT');
+    await ensureColumn(db, 'complaints', 'vehicleModel', 'TEXT');
+    await ensureColumn(db, 'complaints', 'fuelType', 'TEXT');
+    await ensureColumn(db, 'complaints', 'liters', 'REAL');
+    await ensureColumn(db, 'complaints', 'unitPrice', 'REAL');
+    await ensureColumn(db, 'complaints', 'totalAmount', 'REAL');
+    await ensureColumn(db, 'complaints', 'occurredAt', 'TEXT');
+    await ensureColumn(db, 'complaints', 'resolvedAt', 'TEXT');
+    await ensureColumn(db, 'complaints', 'resolutionNote', 'TEXT');
     await seedData();
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION};`);
   }

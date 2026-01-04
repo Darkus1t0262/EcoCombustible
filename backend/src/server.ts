@@ -17,10 +17,49 @@ import PDFDocument from 'pdfkit';
 
 const prisma = new PrismaClient();
 
-const PORT = Number(process.env.PORT ?? 4000);
-const HOST = process.env.HOST ?? '0.0.0.0';
-const JWT_SECRET = process.env.JWT_SECRET ?? 'change_me';
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? `http://localhost:${PORT}`;
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  HOST: z.string().default('0.0.0.0'),
+  JWT_SECRET: z.string().min(1).default('change_me'),
+  JWT_ISSUER: z.string().optional(),
+  JWT_EXPIRES_IN: z.string().default('1d'),
+  PUBLIC_BASE_URL: z.string().url().optional(),
+  FILES_BASE_URL: z.string().url().optional(),
+  CORS_ORIGIN: z.string().optional(),
+  DATABASE_URL: z.string().min(1),
+  TRUST_PROXY: z.string().optional(),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
+  RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+});
+
+const env = envSchema.parse(process.env);
+const PORT = env.PORT;
+const HOST = env.HOST;
+const JWT_SECRET = env.JWT_SECRET;
+const PUBLIC_BASE_URL = (env.PUBLIC_BASE_URL ?? `http://localhost:${PORT}`).replace(/\/+$/, '');
+const FILES_BASE_URL = (env.FILES_BASE_URL ?? PUBLIC_BASE_URL).replace(/\/+$/, '');
+const CORS_ORIGIN = env.CORS_ORIGIN ?? '';
+const TRUST_PROXY = env.TRUST_PROXY === 'true' || env.TRUST_PROXY === '1';
+const JWT_ISSUER = env.JWT_ISSUER?.trim() || undefined;
+
+if (env.NODE_ENV === 'production') {
+  if (JWT_SECRET === 'change_me' || JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production.');
+  }
+  if (!env.PUBLIC_BASE_URL) {
+    throw new Error('PUBLIC_BASE_URL must be set in production.');
+  }
+  if (!PUBLIC_BASE_URL.startsWith('https://')) {
+    throw new Error('PUBLIC_BASE_URL must use https in production.');
+  }
+  if (env.FILES_BASE_URL && !FILES_BASE_URL.startsWith('https://')) {
+    throw new Error('FILES_BASE_URL must use https in production.');
+  }
+  if (!CORS_ORIGIN) {
+    throw new Error('CORS_ORIGIN must be set in production.');
+  }
+}
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage');
 const REPORTS_DIR = path.join(STORAGE_DIR, 'reports');
 const COMPLAINTS_DIR = path.join(STORAGE_DIR, 'complaints');
@@ -36,27 +75,50 @@ ensureDir(REPORTS_DIR);
 ensureDir(COMPLAINTS_DIR);
 
 const parseOrigins = () => {
-  const raw = (process.env.CORS_ORIGIN ?? '').split(',').map((value) => value.trim()).filter(Boolean);
+  const raw = CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean);
   if (raw.length === 0) {
+    return env.NODE_ENV === 'production' ? false : true;
+  }
+  if (raw.includes('*')) {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('CORS_ORIGIN cannot be wildcard in production.');
+    }
     return true;
   }
-  return raw;
+  return raw.map((origin) => {
+    try {
+      return new URL(origin).origin;
+    } catch (error) {
+      throw new Error(`Invalid CORS origin: ${origin}`);
+    }
+  });
 };
 
-const fastify = Fastify({ logger: true });
-
-if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'change_me') {
-  throw new Error('JWT_SECRET must be set in production.');
-}
+const fastify = Fastify({
+  logger: {
+    redact: ['req.headers.authorization'],
+  },
+  trustProxy: TRUST_PROXY,
+});
 
 await fastify.register(helmet, { global: true });
 await fastify.register(cors, { origin: parseOrigins() });
 await fastify.register(rateLimit, {
   global: true,
-  max: 120,
-  timeWindow: '1 minute',
+  max: env.RATE_LIMIT_MAX,
+  timeWindow: env.RATE_LIMIT_WINDOW,
 });
-await fastify.register(jwt, { secret: JWT_SECRET });
+const jwtSignOptions: { expiresIn: string; issuer?: string } = {
+  expiresIn: env.JWT_EXPIRES_IN,
+};
+if (JWT_ISSUER) {
+  jwtSignOptions.issuer = JWT_ISSUER;
+}
+await fastify.register(jwt, {
+  secret: JWT_SECRET,
+  sign: jwtSignOptions,
+  verify: JWT_ISSUER ? { issuer: JWT_ISSUER } : undefined,
+});
 await fastify.register(multipart, {
   limits: {
     fileSize: 5 * 1024 * 1024,
@@ -124,6 +186,34 @@ const buildPdf = async (
     stream.on('error', (err) => reject(err));
   });
 };
+
+const optionalString = () =>
+  z.preprocess(
+    (value) =>
+      value === null || value === undefined || (typeof value === 'string' && value.trim() === '')
+        ? undefined
+        : value,
+    z.string().min(1).optional()
+  );
+
+const optionalNumber = () =>
+  z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.coerce.number().optional()
+  );
+
+const optionalDate = () =>
+  z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.coerce.date().optional()
+  );
+
+const formatComplaint = (complaint: any) => ({
+  ...complaint,
+  createdAt: complaint.createdAt?.toISOString?.() ?? complaint.createdAt,
+  occurredAt: complaint.occurredAt ? complaint.occurredAt.toISOString() : null,
+  resolvedAt: complaint.resolvedAt ? complaint.resolvedAt.toISOString() : null,
+});
 
 fastify.get('/health', async () => ({ status: 'ok' }));
 
@@ -235,10 +325,7 @@ fastify.patch(
 
 fastify.get('/complaints', { preHandler: [fastify.authenticate] }, async () => {
   const complaints = await prisma.complaint.findMany({ orderBy: { createdAt: 'desc' } });
-  return complaints.map((complaint) => ({
-    ...complaint,
-    createdAt: complaint.createdAt.toISOString(),
-  }));
+  return complaints.map(formatComplaint);
 });
 
 fastify.get('/complaints/stats', { preHandler: [fastify.authenticate] }, async () => {
@@ -251,8 +338,19 @@ fastify.get('/complaints/stats', { preHandler: [fastify.authenticate] }, async (
 fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (request, reply) => {
   const payloadSchema = z.object({
     stationName: z.string().min(2),
+    stationId: optionalNumber(),
     type: z.string().min(2),
-    detail: z.string().optional().nullable(),
+    detail: optionalString(),
+    source: optionalString(),
+    reporterName: optionalString(),
+    reporterRole: optionalString(),
+    vehiclePlate: optionalString(),
+    vehicleModel: optionalString(),
+    fuelType: optionalString(),
+    liters: optionalNumber(),
+    unitPrice: optionalNumber(),
+    totalAmount: optionalNumber(),
+    occurredAt: optionalDate(),
   });
 
   let payload: z.infer<typeof payloadSchema>;
@@ -269,7 +367,7 @@ fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (reque
         const storedName = `${Date.now()}_${fileName}`;
         const destPath = path.join(COMPLAINTS_DIR, storedName);
         await pipeline(part.file, createWriteStream(destPath));
-        photoUrl = `${PUBLIC_BASE_URL}/files/complaints/${storedName}`;
+        photoUrl = `${FILES_BASE_URL}/files/complaints/${storedName}`;
       } else {
         fields[part.fieldname] = String(part.value ?? '');
       }
@@ -282,18 +380,75 @@ fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (reque
   const complaint = await prisma.complaint.create({
     data: {
       stationName: payload.stationName,
+      stationId: payload.stationId === undefined ? null : Math.trunc(payload.stationId),
       type: payload.type,
       detail: payload.detail ?? null,
+      source: payload.source ?? null,
+      reporterName: payload.reporterName ?? null,
+      reporterRole: payload.reporterRole ?? null,
+      vehiclePlate: payload.vehiclePlate ?? null,
+      vehicleModel: payload.vehicleModel ?? null,
+      fuelType: payload.fuelType ?? null,
+      liters: payload.liters ?? null,
+      unitPrice: payload.unitPrice ?? null,
+      totalAmount: payload.totalAmount ?? null,
+      occurredAt: payload.occurredAt ?? null,
       photoUrl,
       status: 'pending',
     },
   });
 
-  return reply.code(201).send({
-    ...complaint,
-    createdAt: complaint.createdAt.toISOString(),
-  });
+  return reply.code(201).send(formatComplaint(complaint));
 });
+
+fastify.get('/complaints/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
+  const params = paramsSchema.parse(request.params);
+  const complaint = await prisma.complaint.findUnique({ where: { id: Number(params.id) } });
+  if (!complaint) {
+    return reply.code(404).send({ error: 'Not found' });
+  }
+  return formatComplaint(complaint);
+});
+
+fastify.patch(
+  '/complaints/:id',
+  { preHandler: [fastify.authenticate, requireRole('supervisor')] },
+  async (request, reply) => {
+    const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
+    const bodySchema = z.object({
+      status: z.enum(['pending', 'resolved']).optional(),
+      resolutionNote: optionalString(),
+    });
+    const params = paramsSchema.parse(request.params);
+    const body = bodySchema.parse(request.body);
+
+    if (!body.status && !body.resolutionNote) {
+      return reply.code(400).send({ error: 'No changes provided' });
+    }
+
+    const update: {
+      status?: string;
+      resolutionNote?: string | null;
+      resolvedAt?: Date | null;
+    } = {};
+
+    if (body.status) {
+      update.status = body.status;
+      update.resolvedAt = body.status === 'resolved' ? new Date() : null;
+    }
+    if (body.resolutionNote !== undefined) {
+      update.resolutionNote = body.resolutionNote ?? null;
+    }
+
+    const updated = await prisma.complaint.update({
+      where: { id: Number(params.id) },
+      data: update,
+    });
+
+    return formatComplaint(updated);
+  }
+);
 
 fastify.get('/reports', { preHandler: [fastify.authenticate] }, async () => {
   const reports = await prisma.report.findMany({ orderBy: { createdAt: 'desc' } });
@@ -339,7 +494,7 @@ fastify.post(
 
     if (filePath) {
       const stats = await stat(filePath);
-      fileUrl = `${PUBLIC_BASE_URL}/files/reports/${path.basename(filePath)}`;
+      fileUrl = `${FILES_BASE_URL}/files/reports/${path.basename(filePath)}`;
       const report = await prisma.report.create({
         data: {
           period: body.period,

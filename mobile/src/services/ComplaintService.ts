@@ -5,12 +5,50 @@ import { getDb } from './Database';
 export type ComplaintItem = {
   id: number;
   stationName: string;
+  stationId?: number | null;
   type: string;
   detail: string | null;
-  photoUri: string | null;
+  source?: string | null;
+  reporterName?: string | null;
+  reporterRole?: string | null;
+  vehiclePlate?: string | null;
+  vehicleModel?: string | null;
+  fuelType?: string | null;
+  liters?: number | null;
+  unitPrice?: number | null;
+  totalAmount?: number | null;
+  occurredAt?: string | null;
+  photoUri?: string | null;
+  photoUrl?: string | null;
   status: string;
   createdAt: string;
+  resolvedAt?: string | null;
+  resolutionNote?: string | null;
 };
+
+const normalizeComplaint = (item: any): ComplaintItem => ({
+  id: item.id,
+  stationName: item.stationName,
+  stationId: item.stationId ?? null,
+  type: item.type,
+  detail: item.detail ?? null,
+  source: item.source ?? null,
+  reporterName: item.reporterName ?? null,
+  reporterRole: item.reporterRole ?? null,
+  vehiclePlate: item.vehiclePlate ?? null,
+  vehicleModel: item.vehicleModel ?? null,
+  fuelType: item.fuelType ?? null,
+  liters: item.liters ?? null,
+  unitPrice: item.unitPrice ?? null,
+  totalAmount: item.totalAmount ?? null,
+  occurredAt: item.occurredAt ?? null,
+  photoUri: item.photoUri ?? null,
+  photoUrl: item.photoUrl ?? null,
+  status: item.status,
+  createdAt: item.createdAt,
+  resolvedAt: item.resolvedAt ?? null,
+  resolutionNote: item.resolutionNote ?? null,
+});
 
 export const ComplaintService = {
   getComplaints: async (): Promise<ComplaintItem[]> => {
@@ -21,16 +59,42 @@ export const ComplaintService = {
         throw new Error('Failed to load complaints');
       }
       const items = (await response.json()) as any[];
-      return items.map((item) => ({
-        ...item,
-        photoUri: item.photoUri ?? item.photoUrl ?? null,
-      })) as ComplaintItem[];
+      return items.map((item) => normalizeComplaint({ ...item, photoUri: item.photoUri ?? item.photoUrl ?? null }));
     }
     const db = await getDb();
-    const rows = await db.getAllAsync<ComplaintItem>(
-      'SELECT id, stationName, type, detail, photoUri, status, createdAt FROM complaints ORDER BY createdAt DESC;'
+    const rows = await db.getAllAsync<any>(
+      `SELECT id, stationName, stationId, type, detail, source, reporterName, reporterRole,
+              vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
+              photoUri, status, createdAt, resolvedAt, resolutionNote
+       FROM complaints
+       ORDER BY createdAt DESC;`
     );
-    return rows ?? [];
+    return (rows ?? []).map((row) => normalizeComplaint(row));
+  },
+
+  getComplaint: async (id: number): Promise<ComplaintItem | null> => {
+    if (USE_REMOTE_AUTH) {
+      const headers = await getAuthHeaders();
+      const response = await fetch(buildApiUrl(`/complaints/${id}`), { headers: { Accept: 'application/json', ...headers } });
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error('Failed to load complaint');
+      }
+      const item = await response.json();
+      return normalizeComplaint({ ...item, photoUri: item.photoUri ?? item.photoUrl ?? null });
+    }
+    const db = await getDb();
+    const row = await db.getFirstAsync<any>(
+      `SELECT id, stationName, stationId, type, detail, source, reporterName, reporterRole,
+              vehiclePlate, vehicleModel, fuelType, liters, unitPrice, totalAmount, occurredAt,
+              photoUri, status, createdAt, resolvedAt, resolutionNote
+       FROM complaints
+       WHERE id = ?;`,
+      id
+    );
+    return row ? normalizeComplaint(row) : null;
   },
 
   getStats: async (): Promise<{ total: number; pending: number; resolved: number }> => {
@@ -58,41 +122,23 @@ export const ComplaintService = {
     };
   },
 
-  createComplaint: async (payload: { stationName: string; type: string; detail: string; photoUri?: string | null }) => {
+  updateStatus: async (complaintId: number, status: 'pending' | 'resolved', resolutionNote?: string | null) => {
     if (USE_REMOTE_AUTH) {
-      const headers = await getAuthHeaders();
-      const form = new FormData();
-      form.append('stationName', payload.stationName);
-      form.append('type', payload.type);
-      form.append('detail', payload.detail);
-      if (payload.photoUri) {
-        form.append('photo', {
-          uri: payload.photoUri,
-          name: `complaint_${Date.now()}.jpg`,
-          type: 'image/jpeg',
-        } as any);
-      }
-
-      const response = await fetch(buildApiUrl('/complaints'), {
-        method: 'POST',
-        headers,
-        body: form,
+      await apiFetch(`/complaints/${complaintId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, resolutionNote }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create complaint');
-      }
       return;
     }
     const db = await getDb();
+    const resolvedAt = status === 'resolved' ? new Date().toISOString() : null;
     await db.runAsync(
-      'INSERT INTO complaints (stationName, type, detail, photoUri, status, createdAt) VALUES (?, ?, ?, ?, ?, ?);',
-      payload.stationName,
-      payload.type,
-      payload.detail,
-      payload.photoUri ?? null,
-      'pending',
-      new Date().toISOString()
+      'UPDATE complaints SET status = ?, resolvedAt = ?, resolutionNote = ? WHERE id = ?;',
+      status,
+      resolvedAt,
+      resolutionNote ?? null,
+      complaintId
     );
   },
 };

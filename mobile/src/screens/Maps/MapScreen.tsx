@@ -87,11 +87,14 @@ export default function MapScreen({ navigation }: any) {
         >
           {filteredStations.map((s) => (
             <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} pinColor={s.analysis.color}>
-              <Callout>
-                <View style={{ width: 200, padding: 5 }}>
+              <Callout onPress={() => navigation.navigate('StationDetail', { stationId: s.id })}>
+                <View style={{ width: 220, padding: 5 }}>
                   <Text style={{ fontWeight: 'bold' }}>{s.name}</Text>
                   <Text style={{ color: s.analysis.color, fontWeight: 'bold', marginVertical: 5 }}>{s.analysis.status}</Text>
-                  <Text style={{ fontSize: 10 }}>AI: {s.analysis.msg}</Text>
+                  <Text style={{ fontSize: 10 }}>Stock: {s.stock} gal</Text>
+                  <Text style={{ fontSize: 10 }}>Precio: ${s.price}</Text>
+                  <Text style={{ fontSize: 10, marginTop: 4 }}>AI: {s.analysis.msg}</Text>
+                  <Text style={{ fontSize: 10, color: '#666', marginTop: 6 }}>Tap para ver detalle</Text>
                 </View>
               </Callout>
             </Marker>

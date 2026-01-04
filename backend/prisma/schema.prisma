@@ -29,6 +29,7 @@ model Station {
   lastAudit     DateTime?
   status        String
   audits        Audit[]
+  complaints    Complaint[]
 }
 
 model Audit {
@@ -44,13 +45,27 @@ model Audit {
 }
 
 model Complaint {
-  id          Int      @id @default(autoincrement())
-  stationName String
-  type        String
-  detail      String?
-  photoUrl    String?
-  status      String
-  createdAt   DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  stationName    String
+  stationId      Int?
+  station        Station? @relation(fields: [stationId], references: [id])
+  type           String
+  detail         String?
+  source         String?
+  reporterName   String?
+  reporterRole   String?
+  vehiclePlate   String?
+  vehicleModel   String?
+  fuelType       String?
+  liters         Float?
+  unitPrice      Float?
+  totalAmount    Float?
+  occurredAt     DateTime?
+  photoUrl       String?
+  status         String
+  resolvedAt     DateTime?
+  resolutionNote String?
+  createdAt      DateTime @default(now())
 }
 
 model Report {
