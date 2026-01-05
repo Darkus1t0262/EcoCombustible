@@ -57,30 +57,32 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
           <View>
             <Text style={styles.headerTitle}>EcoCombustible Regulador</Text>
-            <Text style={styles.headerSub}>Supervision Dashboard</Text>
+            <Text style={styles.headerSub}>Panel de supervision</Text>
           </View>
         </View>
         <TouchableOpacity onPress={handleLogout}>
-          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Sign out</Text>
+          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Cerrar sesion</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <View style={styles.grid}>
-          <MenuCard title="Stations" sub="List and status" icon="gas-pump" color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
-          <MenuCard title="Map" sub="Geo view" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />
-          <MenuCard title="Audit" sub="Remote checks" icon="checkmark-circle" color={COLORS.warning} onPress={() => navigation.navigate('Audit')} />
-          <MenuCard title="Complaints" sub="Reports" icon="alert-circle" color={COLORS.purple} onPress={() => navigation.navigate('Complaints')} />
-          <MenuCard title="Reports" sub="Statistics" icon="stats-chart" color={COLORS.secondary} onPress={() => navigation.navigate('Reports')} />
+          <MenuCard title="Estaciones" sub="Listado y estado" icon="gas-pump" color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
+          <MenuCard title="Mapa" sub="Vista geografica" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />
+          <MenuCard title="Auditorias" sub="Revision remota" icon="checkmark-circle" color={COLORS.warning} onPress={() => navigation.navigate('Audit')} />
+          <MenuCard title="Denuncias" sub="Bandeja" icon="alert-circle" color={COLORS.purple} onPress={() => navigation.navigate('Complaints')} />
+          <MenuCard title="Reportes" sub="Estadisticas" icon="stats-chart" color={COLORS.secondary} onPress={() => navigation.navigate('Reports')} />
+          <MenuCard title="Vehiculos" sub="Registro" icon="car" color={COLORS.primary} onPress={() => navigation.navigate('VehicleList')} />
+          <MenuCard title="Transacciones" sub="Consumo" icon="list" color={COLORS.success} onPress={() => navigation.navigate('TransactionList')} />
         </View>
 
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
         ) : (
           <View style={{ gap: 15, marginTop: 10 }}>
-            <KPICard label="Active Stations" val={stats.stations} icon="gas-pump" color={COLORS.primary} />
-            <KPICard label="Audits This Month" val={stats.auditsThisMonth} icon="checkmark-circle" color={COLORS.success} />
-            <KPICard label="Pending Complaints" val={stats.pendingComplaints} icon="alert-circle" color={COLORS.error} />
+            <KPICard label="Estaciones activas" val={stats.stations} icon="gas-pump" color={COLORS.primary} />
+            <KPICard label="Auditorias del mes" val={stats.auditsThisMonth} icon="checkmark-circle" color={COLORS.success} />
+            <KPICard label="Denuncias pendientes" val={stats.pendingComplaints} icon="alert-circle" color={COLORS.error} />
           </View>
         )}
       </ScrollView>

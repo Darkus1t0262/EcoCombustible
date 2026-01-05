@@ -13,7 +13,7 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     setError('');
     if (!username || !password) {
-      setError('Please enter username and password.');
+      setError('Ingresa usuario y contrasena.');
       return;
     }
 
@@ -22,7 +22,7 @@ export default function LoginScreen({ navigation }: any) {
       await AuthService.login(username.trim(), password);
       navigation.replace('Dashboard');
     } catch (err) {
-      setError('Invalid credentials.');
+      setError('Credenciales invalidas.');
     } finally {
       setLoading(false);
     }
@@ -37,21 +37,21 @@ export default function LoginScreen({ navigation }: any) {
         <Text style={styles.title}>EcoCombustible Regulador</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Login</Text>
-          <Text style={styles.label}>Username</Text>
+          <Text style={styles.cardTitle}>Inicio de sesion</Text>
+          <Text style={styles.label}>Usuario</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter username"
+            placeholder="Ingresa usuario"
             placeholderTextColor="#aaa"
             autoCapitalize="none"
             value={username}
             onChangeText={setUsername}
           />
 
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Contrasena</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter password"
+            placeholder="Ingresa contrasena"
             secureTextEntry
             placeholderTextColor="#aaa"
             value={password}
@@ -61,9 +61,9 @@ export default function LoginScreen({ navigation }: any) {
           {!!error && <Text style={styles.errorText}>{error}</Text>}
 
           <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Sign In</Text>}
+            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Ingresar</Text>}
           </TouchableOpacity>
-          <Text style={styles.footerText}>Demo user: admin / admin123</Text>
+          <Text style={styles.footerText}>Usuario demo: admin / admin123</Text>
         </View>
 
         <View style={styles.flagContainer}>

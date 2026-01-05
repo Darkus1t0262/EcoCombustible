@@ -33,9 +33,9 @@ export default function StationDetailScreen({ route, navigation }: any) {
   if (!station) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>Station not found.</Text>
+        <Text style={{ color: COLORS.error }}>Estacion no encontrada.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={{ color: 'white' }}>Back</Text>
+          <Text style={{ color: 'white' }}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
@@ -52,7 +52,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
       <ScrollView style={{ padding: 20 }}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>AI Diagnostic</Text>
+          <Text style={styles.sectionTitle}>Diagnostico IA</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <Ionicons name="analytics" size={24} color={station.analysis.color} />
             <Text style={{ fontWeight: 'bold', color: station.analysis.color, fontSize: 18 }}>{station.analysis.status}</Text>
@@ -62,7 +62,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <View style={styles.card}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={styles.sectionTitle}>Inventory and Sales</Text>
+            <Text style={styles.sectionTitle}>Inventario y ventas</Text>
             <Text style={{ fontSize: 10, color: COLORS.primary }}>
               Source: {USE_REMOTE_AUTH ? 'API' : 'Local DB'}
             </Text>
@@ -70,11 +70,11 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
           <View style={styles.row}>
             <View>
-              <Text style={styles.label}>Current Stock</Text>
+              <Text style={styles.label}>Stock actual</Text>
               <Text style={styles.value}>{station.stock} gal</Text>
             </View>
             <View>
-              <Text style={styles.label}>Sale Price</Text>
+              <Text style={styles.label}>Precio de venta</Text>
               <Text style={styles.value}>${station.price}</Text>
             </View>
           </View>
@@ -82,8 +82,8 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <View style={styles.card}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={styles.sectionTitle}>Sales Trend</Text>
-            <Text style={{ fontSize: 10, color: COLORS.purple }}>Source: History</Text>
+            <Text style={styles.sectionTitle}>Tendencia de ventas</Text>
+            <Text style={{ fontSize: 10, color: COLORS.purple }}>Fuente: Historial</Text>
           </View>
           <Text style={styles.value}>
             {Array.isArray(station.history) && station.history.length > 0
@@ -96,7 +96,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
         </View>
 
         <TouchableOpacity style={[styles.btn, { backgroundColor: COLORS.warning }]} onPress={() => navigation.navigate('Audit')}>
-          <Text style={{ fontWeight: 'bold', color: '#333' }}>Start Manual Audit</Text>
+          <Text style={{ fontWeight: 'bold', color: '#333' }}>Iniciar auditoria manual</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

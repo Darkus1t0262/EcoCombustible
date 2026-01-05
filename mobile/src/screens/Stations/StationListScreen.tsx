@@ -26,7 +26,7 @@ export default function StationListScreen({ navigation }: any) {
       }));
       setStations(processed);
     } catch (err) {
-      setError('Failed to load stations.');
+      setError('No se pudieron cargar las estaciones.');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function StationListScreen({ navigation }: any) {
       <Text style={styles.address}>{item.address}</Text>
 
       <View style={styles.rowInfo}>
-        <Text style={{ fontSize: 12 }}>Price: ${item.price}</Text>
+        <Text style={{ fontSize: 12 }}>Precio: ${item.price}</Text>
         <Text style={{ fontSize: 12 }}>Stock: {item.stock} gl</Text>
       </View>
 
@@ -67,14 +67,14 @@ export default function StationListScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
-        <Text style={styles.title}>Stations</Text>
+        <Text style={styles.title}>Estaciones</Text>
       </View>
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#666" />
         <TextInput
           style={styles.input}
-          placeholder="Search by name or area..."
+          placeholder="Buscar por nombre o zona..."
           value={search}
           onChangeText={setSearch}
         />

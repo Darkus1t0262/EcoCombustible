@@ -58,13 +58,13 @@ export default function MapScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
-        <Text style={styles.title}>Stations Map</Text>
+        <Text style={styles.title}>Mapa de estaciones</Text>
       </View>
 
       <View style={styles.filterContainer}>
-        <Text style={{ fontSize: 12, marginRight: 10, color: '#555' }}>Filter:</Text>
+        <Text style={{ fontSize: 12, marginRight: 10, color: '#555' }}>Filtro:</Text>
         <TouchableOpacity onPress={() => setFilter('Todas')} style={[styles.pill, { backgroundColor: COLORS.primary }]}>
-          <Text style={styles.pillText}>All</Text>
+          <Text style={styles.pillText}>Todas</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setFilter('Cumplimiento')} style={[styles.pill, { backgroundColor: COLORS.success }]}>
           <Text style={styles.pillText}>OK</Text>
@@ -73,7 +73,7 @@ export default function MapScreen({ navigation }: any) {
           <Text style={styles.pillText}>Obs</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setFilter('Infraccion')} style={[styles.pill, { backgroundColor: COLORS.error }]}>
-          <Text style={styles.pillText}>Alert</Text>
+          <Text style={styles.pillText}>Alerta</Text>
         </TouchableOpacity>
       </View>
 
@@ -111,18 +111,18 @@ export default function MapScreen({ navigation }: any) {
       )}
 
       <View style={styles.legend}>
-        <Text style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 5 }}>AI Legend</Text>
+        <Text style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 5 }}>Leyenda IA</Text>
         <View style={styles.row}>
           <View style={[styles.dot, { backgroundColor: COLORS.success }]} />
           <Text style={styles.legText}>Normal</Text>
         </View>
         <View style={styles.row}>
           <View style={[styles.dot, { backgroundColor: COLORS.warning }]} />
-          <Text style={styles.legText}>Observation</Text>
+          <Text style={styles.legText}>Observacion</Text>
         </View>
         <View style={styles.row}>
           <View style={[styles.dot, { backgroundColor: COLORS.error }]} />
-          <Text style={styles.legText}>Violation</Text>
+          <Text style={styles.legText}>Infraccion</Text>
         </View>
       </View>
 
