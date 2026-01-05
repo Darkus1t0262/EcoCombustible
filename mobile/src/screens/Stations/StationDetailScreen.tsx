@@ -58,6 +58,9 @@ export default function StationDetailScreen({ route, navigation }: any) {
             <Text style={{ fontWeight: 'bold', color: station.analysis.color, fontSize: 18 }}>{station.analysis.status}</Text>
           </View>
           <Text style={{ color: '#555' }}>{station.analysis.message}</Text>
+          {typeof station.analysis.score === 'number' && (
+            <Text style={{ color: '#555', marginTop: 6 }}>Score IA: {station.analysis.score}</Text>
+          )}
         </View>
 
         <View style={styles.card}>

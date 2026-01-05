@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8 },
   bodyText: { fontSize: 13, color: '#444' },
   photo: { width: '100%', height: 200, borderRadius: 10, marginTop: 10 },
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 10, marginBottom: 20 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 10, marginBottom: 20 },
   actionBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center' },
   actionText: { color: 'white', fontWeight: 'bold' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
