@@ -139,7 +139,7 @@ export default function MapScreen({ navigation }: any) {
           </Text>
           <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
           {typeof selectedStation.analysis.score === 'number' && (
-            <Text style={styles.detailText}>Score IA: {selectedStation.analysis.score}</Text>
+            <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
           )}
           <View style={styles.detailRow}>
             <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>

@@ -90,7 +90,7 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
               {transaction.analysis.status}
             </Text>
             {!!transaction.analysis.message && <Text style={styles.metaText}>{transaction.analysis.message}</Text>}
-            {!!transaction.analysis.score && <Text style={styles.metaText}>Score: {transaction.analysis.score}</Text>}
+            {!!transaction.analysis.score && <Text style={styles.metaText}>Puntaje: {transaction.analysis.score}</Text>}
           </View>
         )}
 

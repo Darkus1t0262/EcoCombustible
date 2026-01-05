@@ -59,7 +59,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
           </View>
           <Text style={{ color: '#555' }}>{station.analysis.message}</Text>
           {typeof station.analysis.score === 'number' && (
-            <Text style={{ color: '#555', marginTop: 6 }}>Score IA: {station.analysis.score}</Text>
+            <Text style={{ color: '#555', marginTop: 6 }}>Puntaje IA: {station.analysis.score}</Text>
           )}
         </View>
 
