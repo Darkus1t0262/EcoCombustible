@@ -64,7 +64,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={styles.sectionTitle}>Inventario y ventas</Text>
             <Text style={{ fontSize: 10, color: COLORS.primary }}>
-              Fuente: {USE_REMOTE_AUTH ? 'API' : 'Local DB'}
+              Fuente: {USE_REMOTE_AUTH ? 'API' : 'BD local'}
             </Text>
           </View>
 

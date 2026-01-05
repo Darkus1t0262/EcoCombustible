@@ -11,7 +11,9 @@ import StationListScreen from '../screens/Stations/StationListScreen';
 import StationDetailScreen from '../screens/Stations/StationDetailScreen';
 import ComplaintsScreen from '../screens/Complaints/ComplaintsScreen';
 import ComplaintDetailScreen from '../screens/Complaints/ComplaintDetailScreen';
+import VehicleListScreen from '../screens/Vehicles/VehicleListScreen';
 import VehicleDetailScreen from '../screens/Vehicles/VehicleDetailScreen';
+import TransactionListScreen from '../screens/Transactions/TransactionListScreen';
 import TransactionDetailScreen from '../screens/Transactions/TransactionDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 import { initDatabase } from '../services/Database';
@@ -31,7 +33,7 @@ export default function AppNavigator() {
         const session = await AuthService.getSession();
         setInitialRoute(session ? 'Dashboard' : 'Login');
       } catch (error) {
-        setInitError('Failed to load local data.');
+        setInitError('No se pudieron cargar los datos locales.');
       } finally {
         setIsReady(true);
       }
@@ -40,7 +42,7 @@ export default function AppNavigator() {
   }, []);
 
   if (!isReady) {
-    return <LoadingScreen label="Loading local data..." />;
+    return <LoadingScreen label="Cargando datos locales..." />;
   }
 
   if (initError) {
@@ -58,7 +60,9 @@ export default function AppNavigator() {
         <Stack.Screen name="Audit" component={AuditScreen} />
         <Stack.Screen name="Complaints" component={ComplaintsScreen} />
         <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} />
+        <Stack.Screen name="VehicleList" component={VehicleListScreen} />
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+        <Stack.Screen name="TransactionList" component={TransactionListScreen} />
         <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
       </Stack.Navigator>
