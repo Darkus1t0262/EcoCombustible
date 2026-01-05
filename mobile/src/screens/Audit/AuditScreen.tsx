@@ -20,10 +20,10 @@ export default function AuditScreen({ navigation }: any) {
   }, []);
 
   const handleUpdate = (auditId: number, status: 'approved' | 'rejected') => {
-    Alert.alert('Confirm', `Mark audit as ${status}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Confirmar', `Marcar auditoria como ${status === 'approved' ? 'aprobada' : 'rechazada'}?`, [
+      { text: 'Cancelar', style: 'cancel' },
       {
-        text: 'OK',
+        text: 'Aceptar',
         onPress: async () => {
           await AuditService.updateAuditStatus(auditId, status);
           await loadAudits();
@@ -42,7 +42,7 @@ export default function AuditScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
-        <Text style={styles.title}>Remote Audits</Text>
+        <Text style={styles.title}>Auditorias remotas</Text>
       </View>
 
       <ScrollView style={{ padding: 20 }}>
@@ -53,11 +53,11 @@ export default function AuditScreen({ navigation }: any) {
           </View>
           <View style={styles.statBox}>
             <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{approved}</Text>
-            <Text style={{ fontSize: 10 }}>Approved</Text>
+            <Text style={{ fontSize: 10 }}>Aprobadas</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={{ color: COLORS.error, fontWeight: 'bold', fontSize: 18 }}>{pending}</Text>
-            <Text style={{ fontSize: 10 }}>Pending</Text>
+            <Text style={{ fontSize: 10 }}>Pendientes</Text>
           </View>
         </View>
 
@@ -68,15 +68,15 @@ export default function AuditScreen({ navigation }: any) {
             <View key={audit.id} style={styles.card}>
               <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{audit.stationName}</Text>
               <Text style={{ color: COLORS.primary, fontSize: 12, marginBottom: 10 }}>
-                Status: {audit.status.toUpperCase()}
+                Estado: {audit.status.toUpperCase()}
               </Text>
-              <Text style={{ fontSize: 12, color: '#666' }}>Code: {audit.code}</Text>
+              <Text style={{ fontSize: 12, color: '#666' }}>Codigo: {audit.code}</Text>
 
               <View style={styles.checkItem}>
                 <View>
-                  <Text style={{ fontWeight: 'bold' }}>Fuel Price</Text>
+                  <Text style={{ fontWeight: 'bold' }}>Precio de combustible</Text>
                   <Text style={{ fontSize: 12 }}>
-                    Expected: ${audit.priceExpected} | Reported: ${audit.priceReported}
+                    Esperado: ${audit.priceExpected} | Reportado: ${audit.priceReported}
                   </Text>
                 </View>
                 <Ionicons
@@ -88,8 +88,8 @@ export default function AuditScreen({ navigation }: any) {
 
               <View style={styles.checkItem}>
                 <View>
-                  <Text style={{ fontWeight: 'bold' }}>Dispenser Calibration</Text>
-                  <Text style={{ fontSize: 12 }}>Status: {audit.dispenserOk ? 'OK' : 'Issue'}</Text>
+                  <Text style={{ fontWeight: 'bold' }}>Calibracion del dispensador</Text>
+                  <Text style={{ fontSize: 12 }}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
                 </View>
                 <Ionicons
                   name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
@@ -104,13 +104,13 @@ export default function AuditScreen({ navigation }: any) {
                     style={[styles.btn, { backgroundColor: COLORS.success }]}
                     onPress={() => handleUpdate(audit.id, 'approved')}
                   >
-                    <Text style={styles.btnTxt}>Approve</Text>
+                    <Text style={styles.btnTxt}>Aprobar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.btn, { backgroundColor: COLORS.error }]}
                     onPress={() => handleUpdate(audit.id, 'rejected')}
                   >
-                    <Text style={styles.btnTxt}>Reject</Text>
+                    <Text style={styles.btnTxt}>Rechazar</Text>
                   </TouchableOpacity>
                 </View>
               )}

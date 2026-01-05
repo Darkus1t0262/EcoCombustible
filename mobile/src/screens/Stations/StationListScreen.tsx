@@ -86,7 +86,7 @@ export default function StationListScreen({ navigation }: any) {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
-            <Text style={{ color: 'white' }}>Retry</Text>
+            <Text style={{ color: 'white' }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (

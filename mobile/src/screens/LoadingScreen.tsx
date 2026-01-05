@@ -10,7 +10,7 @@ export default function LoadingScreen({ label }: Props) {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={COLORS.primary} />
-      <Text style={styles.text}>{label || 'Loading...'}</Text>
+      <Text style={styles.text}>{label || 'Cargando...'}</Text>
     </View>
   );
 }

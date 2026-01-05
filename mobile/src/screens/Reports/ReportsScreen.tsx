@@ -51,14 +51,14 @@ export default function ReportsScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
-        <Text style={styles.title}>Automatic Reports</Text>
+        <Text style={styles.title}>Reportes automaticos</Text>
       </View>
 
       <ScrollView style={{ padding: 20 }}>
         <View style={styles.card}>
-          <Text style={{ fontWeight: 'bold', marginBottom: 15 }}>Generate New Report</Text>
+          <Text style={{ fontWeight: 'bold', marginBottom: 15 }}>Generar nuevo reporte</Text>
 
-          <Text style={styles.label}>Period</Text>
+          <Text style={styles.label}>Periodo</Text>
           <View style={styles.tabsRow}>
             {periods.map((p) => (
               <TouchableOpacity
@@ -71,7 +71,7 @@ export default function ReportsScreen({ navigation }: any) {
             ))}
           </View>
 
-          <Text style={styles.label}>Export Format</Text>
+          <Text style={styles.label}>Formato de exportacion</Text>
           <View style={styles.formatRow}>
             {formats.map((f) => (
               <TouchableOpacity
@@ -90,13 +90,13 @@ export default function ReportsScreen({ navigation }: any) {
             ) : (
               <>
                 <Ionicons name="document-text" color="white" size={20} style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>Generate Report</Text>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Generar reporte</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
 
-        <Text style={{ fontWeight: 'bold', marginTop: 20, marginBottom: 10 }}>Recent Reports</Text>
+        <Text style={{ fontWeight: 'bold', marginTop: 20, marginBottom: 10 }}>Reportes recientes</Text>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} />
         ) : (
