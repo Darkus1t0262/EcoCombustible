@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Acti
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
+import { PushService } from '../../services/PushService';
 
 export default function LoginScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
@@ -20,6 +21,7 @@ export default function LoginScreen({ navigation }: any) {
     try {
       setLoading(true);
       await AuthService.login(username.trim(), password);
+      await PushService.registerDevice().catch(() => undefined);
       navigation.replace('Dashboard');
     } catch (err) {
       setError('Credenciales invalidas.');
