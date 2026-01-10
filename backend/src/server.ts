@@ -534,13 +534,17 @@ fastify.post(
     const title = body.title ?? 'EcoCombustible';
     const message = body.body ?? 'Notificacion de prueba';
 
-    await notifySupervisors({
-      title,
-      body: message,
-      data: { type: 'test' },
-    });
-
-    return reply.send({ ok: true });
+    try {
+      await notifySupervisors({
+        title,
+        body: message,
+        data: { type: 'test' },
+      });
+      return reply.send({ ok: true });
+    } catch (error) {
+      request.log.error({ error }, 'Push notification failed');
+      return reply.code(500).send({ error: 'Push notification failed' });
+    }
   }
 );
 
