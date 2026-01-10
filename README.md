@@ -3,12 +3,12 @@
 Repositorio monorepo con:
 - `mobile/`: app Expo (React Native) para supervision, mapa, denuncias, auditorias, reportes, vehiculos y transacciones.
 - `backend/`: API Fastify + Prisma.
-- `backend/docker-compose.yml`: Postgres local para desarrollo.
+- `backend/docker-compose.yml`: stack local (API + Postgres + Redis + MinIO).
 
 ## Requisitos
 - Node.js LTS + npm
 - Git
-- Docker Desktop (para Postgres local)
+- Docker Desktop (para stack local)
 - Expo Go en el telefono (o emulador Android)
 
 ## Instalacion de dependencias
@@ -37,10 +37,15 @@ Luego ajustar:
 - `backend/.env`: `DATABASE_URL`, `JWT_SECRET`, `PUBLIC_BASE_URL`, `CORS_ORIGIN` (y opcional `FILES_BASE_URL`).
 - `mobile/.env`: `EXPO_PUBLIC_API_BASE_URL=http://TU_IP_LOCAL:4000` (con esquema `http://`).
 
-## Levantar base de datos (Postgres con Docker)
+## Levantar stack local (API + DB + Redis + MinIO)
 ```bash
 docker compose -f backend/docker-compose.yml up -d
 ```
+Servicios locales:
+- API: http://localhost:4000
+- Postgres: localhost:5432
+- Redis: localhost:6379
+- MinIO: http://localhost:9000 (console: http://localhost:9001)
 
 ## Migraciones y seed (backend)
 ```bash
@@ -76,6 +81,6 @@ Si no defines `EXPO_PUBLIC_API_BASE_URL`, la app usa SQLite local con datos de p
 # Limpiar cache de Expo
 npm run mobile:start -- -c
 
-# Apagar Postgres
+# Apagar stack
 docker compose -f backend/docker-compose.yml down
 ```
