@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name="gas-pump" size={40} color={COLORS.primary} />
+          <Ionicons name="flame" size={40} color={COLORS.primary} />
         </View>
         <Text style={styles.title}>EcoCombustible Regulador</Text>
 

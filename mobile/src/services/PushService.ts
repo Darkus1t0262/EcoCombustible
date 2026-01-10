@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { USE_REMOTE_AUTH } from '../config/env';
 import { apiFetch } from './ApiClient';
 
 let handlerConfigured = false;
@@ -26,6 +27,10 @@ const configureNotifications = async () => {
 
 export const PushService = {
   registerDevice: async (): Promise<void> => {
+    if (!USE_REMOTE_AUTH) {
+      return;
+    }
+
     if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
       return;
     }
