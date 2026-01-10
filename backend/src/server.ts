@@ -32,6 +32,8 @@ const envSchema = z.object({
   TRUST_PROXY: z.string().optional(),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  EXPO_ACCESS_TOKEN: z.string().optional(),
+  EXPO_PUSH_URL: z.string().url().optional(),
 });
 
 const env = envSchema.parse(process.env);
@@ -43,6 +45,8 @@ const FILES_BASE_URL = (env.FILES_BASE_URL ?? PUBLIC_BASE_URL).replace(/\/+$/, '
 const CORS_ORIGIN = env.CORS_ORIGIN ?? '';
 const TRUST_PROXY = env.TRUST_PROXY === 'true' || env.TRUST_PROXY === '1';
 const JWT_ISSUER = env.JWT_ISSUER?.trim() || undefined;
+const EXPO_ACCESS_TOKEN = env.EXPO_ACCESS_TOKEN?.trim() || undefined;
+const EXPO_PUSH_URL = env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send';
 
 if (env.NODE_ENV === 'production') {
   if (JWT_SECRET === 'change_me' || JWT_SECRET.length < 32) {
@@ -327,6 +331,118 @@ const formatTransaction = (transaction: any, analysis: any) => ({
   analysis,
 });
 
+type PushPayload = {
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+};
+
+const notifySupervisors = async (payload: PushPayload) => {
+  const supervisors = await prisma.user.findMany({
+    where: { role: 'supervisor' },
+    select: { id: true },
+  });
+  const userIds = supervisors.map((user) => user.id);
+  if (userIds.length === 0) {
+    return;
+  }
+
+  const tokens = await prisma.deviceToken.findMany({
+    where: { userId: { in: userIds }, active: true },
+  });
+  if (tokens.length === 0) {
+    return;
+  }
+
+  const userIdsWithTokens = Array.from(new Set(tokens.map((token) => token.userId)));
+  const notifications = await Promise.all(
+    userIdsWithTokens.map((userId) =>
+      prisma.notification.create({
+        data: {
+          userId,
+          title: payload.title,
+          body: payload.body,
+          data: payload.data ?? {},
+          status: 'queued',
+        },
+      })
+    )
+  );
+
+  const notificationIdByUser = new Map<number, number>();
+  for (const item of notifications) {
+    if (item.userId) {
+      notificationIdByUser.set(item.userId, item.id);
+    }
+  }
+
+  const results = await sendExpoPushNotifications({
+    messages: tokens.map((token) => ({
+      to: token.token,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data,
+    })),
+    accessToken: EXPO_ACCESS_TOKEN,
+    apiUrl: EXPO_PUSH_URL,
+  });
+
+  const successTokens = new Set(
+    results.filter((result) => result.status === 'ok').map((result) => result.token)
+  );
+
+  const successUserIds = new Set<number>();
+  for (const token of tokens) {
+    if (successTokens.has(token.token)) {
+      successUserIds.add(token.userId);
+    }
+  }
+
+  const successNotificationIds = userIdsWithTokens
+    .filter((userId) => successUserIds.has(userId))
+    .map((userId) => notificationIdByUser.get(userId))
+    .filter((id): id is number => Boolean(id));
+
+  const failedNotificationIds = userIdsWithTokens
+    .filter((userId) => !successUserIds.has(userId))
+    .map((userId) => notificationIdByUser.get(userId))
+    .filter((id): id is number => Boolean(id));
+
+  if (successNotificationIds.length > 0) {
+    await prisma.notification.updateMany({
+      where: { id: { in: successNotificationIds } },
+      data: { status: 'sent', sentAt: new Date() },
+    });
+  }
+
+  if (failedNotificationIds.length > 0) {
+    await prisma.notification.updateMany({
+      where: { id: { in: failedNotificationIds } },
+      data: { status: 'failed', error: 'Push delivery failed' },
+    });
+  }
+
+  const invalidTokens = results
+    .filter((result) => {
+      if (result.status !== 'error') {
+        return false;
+      }
+      if (!result.details || typeof result.details !== 'object') {
+        return false;
+      }
+      const details = result.details as { error?: string };
+      return details.error === 'DeviceNotRegistered';
+    })
+    .map((result) => result.token);
+
+  if (invalidTokens.length > 0) {
+    await prisma.deviceToken.updateMany({
+      where: { token: { in: invalidTokens } },
+      data: { active: false },
+    });
+  }
+};
+
 fastify.get('/health', async () => ({ status: 'ok' }));
 
 fastify.post(
@@ -362,6 +478,69 @@ fastify.post(
       user: { id: user.id, username: user.username, name: user.name, role: user.role },
       token,
     });
+  }
+);
+
+fastify.post('/devices/register', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  const bodySchema = z.object({
+    token: z.string().min(1),
+    platform: z.enum(['ios', 'android']),
+  });
+  const body = bodySchema.parse(request.body);
+  const token = body.token.trim();
+
+  if (!isValidExpoPushToken(token)) {
+    return reply.code(400).send({ error: 'Invalid Expo push token' });
+  }
+
+  const user = request.user as { id: number };
+  const now = new Date();
+  const existing = await prisma.deviceToken.findUnique({ where: { token } });
+
+  if (existing) {
+    await prisma.deviceToken.update({
+      where: { token },
+      data: {
+        userId: user.id,
+        platform: body.platform,
+        active: true,
+        lastSeen: now,
+      },
+    });
+  } else {
+    await prisma.deviceToken.create({
+      data: {
+        userId: user.id,
+        platform: body.platform,
+        token,
+        active: true,
+        lastSeen: now,
+      },
+    });
+  }
+
+  return reply.send({ ok: true });
+});
+
+fastify.post(
+  '/notifications/test',
+  { preHandler: [fastify.authenticate, requireRole('supervisor')] },
+  async (request, reply) => {
+    const bodySchema = z.object({
+      title: z.string().min(1).optional(),
+      body: z.string().min(1).optional(),
+    });
+    const body = bodySchema.parse(request.body ?? {});
+    const title = body.title ?? 'EcoCombustible';
+    const message = body.body ?? 'Notificacion de prueba';
+
+    await notifySupervisors({
+      title,
+      body: message,
+      data: { type: 'test' },
+    });
+
+    return reply.send({ ok: true });
   }
 );
 
@@ -647,6 +826,18 @@ fastify.post('/complaints', { preHandler: [fastify.authenticate] }, async (reque
       photoUrl,
       status: 'pending',
     },
+  });
+
+  void notifySupervisors({
+    title: 'Nueva denuncia',
+    body: `${payload.stationName}: ${payload.type}`,
+    data: {
+      complaintId: complaint.id,
+      stationName: payload.stationName,
+      type: payload.type,
+    },
+  }).catch((error) => {
+    request.log.error({ error }, 'Push notification failed');
   });
 
   return reply.code(201).send(formatComplaint(complaint));

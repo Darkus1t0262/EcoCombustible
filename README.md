@@ -66,6 +66,11 @@ Usuario demo: `admin` / `admin123`.
 ## Modo local sin backend
 Si no defines `EXPO_PUBLIC_API_BASE_URL`, la app usa SQLite local con datos de prueba.
 
+## Notificaciones push (local)
+- Registrar el dispositivo en el backend con `POST /devices/register` (requiere JWT).
+- Variables recomendadas en `backend/.env`: `EXPO_ACCESS_TOKEN` y `EXPO_PUSH_URL`.
+- Prueba rapida: `POST /notifications/test` (rol supervisor).
+
 ## Comandos utiles
 ```bash
 # Limpiar cache de Expo
