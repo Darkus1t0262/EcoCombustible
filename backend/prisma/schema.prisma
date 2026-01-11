@@ -16,6 +16,8 @@ model User {
   createdAt    DateTime @default(now())
   deviceTokens DeviceToken[]
   notifications Notification[]
+
+  @@index([role])
 }
 
 model Station {
@@ -33,6 +35,8 @@ model Station {
   audits        Audit[]
   complaints    Complaint[]
   transactions  Transaction[]
+
+  @@index([name])
 }
 
 model Audit {
@@ -45,6 +49,8 @@ model Audit {
   priceReported Float
   dispenserOk   Boolean
   createdAt     DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model Complaint {
@@ -73,6 +79,9 @@ model Complaint {
   resolvedAt     DateTime?
   resolutionNote String?
   createdAt      DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Report {
@@ -85,6 +94,8 @@ model Report {
   mimeType  String?
   status    String   @default("ready")
   error     String?
+
+  @@index([createdAt])
 }
 
 model Vehicle {
@@ -113,6 +124,9 @@ model Transaction {
   occurredAt   DateTime  @default(now())
   createdAt    DateTime  @default(now())
   complaints   Complaint[]
+
+  @@index([vehicleId])
+  @@index([occurredAt])
 }
 
 model DeviceToken {
@@ -125,6 +139,8 @@ model DeviceToken {
   lastSeen  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Notification {
@@ -138,4 +154,6 @@ model Notification {
   error     String?
   createdAt DateTime @default(now())
   sentAt    DateTime?
+
+  @@index([userId])
 }

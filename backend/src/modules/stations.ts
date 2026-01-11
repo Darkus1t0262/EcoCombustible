@@ -3,10 +3,22 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../lib/auth.js';
 import { analyzeStation } from '../lib/analysis.js';
+import { parsePagination } from '../lib/pagination.js';
 
 export const registerStationRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/stations', { preHandler: [authenticate] }, async () => {
-    const stations = await prisma.station.findMany({ orderBy: { name: 'asc' } });
+  fastify.get('/stations', { preHandler: [authenticate] }, async (request, reply) => {
+    const pagination = parsePagination((request as any).query);
+    if (pagination) {
+      const total = await prisma.station.count();
+      reply.header('X-Total-Count', total);
+      reply.header('X-Page', pagination.page);
+      reply.header('X-Limit', pagination.limit);
+    }
+
+    const stations = await prisma.station.findMany({
+      orderBy: { name: 'asc' },
+      ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
+    });
     return stations.map((station) => ({
       ...station,
       history: station.history ?? [],
