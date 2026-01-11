@@ -8,10 +8,12 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma": "prisma",
+    "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+<<<<<<< Updated upstream
     "@fastify/cors": "^10.1.0",
     "@fastify/helmet": "^12.0.0",
     "@fastify/jwt": "^9.1.0",
@@ -22,6 +24,18 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
+=======
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^10.1.0",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/multipart": "^8.3.0",
+    "@fastify/rate-limit": "^8.0.0",
+    "@fastify/static": "^6.0.0",
+    "@prisma/client": "^6.6.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.29.1",
+>>>>>>> Stashed changes
     "pdfkit": "^0.15.0",
     "zod": "^3.23.8"
   },

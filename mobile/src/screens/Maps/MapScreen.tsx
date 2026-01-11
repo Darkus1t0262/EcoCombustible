@@ -16,6 +16,20 @@ export default function MapScreen({ navigation }: any) {
   const [selectedStation, setSelectedStation] = useState<any | null>(null);
 
   useEffect(() => {
+    if (selectedStation) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: selectedStation.lat,
+          longitude: selectedStation.lng,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        },
+        500
+      );
+    }
+  }, [selectedStation]);
+
+  useEffect(() => {
     const load = async () => {
       const data = await StationService.getAllStations();
       const processed = data.map((s) => ({
@@ -94,7 +108,18 @@ export default function MapScreen({ navigation }: any) {
               key={s.id}
               coordinate={{ latitude: s.lat, longitude: s.lng }}
               pinColor={s.analysis.color}
-              onPress={() => setSelectedStation(s)}
+              onPress={() => {
+                setSelectedStation(s);
+                mapRef.current?.animateToRegion(
+                  {
+                    latitude: s.lat,
+                    longitude: s.lng,
+                    latitudeDelta: 0.02,
+                    longitudeDelta: 0.02,
+                  },
+                  500
+                );
+              }}
             >
               <Callout tooltip>
                 <View style={styles.callout}>
@@ -130,7 +155,15 @@ export default function MapScreen({ navigation }: any) {
         <View style={styles.detailCard}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-            <TouchableOpacity onPress={() => setSelectedStation(null)}>
+            <TouchableOpacity
+              onPress={() => {
+                mapRef.current?.animateToRegion(
+                  { latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 },
+                  500
+                );
+                setSelectedStation(null);
+              }}
+            >
               <Ionicons name="close" size={18} color="#666" />
             </TouchableOpacity>
           </View>

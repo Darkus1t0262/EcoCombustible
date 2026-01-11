@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { ReportService, ReportItem } from '../../services/ReportService';
 
-const periods = ['Semana', 'Mes', 'Anio'];
+const periods = ['Semana', 'Mes', 'Año'];
 const formats = ['PDF', 'Excel', 'CSV'];
 
 export default function ReportsScreen({ navigation }: any) {

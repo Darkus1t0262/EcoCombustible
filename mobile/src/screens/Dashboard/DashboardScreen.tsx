@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
 import { StatsService } from '../../services/StatsService';
@@ -8,7 +8,11 @@ import { StatsService } from '../../services/StatsService';
 const MenuCard = ({ title, sub, icon, color, onPress }: any) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={[styles.iconBox, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={28} color="white" />
+      {icon === 'gas-pump' ? (
+        <MaterialCommunityIcons name="gas-station" size={28} color="white" />
+      ) : (
+        <Ionicons name={icon} size={28} color="white" />
+      )}
     </View>
     <Text style={styles.cardTitle}>{title}</Text>
     <Text style={styles.cardSub}>{sub}</Text>
@@ -22,7 +26,11 @@ const KPICard = ({ label, val, icon, color }: any) => (
       <Text style={[styles.kpiVal, { color }]}>{val}</Text>
     </View>
     <View style={[styles.kpiIcon, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={20} color="white" />
+      {icon === 'gas-pump' ? (
+        <MaterialCommunityIcons name="gas-station" size={20} color="white" />
+      ) : (
+        <Ionicons name={icon} size={20} color="white" />
+      )}
     </View>
   </View>
 );
@@ -53,7 +61,11 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ backgroundColor: COLORS.primary, padding: 8, borderRadius: 8, marginRight: 10 }}>
+<<<<<<< Updated upstream
             <Ionicons name="gas-pump" size={20} color="white" />
+=======
+            <MaterialCommunityIcons name="gas-station" size={20} color="white" />
+>>>>>>> Stashed changes
           </View>
           <View>
             <Text style={styles.headerTitle}>EcoCombustible Regulador</Text>
