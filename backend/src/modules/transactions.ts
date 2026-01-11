@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../lib/auth.js';
 import { analyzeTransaction } from '../lib/analysis.js';
 import { optionalDate, optionalNumber, optionalString } from '../lib/validation.js';
+import { parsePagination } from '../lib/pagination.js';
 
 const formatTransaction = (transaction: any, analysis: any) => ({
   ...transaction,
@@ -13,16 +14,33 @@ const formatTransaction = (transaction: any, analysis: any) => ({
 });
 
 export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/transactions', { preHandler: [authenticate] }, async () => {
+  fastify.get('/transactions', { preHandler: [authenticate] }, async (request, reply) => {
+    const pagination = parsePagination((request as any).query);
+    if (pagination) {
+      const total = await prisma.transaction.count();
+      reply.header('X-Total-Count', total);
+      reply.header('X-Page', pagination.page);
+      reply.header('X-Limit', pagination.limit);
+    }
+
     const transactions = await prisma.transaction.findMany({
       include: { station: true, vehicle: true },
       orderBy: { occurredAt: 'desc' },
+      ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     });
+    const vehicleIds = Array.from(new Set(transactions.map((tx) => tx.vehicleId)));
     const historyByVehicle = new Map<number, number[]>();
-    for (const tx of transactions) {
-      const list = historyByVehicle.get(tx.vehicleId) ?? [];
-      list.push(tx.liters);
-      historyByVehicle.set(tx.vehicleId, list);
+    if (vehicleIds.length > 0) {
+      const historyRows = await prisma.transaction.findMany({
+        where: { vehicleId: { in: vehicleIds } },
+        orderBy: { occurredAt: 'desc' },
+        select: { vehicleId: true, liters: true },
+      });
+      for (const row of historyRows) {
+        const list = historyByVehicle.get(row.vehicleId) ?? [];
+        list.push(row.liters);
+        historyByVehicle.set(row.vehicleId, list);
+      }
     }
     return transactions.map((transaction) => {
       const history = historyByVehicle.get(transaction.vehicleId) ?? [];

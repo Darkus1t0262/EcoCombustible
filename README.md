@@ -82,6 +82,9 @@ Si no defines `EXPO_PUBLIC_API_BASE_URL`, la app usa SQLite local con datos de p
 - Variables recomendadas en `backend/.env`: `EXPO_ACCESS_TOKEN` y `EXPO_PUSH_URL`.
 - Prueba rapida: `POST /notifications/test` (rol supervisor).
 
+## Paginacion (backend)
+Los listados soportan `?page=` y `?limit=` y responden con headers `X-Total-Count`, `X-Page`, `X-Limit`.
+
 ## Comandos utiles
 ```bash
 # Limpiar cache de Expo

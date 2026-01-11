@@ -9,6 +9,7 @@ import { optionalDate, optionalNumber, optionalString } from '../lib/validation.
 import { COMPLAINTS_DIR, safeFilename } from '../config/storage.js';
 import { FILES_BASE_URL } from '../config/env.js';
 import { enqueueSupervisorNotification } from '../services/notifications.js';
+import { parsePagination } from '../lib/pagination.js';
 
 const formatComplaint = (complaint: any) => ({
   ...complaint,
@@ -18,8 +19,18 @@ const formatComplaint = (complaint: any) => ({
 });
 
 export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/complaints', { preHandler: [authenticate] }, async () => {
-    const complaints = await prisma.complaint.findMany({ orderBy: { createdAt: 'desc' } });
+  fastify.get('/complaints', { preHandler: [authenticate] }, async (request, reply) => {
+    const pagination = parsePagination((request as any).query);
+    if (pagination) {
+      const total = await prisma.complaint.count();
+      reply.header('X-Total-Count', total);
+      reply.header('X-Page', pagination.page);
+      reply.header('X-Limit', pagination.limit);
+    }
+    const complaints = await prisma.complaint.findMany({
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
+    });
     return complaints.map(formatComplaint);
   });
 

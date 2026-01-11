@@ -3,10 +3,21 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireRole } from '../lib/auth.js';
 import { enqueueReportGeneration } from '../services/reports.js';
+import { parsePagination } from '../lib/pagination.js';
 
 export const registerReportRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/reports', { preHandler: [authenticate] }, async () => {
-    const reports = await prisma.report.findMany({ orderBy: { createdAt: 'desc' } });
+  fastify.get('/reports', { preHandler: [authenticate] }, async (request, reply) => {
+    const pagination = parsePagination((request as any).query);
+    if (pagination) {
+      const total = await prisma.report.count();
+      reply.header('X-Total-Count', total);
+      reply.header('X-Page', pagination.page);
+      reply.header('X-Limit', pagination.limit);
+    }
+    const reports = await prisma.report.findMany({
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
+    });
     return reports.map((report) => ({
       ...report,
       createdAt: report.createdAt.toISOString(),
