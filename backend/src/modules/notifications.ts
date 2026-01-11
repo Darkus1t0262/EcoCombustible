@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireRole } from '../lib/auth.js';
 import { isValidExpoPushToken } from '../push.js';
-import { notifySupervisors } from '../services/notifications.js';
+import { enqueueSupervisorNotification } from '../services/notifications.js';
 
 export const registerNotificationRoutes = async (fastify: FastifyInstance) => {
   fastify.post('/devices/register', { preHandler: [authenticate] }, async (request, reply) => {
@@ -60,7 +60,7 @@ export const registerNotificationRoutes = async (fastify: FastifyInstance) => {
       const message = body.body ?? 'Notificacion de prueba';
 
       try {
-        await notifySupervisors({
+        await enqueueSupervisorNotification({
           title,
           body: message,
           data: { type: 'test' },

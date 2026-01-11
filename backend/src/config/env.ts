@@ -16,6 +16,7 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   EXPO_ACCESS_TOKEN: z.string().optional(),
   EXPO_PUSH_URL: z.string().url().optional(),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 });
 
 export const env = envSchema.parse(process.env);
@@ -34,6 +35,7 @@ export const RATE_LIMIT_MAX = env.RATE_LIMIT_MAX;
 export const RATE_LIMIT_WINDOW = env.RATE_LIMIT_WINDOW;
 export const EXPO_ACCESS_TOKEN = env.EXPO_ACCESS_TOKEN?.trim() || undefined;
 export const EXPO_PUSH_URL = env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send';
+export const REDIS_URL = env.REDIS_URL;
 
 if (NODE_ENV === 'production') {
   if (JWT_SECRET === 'change_me' || JWT_SECRET.length < 32) {

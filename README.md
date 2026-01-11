@@ -34,7 +34,7 @@ cp backend/.env.example backend/.env
 cp mobile/.env.example mobile/.env
 ```
 Luego ajustar:
-- `backend/.env`: `DATABASE_URL`, `JWT_SECRET`, `PUBLIC_BASE_URL`, `CORS_ORIGIN` (y opcional `FILES_BASE_URL`).
+- `backend/.env`: `DATABASE_URL`, `JWT_SECRET`, `PUBLIC_BASE_URL`, `CORS_ORIGIN`, `REDIS_URL` (y opcional `FILES_BASE_URL`).
 - `mobile/.env`: `EXPO_PUBLIC_API_BASE_URL=http://TU_IP_LOCAL:4000` (con esquema `http://`).
 
 ## Levantar stack local (API + DB + Redis + MinIO)
@@ -57,6 +57,12 @@ npm --prefix backend run db:seed
 ```bash
 npm run backend:dev
 ```
+
+## Ejecutar worker (cola de reportes y notificaciones)
+```bash
+npm --prefix backend run worker
+```
+Si usas el `docker compose` del backend, el worker ya corre como servicio.
 
 ## Ejecutar mobile
 ```bash

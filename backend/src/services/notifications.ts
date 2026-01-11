@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { sendExpoPushNotifications } from '../push.js';
 import { EXPO_ACCESS_TOKEN, EXPO_PUSH_URL } from '../config/env.js';
+import { notificationQueue } from '../lib/queue.js';
 
 export type PushPayload = {
   title: string;
@@ -112,4 +113,13 @@ export const notifySupervisors = async (payload: PushPayload) => {
       data: { active: false },
     });
   }
+};
+
+export const enqueueSupervisorNotification = async (payload: PushPayload) => {
+  await notificationQueue.add('notify-supervisors', payload, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 5000 },
+    removeOnComplete: 100,
+    removeOnFail: 100,
+  });
 };

@@ -83,6 +83,8 @@ model Report {
   sizeMb    Float
   fileUrl   String?
   mimeType  String?
+  status    String   @default("ready")
+  error     String?
 }
 
 model Vehicle {

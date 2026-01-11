@@ -8,7 +8,7 @@ import { authenticate, requireRole } from '../lib/auth.js';
 import { optionalDate, optionalNumber, optionalString } from '../lib/validation.js';
 import { COMPLAINTS_DIR, safeFilename } from '../config/storage.js';
 import { FILES_BASE_URL } from '../config/env.js';
-import { notifySupervisors } from '../services/notifications.js';
+import { enqueueSupervisorNotification } from '../services/notifications.js';
 
 const formatComplaint = (complaint: any) => ({
   ...complaint,
@@ -97,7 +97,7 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
       },
     });
 
-    void notifySupervisors({
+    void enqueueSupervisorNotification({
       title: 'Nueva denuncia',
       body: `${payload.stationName}: ${payload.type}`,
       data: {
@@ -106,7 +106,7 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
         type: payload.type,
       },
     }).catch((error) => {
-      request.log.error({ error }, 'Push notification failed');
+      request.log.error({ error }, 'Push notification enqueue failed');
     });
 
     return reply.code(201).send(formatComplaint(complaint));

@@ -101,7 +101,14 @@ export default function ReportsScreen({ navigation }: any) {
           <ActivityIndicator color={COLORS.primary} />
         ) : (
           reports.map((report) => {
-            const canShare = Boolean(report.fileUri || report.fileUrl);
+            const canShare = Boolean(report.fileUri || report.fileUrl) && report.status !== 'queued' && report.status !== 'processing';
+            const status = report.status ?? (canShare ? 'ready' : 'queued');
+            const statusLabel =
+              status === 'ready'
+                ? 'Disponible'
+                : status === 'failed'
+                  ? 'Error'
+                  : 'En proceso';
             return (
             <TouchableOpacity
               key={report.id}
@@ -114,6 +121,7 @@ export default function ReportsScreen({ navigation }: any) {
                 <Text style={{ fontSize: 12, color: '#888' }}>
                   {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
                 </Text>
+                <Text style={{ fontSize: 12, color: '#888' }}>Estado: {statusLabel}</Text>
               </View>
               <Text style={{ color: COLORS.primary }}>{canShare ? 'Compartir' : 'No disponible'}</Text>
             </TouchableOpacity>

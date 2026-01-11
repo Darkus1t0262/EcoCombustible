@@ -14,6 +14,8 @@ export type ReportItem = {
   fileUri: string | null;
   fileUrl?: string | null;
   mimeType: string | null;
+  status?: string;
+  error?: string | null;
 };
 
 const estimateSizeMb = (period: string, format: string) => {
@@ -88,6 +90,8 @@ export const ReportService = {
         fileUri: report.fileUri ?? null,
         fileUrl: report.fileUrl ?? null,
         mimeType: report.mimeType ?? null,
+        status: report.status ?? undefined,
+        error: report.error ?? null,
       }));
     }
     const db = await getDb();
@@ -104,12 +108,14 @@ export const ReportService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period, format }),
       });
-      return {
-        ...created,
-        fileUri: created.fileUri ?? null,
-        fileUrl: created.fileUrl ?? null,
-        mimeType: created.mimeType ?? null,
-      };
+    return {
+      ...created,
+      fileUri: created.fileUri ?? null,
+      fileUrl: created.fileUrl ?? null,
+      mimeType: created.mimeType ?? null,
+      status: created.status ?? undefined,
+      error: created.error ?? null,
+    };
     }
     const db = await getDb();
     const createdAt = new Date().toISOString();
@@ -157,6 +163,9 @@ export const ReportService = {
   },
 
   shareReport: async (report: ReportItem): Promise<void> => {
+    if (report.status && report.status !== 'ready') {
+      throw new Error('Report not ready.');
+    }
     let uri = report.fileUri ?? null;
     if (!uri && report.fileUrl) {
       if (!FileSystem.documentDirectory) {
