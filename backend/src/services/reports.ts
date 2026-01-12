@@ -4,8 +4,8 @@ import path from 'node:path';
 import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { estimateSizeMb, REPORTS_DIR, safeFilename } from '../config/storage.js';
-import { FILES_BASE_URL } from '../config/env.js';
 import { reportQueue } from '../lib/queue.js';
+import { storeLocalFile } from './storage.js';
 
 const buildCsv = (summary: { stations: number; auditsThisMonth: number; pendingComplaints: number }, createdAt: string) => {
   return [
@@ -63,24 +63,33 @@ export const generateReport = async (reportId: number) => {
     let fileUrl: string | null = null;
     let mimeType: string | null = null;
     let filePath: string | null = null;
+    let filename: string | null = null;
 
     if (report.format === 'PDF') {
-      filePath = path.join(REPORTS_DIR, `${baseName}.pdf`);
+      filename = `${baseName}.pdf`;
+      filePath = path.join(REPORTS_DIR, filename);
       mimeType = 'application/pdf';
       await buildPdf(summary, createdAt, filePath);
     } else {
-      filePath = path.join(REPORTS_DIR, `${baseName}.csv`);
+      filename = `${baseName}.csv`;
+      filePath = path.join(REPORTS_DIR, filename);
       const csv = buildCsv(summary, createdAt);
       await writeFile(filePath, csv, 'utf8');
       mimeType = report.format === 'Excel' ? 'application/vnd.ms-excel' : 'text/csv';
     }
 
-    if (!filePath) {
+    if (!filePath || !filename) {
       throw new Error('Report generation failed');
     }
 
     const stats = await stat(filePath);
-    fileUrl = `${FILES_BASE_URL}/files/reports/${path.basename(filePath)}`;
+    const stored = await storeLocalFile({
+      category: 'reports',
+      filename,
+      filePath,
+      contentType: mimeType,
+    });
+    fileUrl = stored.fileUrl;
 
     return await prisma.report.update({
       where: { id: reportId },

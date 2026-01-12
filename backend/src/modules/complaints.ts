@@ -1,15 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
-import path from 'node:path';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireRole } from '../lib/auth.js';
 import { optionalDate, optionalNumber, optionalString } from '../lib/validation.js';
-import { COMPLAINTS_DIR, safeFilename } from '../config/storage.js';
-import { FILES_BASE_URL } from '../config/env.js';
+import { safeFilename } from '../config/storage.js';
 import { enqueueSupervisorNotification } from '../services/notifications.js';
 import { parsePagination } from '../lib/pagination.js';
+import { storeStream } from '../services/storage.js';
 
 const formatComplaint = (complaint: any) => ({
   ...complaint,
@@ -73,9 +70,13 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
           }
           const fileName = safeFilename(part.filename ?? `photo_${Date.now()}.jpg`);
           const storedName = `${Date.now()}_${fileName}`;
-          const destPath = path.join(COMPLAINTS_DIR, storedName);
-          await pipeline(part.file, createWriteStream(destPath));
-          photoUrl = `${FILES_BASE_URL}/files/complaints/${storedName}`;
+          const stored = await storeStream({
+            category: 'complaints',
+            filename: storedName,
+            stream: part.file,
+            contentType: part.mimetype ?? null,
+          });
+          photoUrl = stored.fileUrl;
         } else {
           fields[part.fieldname] = String(part.value ?? '');
         }
