@@ -60,8 +60,9 @@ export default function DashboardScreen({ navigation }: any) {
             <Text style={styles.headerSub}>Panel de supervision</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Cerrar sesion</Text>
+        <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="log-out-outline" size={18} color={COLORS.error} style={{ marginRight: 8 }} />
+          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Salir</Text>
         </TouchableOpacity>
       </View>
 
