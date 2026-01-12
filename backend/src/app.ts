@@ -6,7 +6,7 @@ import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { z } from 'zod';
-import { parseOrigins, TRUST_PROXY, JWT_SECRET, JWT_EXPIRES_IN, JWT_ISSUER, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from './config/env.js';
+import { parseOrigins, TRUST_PROXY, JWT_SECRET, JWT_EXPIRES_IN, JWT_ISSUER, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW, STORAGE_DRIVER } from './config/env.js';
 import { ensureStorageDirs, STORAGE_DIR } from './config/storage.js';
 import { registerHealthRoutes } from './modules/health.js';
 import { registerAuthRoutes } from './modules/auth.js';
@@ -56,11 +56,13 @@ export const buildApp = async () => {
     },
   });
 
-  await fastify.register(fastifyStatic, {
-    root: STORAGE_DIR,
-    prefix: '/files/',
-    serve: false,
-  });
+  if (STORAGE_DRIVER === 'local') {
+    await fastify.register(fastifyStatic, {
+      root: STORAGE_DIR,
+      prefix: '/files/',
+      serve: false,
+    });
+  }
 
   await fastify.register(registerHealthRoutes);
   await fastify.register(registerAuthRoutes);
@@ -71,7 +73,9 @@ export const buildApp = async () => {
   await fastify.register(registerAuditRoutes);
   await fastify.register(registerComplaintRoutes);
   await fastify.register(registerReportRoutes);
-  await fastify.register(registerFileRoutes);
+  if (STORAGE_DRIVER === 'local') {
+    await fastify.register(registerFileRoutes);
+  }
   await fastify.register(registerNotificationRoutes);
 
   fastify.setErrorHandler((error, request, reply) => {

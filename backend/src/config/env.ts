@@ -17,6 +17,13 @@ const envSchema = z.object({
   EXPO_ACCESS_TOKEN: z.string().optional(),
   EXPO_PUSH_URL: z.string().url().optional(),
   REDIS_URL: z.string().default('redis://localhost:6379'),
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  S3_ENDPOINT: z.string().optional(),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_BUCKET: z.string().default('ecocombustible'),
+  S3_ACCESS_KEY: z.string().optional(),
+  S3_SECRET_KEY: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
@@ -36,6 +43,25 @@ export const RATE_LIMIT_WINDOW = env.RATE_LIMIT_WINDOW;
 export const EXPO_ACCESS_TOKEN = env.EXPO_ACCESS_TOKEN?.trim() || undefined;
 export const EXPO_PUSH_URL = env.EXPO_PUSH_URL ?? 'https://exp.host/--/api/v2/push/send';
 export const REDIS_URL = env.REDIS_URL;
+export const STORAGE_DRIVER = env.STORAGE_DRIVER;
+export const S3_ENDPOINT = env.S3_ENDPOINT?.trim() || undefined;
+export const S3_REGION = env.S3_REGION;
+export const S3_BUCKET = env.S3_BUCKET;
+export const S3_ACCESS_KEY = env.S3_ACCESS_KEY?.trim() || undefined;
+export const S3_SECRET_KEY = env.S3_SECRET_KEY?.trim() || undefined;
+export const S3_FORCE_PATH_STYLE = env.S3_FORCE_PATH_STYLE === 'true' || env.S3_FORCE_PATH_STYLE === '1';
+
+if (STORAGE_DRIVER === 's3') {
+  if (!S3_ACCESS_KEY || !S3_SECRET_KEY) {
+    throw new Error('S3_ACCESS_KEY and S3_SECRET_KEY must be set when STORAGE_DRIVER=s3.');
+  }
+  if (!S3_BUCKET) {
+    throw new Error('S3_BUCKET must be set when STORAGE_DRIVER=s3.');
+  }
+  if (!env.FILES_BASE_URL) {
+    throw new Error('FILES_BASE_URL must be set when STORAGE_DRIVER=s3.');
+  }
+}
 
 if (NODE_ENV === 'production') {
   if (JWT_SECRET === 'change_me' || JWT_SECRET.length < 32) {

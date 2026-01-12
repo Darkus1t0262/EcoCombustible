@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
@@ -32,6 +34,15 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
+      
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons name="gas-station" size={40} color={COLORS.primary} />
@@ -41,24 +52,32 @@ export default function LoginScreen({ navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Inicio de sesion</Text>
           <Text style={styles.label}>Usuario</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa usuario"
-            placeholderTextColor="#aaa"
-            autoCapitalize="none"
-            value={username}
-            onChangeText={setUsername}
-          />
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="account" size={20} color="#888" />
+            <TextInput
+              style={styles.inputWithIcon}
+              placeholder="Ingresa usuario"
+              placeholderTextColor="#aaa"
+              autoCapitalize="none"
+              value={username}
+              onChangeText={setUsername}
+            />
+          </View> 
+         
 
           <Text style={styles.label}>Contrasena</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa contrasena"
-            secureTextEntry
-            placeholderTextColor="#aaa"
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="lock" size={20} color="#888" />
+            <TextInput
+              style={styles.inputWithIcon}
+              placeholder="Ingresa contrasena"
+              secureTextEntry
+              placeholderTextColor="#aaa"
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
 
           {!!error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -77,7 +96,10 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.govText}>Gobierno del Ecuador - ARCERNNR</Text>
         </View>
       </View>
-    </SafeAreaView>
+        
+        </ScrollView>
+      </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }
 
@@ -87,7 +109,7 @@ const styles = StyleSheet.create({
   iconContainer: { backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, color: '#000' },
   card: { backgroundColor: 'white', width: '100%', padding: 25, borderRadius: 20, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1 },
-  cardTitle: { fontSize: 16, marginBottom: 20, color: '#555' },
+  cardTitle: { fontSize: 16, marginBottom: 20, color: '#555',fontWeight:'bold'},
   label: { marginBottom: 8, fontWeight: '600', color: '#333' },
   input: { backgroundColor: '#F5F6FA', padding: 15, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#E0E0E0' },
   button: { backgroundColor: '#2F60FF', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
@@ -96,4 +118,19 @@ const styles = StyleSheet.create({
   flagContainer: { marginTop: 40, alignItems: 'center' },
   govText: { fontSize: 10, fontWeight: 'bold' },
   errorText: { color: COLORS.error, marginBottom: 10 },
+  inputContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F5F6FA',
+  borderRadius: 10,
+  borderWidth: 1,
+  borderColor: '#E0E0E0',
+  paddingHorizontal: 12,
+  marginBottom: 15,
+  },
+  inputWithIcon: {
+  flex: 1,
+  padding: 15,
+  paddingLeft: 10,
+  },
 });
