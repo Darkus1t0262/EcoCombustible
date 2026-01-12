@@ -73,15 +73,18 @@ export default function ReportsScreen({ navigation }: any) {
 
           <Text style={styles.label}>Formato de exportacion</Text>
           <View style={styles.formatRow}>
-            {formats.map((f) => (
-              <TouchableOpacity
-                key={f}
-                style={[styles.exportBtn, { backgroundColor: f === format ? COLORS.primary : '#eee' }]}
-                onPress={() => setFormat(f)}
-              >
-                <Text style={{ color: f === format ? 'white' : '#333' }}>{f}</Text>
-              </TouchableOpacity>
-            ))}
+            {formats.map((f) => {
+              const btnColor = f === 'PDF' ? COLORS.error : f === 'Excel' ? COLORS.success : COLORS.primary;
+              return (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.exportBtn, { backgroundColor: f === format ? btnColor : '#eee' }]}
+                  onPress={() => setFormat(f)}
+                >
+                  <Text style={{ color: f === format ? 'white' : '#333' }}>{f}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <TouchableOpacity style={styles.generateBtn} onPress={handleCreate} disabled={creating}>
