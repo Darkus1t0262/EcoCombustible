@@ -15,6 +15,8 @@ export default function MapScreen({ navigation }: any) {
   const [hasLocation, setHasLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState<any | null>(null);
 
+  const initialRegion = { latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 };
+
   useEffect(() => {
     const load = async () => {
       const data = await StationService.getAllStations();
@@ -48,6 +50,24 @@ export default function MapScreen({ navigation }: any) {
     };
     loadLocation();
   }, []);
+
+  const handleSelectStation = (station: any) => {
+    setSelectedStation(station);
+    mapRef.current?.animateToRegion(
+      {
+        latitude: station.lat,
+        longitude: station.lng,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      500
+    );
+  };
+
+  const handleDeselectStation = () => {
+    setSelectedStation(null);
+    mapRef.current?.animateToRegion(initialRegion, 500);
+  };
 
   const filteredStations =
     filter === 'Todas' ? stations : stations.filter((s) => s.analysis.status === filter);
@@ -85,7 +105,7 @@ export default function MapScreen({ navigation }: any) {
         <MapView
           ref={mapRef}
           style={styles.map}
-          initialRegion={{ latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 }}
+          initialRegion={initialRegion}
           showsUserLocation={hasLocation}
           showsMyLocationButton={hasLocation}
         >
@@ -94,7 +114,7 @@ export default function MapScreen({ navigation }: any) {
               key={s.id}
               coordinate={{ latitude: s.lat, longitude: s.lng }}
               pinColor={s.analysis.color}
-              onPress={() => setSelectedStation(s)}
+              onPress={() => handleSelectStation(s)}
             >
               <Callout tooltip>
                 <View style={styles.callout}>
@@ -130,7 +150,7 @@ export default function MapScreen({ navigation }: any) {
         <View style={styles.detailCard}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-            <TouchableOpacity onPress={() => setSelectedStation(null)}>
+            <TouchableOpacity onPress={handleDeselectStation}>
               <Ionicons name="close" size={18} color="#666" />
             </TouchableOpacity>
           </View>
