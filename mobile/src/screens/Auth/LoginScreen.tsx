@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
 import { PushService } from '../../services/PushService';
@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name="flame" size={40} color={COLORS.primary} />
+          <MaterialCommunityIcons name="gas-station" size={40} color={COLORS.primary} />
         </View>
         <Text style={styles.title}>EcoCombustible Regulador</Text>
 
