@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
 import { StatsService } from '../../services/StatsService';
@@ -8,7 +8,7 @@ import { StatsService } from '../../services/StatsService';
 const MenuCard = ({ title, sub, icon, color, onPress }: any) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={[styles.iconBox, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={28} color="white" />
+      {typeof icon === 'string' ? <Ionicons name={icon as any} size={28} color="white" /> : icon}
     </View>
     <Text style={styles.cardTitle}>{title}</Text>
     <Text style={styles.cardSub}>{sub}</Text>
@@ -22,7 +22,7 @@ const KPICard = ({ label, val, icon, color }: any) => (
       <Text style={[styles.kpiVal, { color }]}>{val}</Text>
     </View>
     <View style={[styles.kpiIcon, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={20} color="white" />
+      {typeof icon === 'string' ? <Ionicons name={icon as any} size={20} color="white" /> : icon}
     </View>
   </View>
 );
@@ -53,21 +53,22 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ backgroundColor: COLORS.primary, padding: 8, borderRadius: 8, marginRight: 10 }}>
-            <Ionicons name="flame" size={20} color="white" />
+            <MaterialCommunityIcons name="gas-station" size={20} color="white" />
           </View>
           <View>
             <Text style={styles.headerTitle}>EcoCombustible Regulador</Text>
             <Text style={styles.headerSub}>Panel de supervision</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Cerrar sesion</Text>
+        <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="log-out-outline" size={18} color={COLORS.error} style={{ marginRight: 8 }} />
+          <Text style={{ color: COLORS.error, fontWeight: 'bold' }}>Salir</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <View style={styles.grid}>
-          <MenuCard title="Estaciones" sub="Listado y estado" icon="flame" color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
+          <MenuCard title="Estaciones" sub="Listado y estado" icon={<MaterialCommunityIcons name="gas-station" size={28} color="white" />} color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
           <MenuCard title="Mapa" sub="Vista geografica" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />
           <MenuCard title="Auditorias" sub="Revision remota" icon="checkmark-circle" color={COLORS.warning} onPress={() => navigation.navigate('Audit')} />
           <MenuCard title="Denuncias" sub="Bandeja" icon="alert-circle" color={COLORS.purple} onPress={() => navigation.navigate('Complaints')} />
@@ -80,7 +81,7 @@ export default function DashboardScreen({ navigation }: any) {
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
         ) : (
           <View style={{ gap: 15, marginTop: 10 }}>
-            <KPICard label="Estaciones activas" val={stats.stations} icon="flame" color={COLORS.primary} />
+            <KPICard label="Estaciones activas" val={stats.stations} icon={<MaterialCommunityIcons name="gas-station" size={20} color="white" />} color={COLORS.primary} />
             <KPICard label="Auditorias del mes" val={stats.auditsThisMonth} icon="checkmark-circle" color={COLORS.success} />
             <KPICard label="Denuncias pendientes" val={stats.pendingComplaints} icon="alert-circle" color={COLORS.error} />
           </View>
