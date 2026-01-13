@@ -8,7 +8,7 @@ import { parsePagination } from '../lib/pagination.js';
 export const registerStationRoutes = async (fastify: FastifyInstance) => {
 
   // =========================
-  // GET /stations (LISTAR)
+  // GET /stations (LISTAR) Ya funcionaba antes
   // =========================
   fastify.get(
     '/stations',
@@ -39,7 +39,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
   );
 
   // =========================
-  // GET /stations/:id (DETALLE)
+  // GET /stations/:id (DETALLE) ya Funciona
   // =========================
   fastify.get(
     '/stations/:id',
@@ -68,7 +68,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
   );
 
   // =========================
-  // POST /stations (CREAR)
+  // POST /stations (CREAR) Funciona de Manera Correcta
   // =========================
   fastify.post(
     '/stations',
@@ -103,7 +103,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
   );
 
   // =========================
-  // PUT /stations/:id (EDITAR)
+  // PUT /stations/:id (EDITAR) Ya funciona , solo era problema con el Docker
   // =========================
   fastify.put(
     '/stations/:id',
@@ -140,7 +140,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
   );
 
   // =========================
-  // DELETE /stations/:id (ELIMINAR)
+  // DELETE /stations/:id (ELIMINAR) Ya Funciona
   // =========================
   fastify.delete(
     '/stations/:id',
