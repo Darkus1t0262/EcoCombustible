@@ -7,6 +7,7 @@ import { AuditService, AuditItem } from '../../services/AuditService';
 export default function AuditScreen({ navigation }: any) {
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
 
   const loadAudits = async () => {
     setLoading(true);
@@ -35,6 +36,11 @@ export default function AuditScreen({ navigation }: any) {
   const total = audits.length;
   const approved = audits.filter((a) => a.status === 'approved').length;
   const pending = audits.filter((a) => a.status === 'pending').length;
+  const filteredAudits =
+  filter === 'all'
+    ? audits
+    : audits.filter((a) => a.status === filter);
+
 
   return (
     <View style={styles.container}>
@@ -47,24 +53,27 @@ export default function AuditScreen({ navigation }: any) {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom:50 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-          <View style={styles.statBox}>
+          <TouchableOpacity style={styles.statBox} onPress={() => setFilter('all')}>
             <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 18 }}>{total}</Text>
             <Text style={{ fontSize: 10 }}>Total</Text>
-          </View>
-          <View style={styles.statBox}>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.statBox} onPress={() => setFilter('approved')}>
             <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{approved}</Text>
             <Text style={{ fontSize: 10 }}>Aprobadas</Text>
-          </View>
-          <View style={styles.statBox}>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.statBox} onPress={() => setFilter('pending')}>
             <Text style={{ color: COLORS.error, fontWeight: 'bold', fontSize: 18 }}>{pending}</Text>
             <Text style={{ fontSize: 10 }}>Pendientes</Text>
-          </View>
+          </TouchableOpacity>
+
         </View>
 
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} />
         ) : (
-          audits.map((audit) => (
+          filteredAudits.map((audit) => (
             <View key={audit.id} style={styles.card}>
               <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{audit.stationName}</Text>
               <Text style={{ color: COLORS.primary, fontSize: 12, marginBottom: 10 }}>
