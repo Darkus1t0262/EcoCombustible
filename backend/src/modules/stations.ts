@@ -1,38 +1,162 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { authenticate } from '../lib/auth.js';
+import { authenticate, requireRole } from '../lib/auth.js';
 import { analyzeStation } from '../lib/analysis.js';
 import { parsePagination } from '../lib/pagination.js';
 
 export const registerStationRoutes = async (fastify: FastifyInstance) => {
-  fastify.get('/stations', { preHandler: [authenticate] }, async (request, reply) => {
-    const pagination = parsePagination((request as any).query);
-    if (pagination) {
-      const total = await prisma.station.count();
-      reply.header('X-Total-Count', total);
-      reply.header('X-Page', pagination.page);
-      reply.header('X-Limit', pagination.limit);
-    }
 
-    const stations = await prisma.station.findMany({
-      orderBy: { name: 'asc' },
-      ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
-    });
-    return stations.map((station) => ({
-      ...station,
-      history: station.history ?? [],
-      analysis: analyzeStation(station),
-    }));
-  });
+  // =========================
+  // GET /stations (LISTAR)
+  // =========================
+  fastify.get(
+    '/stations',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const pagination = parsePagination((request as any).query);
 
-  fastify.get('/stations/:id', { preHandler: [authenticate] }, async (request, reply) => {
-    const paramsSchema = z.object({ id: z.string().regex(/^\d+$/) });
-    const params = paramsSchema.parse(request.params);
-    const station = await prisma.station.findUnique({ where: { id: Number(params.id) } });
-    if (!station) {
-      return reply.code(404).send({ error: 'Not found' });
+      if (pagination) {
+        const total = await prisma.station.count();
+        reply.header('X-Total-Count', total);
+        reply.header('X-Page', pagination.page);
+        reply.header('X-Limit', pagination.limit);
+      }
+
+      const stations = await prisma.station.findMany({
+        orderBy: { name: 'asc' },
+        ...(pagination
+          ? { skip: pagination.offset, take: pagination.limit }
+          : {}),
+      });
+
+      return stations.map((station) => ({
+        ...station,
+        history: station.history ?? [],
+        analysis: analyzeStation(station),
+      }));
     }
-    return { ...station, history: station.history ?? [], analysis: analyzeStation(station) };
-  });
+  );
+
+  // =========================
+  // GET /stations/:id (DETALLE)
+  // =========================
+  fastify.get(
+    '/stations/:id',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const paramsSchema = z.object({
+        id: z.string().regex(/^\d+$/),
+      });
+
+      const { id } = paramsSchema.parse(request.params);
+
+      const station = await prisma.station.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!station) {
+        return reply.code(404).send({ error: 'Station not found' });
+      }
+
+      return {
+        ...station,
+        history: station.history ?? [],
+        analysis: analyzeStation(station),
+      };
+    }
+  );
+
+  // =========================
+  // POST /stations (CREAR)
+  // =========================
+  fastify.post(
+    '/stations',
+    { preHandler: [authenticate, requireRole('admin')] },
+    async (request, reply) => {
+      const bodySchema = z.object({
+        name: z.string().min(3),
+        address: z.string().min(5),
+        lat: z.number(),
+        lng: z.number(),
+        stock: z.number().int().nonnegative(),
+        price: z.number().positive(),
+        officialPrice: z.number().positive(),
+      });
+
+      const data = bodySchema.parse(request.body);
+
+      const station = await prisma.station.create({
+        data: {
+          ...data,
+          history: [],
+          status: 'Cumplimiento',
+        },
+      });
+
+      return reply.code(201).send({
+        ...station,
+        history: station.history ?? [],
+        analysis: analyzeStation(station),
+      });
+    }
+  );
+
+  // =========================
+  // PUT /stations/:id (EDITAR)
+  // =========================
+  fastify.put(
+    '/stations/:id',
+    { preHandler: [authenticate, requireRole('admin')] },
+    async (request, reply) => {
+      const paramsSchema = z.object({
+        id: z.string().regex(/^\d+$/),
+      });
+
+      const bodySchema = z.object({
+        name: z.string().min(3).optional(),
+        address: z.string().min(5).optional(),
+        lat: z.number().optional(),
+        lng: z.number().optional(),
+        stock: z.number().int().nonnegative().optional(),
+        price: z.number().positive().optional(),
+        officialPrice: z.number().positive().optional(),
+      });
+
+      const { id } = paramsSchema.parse(request.params);
+      const data = bodySchema.parse(request.body);
+
+      const station = await prisma.station.update({
+        where: { id: Number(id) },
+        data,
+      });
+
+      return {
+        ...station,
+        history: station.history ?? [],
+        analysis: analyzeStation(station),
+      };
+    }
+  );
+
+  // =========================
+  // DELETE /stations/:id (ELIMINAR)
+  // =========================
+  fastify.delete(
+    '/stations/:id',
+    { preHandler: [authenticate, requireRole('admin')] },
+    async (request, reply) => {
+      const paramsSchema = z.object({
+        id: z.string().regex(/^\d+$/),
+      });
+
+      const { id } = paramsSchema.parse(request.params);
+
+      await prisma.station.delete({
+        where: { id: Number(id) },
+      });
+
+      return reply.code(204).send();
+    }
+  );
 };
