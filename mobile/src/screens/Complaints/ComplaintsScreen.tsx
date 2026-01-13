@@ -108,18 +108,21 @@ export default function ComplaintsScreen({ navigation }: any) {
       </View>
 
       <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
-          <Text style={styles.statLabel}>Resueltas</Text>
-        </View>
-        <View style={styles.stat}>
+        <TouchableOpacity style={styles.stat} onPress={() => setFilter('resolved')}>
+             <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
+              <Text style={styles.statLabel}>Resueltas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.stat} onPress={() => setFilter('pending')}>
           <Text style={{ color: COLORS.error, fontWeight: 'bold', fontSize: 18 }}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
-        </View>
-        <View style={styles.stat}>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.stat} onPress={() => setFilter('all')}>
           <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 18 }}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
-        </View>
+        </TouchableOpacity>
+
       </View>
 
       <View style={styles.searchBox}>

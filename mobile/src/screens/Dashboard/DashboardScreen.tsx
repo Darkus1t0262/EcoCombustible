@@ -66,7 +66,7 @@ export default function DashboardScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <ScrollView contentContainerStyle={{ padding: 20 ,paddingBottom:45}}>
         <View style={styles.grid}>
           <MenuCard title="Estaciones" sub="Listado y estado" icon={<MaterialCommunityIcons name="gas-station" size={28} color="white" />} color={COLORS.primary} onPress={() => navigation.navigate('StationList')} />
           <MenuCard title="Mapa" sub="Vista geografica" icon="map" color={COLORS.success} onPress={() => navigation.navigate('Map')} />

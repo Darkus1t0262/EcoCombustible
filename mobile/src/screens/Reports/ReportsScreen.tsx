@@ -54,7 +54,7 @@ export default function ReportsScreen({ navigation }: any) {
         <Text style={styles.title}>Reportes automaticos</Text>
       </View>
 
-      <ScrollView style={{ padding: 20 }}>
+      <ScrollView contentContainerStyle={{ padding: 20,paddingBottom:40 }}>
         <View style={styles.card}>
           <Text style={{ fontWeight: 'bold', marginBottom: 15 }}>Generar nuevo reporte</Text>
 
