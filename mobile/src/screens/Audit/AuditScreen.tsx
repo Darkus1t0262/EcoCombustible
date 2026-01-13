@@ -45,7 +45,7 @@ export default function AuditScreen({ navigation }: any) {
         <Text style={styles.title}>Auditorias remotas</Text>
       </View>
 
-      <ScrollView style={{ padding: 20 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom:50 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
           <View style={styles.statBox}>
             <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 18 }}>{total}</Text>

@@ -94,7 +94,7 @@ export default function StationListScreen({ navigation }: any) {
           data={filteredStations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 20 }}
+          contentContainerStyle={{ padding: 20,paddingBottom:50 }}
         />
       )}
     </View>

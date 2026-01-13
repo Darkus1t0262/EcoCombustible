@@ -86,7 +86,7 @@ export default function TransactionListScreen({ navigation }: any) {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 20 }}
+          contentContainerStyle={{ padding: 20,paddingBottom:30 }}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}
