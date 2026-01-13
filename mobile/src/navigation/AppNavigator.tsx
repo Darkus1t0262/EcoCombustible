@@ -27,7 +27,9 @@ export default function AppNavigator() {
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
+    const MIN_SPLASH = 1500; // ms
     const load = async () => {
+      const start = Date.now();
       try {
         await initDatabase();
         const session = await AuthService.getSession();
@@ -35,7 +37,9 @@ export default function AppNavigator() {
       } catch (error) {
         setInitError('No se pudieron cargar los datos locales.');
       } finally {
-        setIsReady(true);
+        const elapsed = Date.now() - start;
+        const wait = Math.max(0, MIN_SPLASH - elapsed);
+        setTimeout(() => setIsReady(true), wait);
       }
     };
     load();
