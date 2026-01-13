@@ -3,19 +3,34 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const seed = async () => {
-  const existingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-  if (!existingUser) {
-    const passwordHash = await bcrypt.hash('admin123', 10);
-    await prisma.user.create({
-      data: {
-        username: 'admin',
-        passwordHash,
-        name: 'Admin',
-        role: 'supervisor',
-      },
-    });
-  }
+// --- Usuario admin existente ---
+const existingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+if (!existingUser) {
+  const passwordHash = await bcrypt.hash('admin123', 10);
+  await prisma.user.create({
+    data: {
+      username: 'admin',
+      passwordHash,
+      name: 'Admin',
+      role: 'supervisor',
+    },
+  });
+}
+
+// --- Nuevo usuario admin_root ---
+const existingAdminRoot = await prisma.user.findFirst({ where: { username: 'admin_root' } });
+if (!existingAdminRoot) {
+  const passwordHash = await bcrypt.hash('admin', 10); // contraseña: admin
+  await prisma.user.create({
+    data: {
+      username: 'admin_root',
+      passwordHash,
+      name: 'Administrador Principal',
+      role: 'admin',
+    },
+  });
+}
+
 
   const stations = [
     {
