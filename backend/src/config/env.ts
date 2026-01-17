@@ -24,6 +24,12 @@ const envSchema = z.object({
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_FORCE_PATH_STYLE: z.string().optional(),
+  METRICS_ENABLED: z.string().optional(),
+  METRICS_PATH: z.string().default('/metrics'),
+  ML_ENABLED: z.string().optional(),
+  ML_API_URL: z.string().url().optional(),
+  ML_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
+  ML_FALLBACK_LABEL: z.enum(['low', 'medium', 'high', 'unknown']).default('unknown'),
 });
 
 export const env = envSchema.parse(process.env);
@@ -50,6 +56,12 @@ export const S3_BUCKET = env.S3_BUCKET;
 export const S3_ACCESS_KEY = env.S3_ACCESS_KEY?.trim() || undefined;
 export const S3_SECRET_KEY = env.S3_SECRET_KEY?.trim() || undefined;
 export const S3_FORCE_PATH_STYLE = env.S3_FORCE_PATH_STYLE === 'true' || env.S3_FORCE_PATH_STYLE === '1';
+export const METRICS_ENABLED = env.METRICS_ENABLED === 'true' || env.METRICS_ENABLED === '1';
+export const METRICS_PATH = env.METRICS_PATH;
+export const ML_ENABLED = env.ML_ENABLED === 'true' || env.ML_ENABLED === '1';
+export const ML_API_URL = env.ML_API_URL?.trim() || undefined;
+export const ML_TIMEOUT_MS = env.ML_TIMEOUT_MS;
+export const ML_FALLBACK_LABEL = env.ML_FALLBACK_LABEL;
 
 if (STORAGE_DRIVER === 's3') {
   if (!S3_ACCESS_KEY || !S3_SECRET_KEY) {
@@ -61,6 +73,10 @@ if (STORAGE_DRIVER === 's3') {
   if (!env.FILES_BASE_URL) {
     throw new Error('FILES_BASE_URL must be set when STORAGE_DRIVER=s3.');
   }
+}
+
+if (ML_ENABLED && !ML_API_URL) {
+  throw new Error('ML_API_URL must be set when ML_ENABLED=true.');
 }
 
 if (NODE_ENV === 'production') {
