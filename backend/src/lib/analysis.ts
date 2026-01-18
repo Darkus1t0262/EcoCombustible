@@ -16,7 +16,7 @@ export const analyzeStation = (station: {
 
   if (priceDelta > 0.01) {
     return {
-      status: 'Infraccion',
+      status: 'Infracción',
       score: 90,
       message: 'Precio sobre el oficial reportado.',
       zScore: null,
@@ -25,7 +25,7 @@ export const analyzeStation = (station: {
 
   if (history.length < 3) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: 55,
       message: 'Historial insuficiente para evaluar consumo.',
       zScore: null,
@@ -41,9 +41,9 @@ export const analyzeStation = (station: {
 
   if (Math.abs(zScore) >= 2.5) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: Math.max(score, 70),
-      message: 'Variacion atipica en consumo frente al promedio.',
+      message: 'Variación atípica en consumo frente al promedio.',
       zScore,
     };
   }
@@ -63,18 +63,18 @@ export const analyzeTransaction = (
   const capacity = transaction.vehicle?.capacityLiters ?? 0;
   if (capacity > 0 && transaction.liters > capacity * 1.05) {
     return {
-      status: 'Infraccion',
+      status: 'Infracción',
       score: 95,
-      message: 'Consumo supera la capacidad declarada del vehiculo.',
+      message: 'Consumo supera la capacidad declarada del vehículo.',
       zScore: null,
     };
   }
 
   if (history.length < 3) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: 55,
-      message: 'Historial insuficiente para evaluar consumo del vehiculo.',
+      message: 'Historial insuficiente para evaluar consumo del vehículo.',
       zScore: null,
     };
   }
@@ -87,9 +87,9 @@ export const analyzeTransaction = (
 
   if (Math.abs(zScore) >= 2.5) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: Math.max(score, 70),
-      message: 'Consumo atipico respecto al historial del vehiculo.',
+      message: 'Consumo atípico respecto al historial del vehículo.',
       zScore,
     };
   }
@@ -97,7 +97,7 @@ export const analyzeTransaction = (
   return {
     status: 'Cumplimiento',
     score: Math.max(score, 20),
-    message: 'Consumo dentro del rango esperado para el vehiculo.',
+      message: 'Consumo dentro del rango esperado para el vehículo.',
     zScore,
   };
 };
