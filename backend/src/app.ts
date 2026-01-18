@@ -19,6 +19,8 @@ import { registerComplaintRoutes } from './modules/complaints.js';
 import { registerReportRoutes } from './modules/reports.js';
 import { registerFileRoutes } from './modules/files.js';
 import { registerNotificationRoutes } from './modules/notifications.js';
+import { registerUserRoutes } from './modules/users.js';
+import { registerMetrics } from './observability/metrics.js';
 
 export const buildApp = async () => {
   ensureStorageDirs();
@@ -28,6 +30,10 @@ export const buildApp = async () => {
       redact: ['req.headers.authorization'],
     },
     trustProxy: TRUST_PROXY,
+  });
+
+  fastify.addHook('onRequest', async (request, reply) => {
+    reply.header('x-request-id', request.id);
   });
 
   await fastify.register(helmet, { global: true });
@@ -64,6 +70,8 @@ export const buildApp = async () => {
     });
   }
 
+  await registerMetrics(fastify);
+
   await fastify.register(registerHealthRoutes);
   await fastify.register(registerAuthRoutes);
   await fastify.register(registerDashboardRoutes);
@@ -77,6 +85,7 @@ export const buildApp = async () => {
     await fastify.register(registerFileRoutes);
   }
   await fastify.register(registerNotificationRoutes);
+  await fastify.register(registerUserRoutes);
 
   fastify.setErrorHandler((error, request, reply) => {
     request.log.error(error);
