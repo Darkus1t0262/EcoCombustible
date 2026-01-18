@@ -1,8 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../theme/colors';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
+import { Skeleton } from '../../components/Skeleton';
+
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 type StatusFilter = 'all' | 'pending' | 'resolved';
 
@@ -21,31 +25,73 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function ComplaintsScreen({ navigation }: any) {
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0 });
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const loadData = async () => {
+  const PAGE_SIZE = 20;
+
+  const loadData = useCallback(async (pageToLoad: number, replace: boolean, showLoader = true) => {
     try {
       setError('');
-      setLoading(true);
-      const [items, summary] = await Promise.all([
-        ComplaintService.getComplaints(),
-        ComplaintService.getStats(),
+      if (replace) {
+        if (showLoader) {
+          setLoading(true);
+        }
+      } else {
+        setLoadingMore(true);
+      }
+      const [pageResponse, summary] = await Promise.all([
+        ComplaintService.getComplaintsPage(pageToLoad, PAGE_SIZE),
+        replace ? ComplaintService.getStats() : Promise.resolve(null),
       ]);
-      setComplaints(items);
-      setStats(summary);
+      let nextCount = 0;
+      setComplaints((prev) => {
+        const next = replace ? pageResponse.items : [...prev, ...pageResponse.items];
+        nextCount = next.length;
+        return next;
+      });
+      const nextTotal = pageResponse.total ?? 0;
+      setHasMore(nextTotal ? nextCount < nextTotal : pageResponse.items.length === PAGE_SIZE);
+      setPage(pageToLoad);
+      if (summary) {
+        setStats(summary);
+      }
     } catch (err) {
       setError('No se pudieron cargar las denuncias.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(1, true);
+  }, [loadData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData(1, true, false);
+    }, [loadData])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData(1, true, false);
+    setRefreshing(false);
+  }, [loadData]);
+
+  const handleLoadMore = () => {
+    if (loading || loadingMore || refreshing || !hasMore) {
+      return;
+    }
+    void loadData(page + 1, false);
+  };
 
   const filtered = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -69,6 +115,21 @@ export default function ComplaintsScreen({ navigation }: any) {
     });
   }, [complaints, filter, search]);
 
+  const renderSkeleton = () => (
+    <View style={styles.skeletonWrap}>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <View key={`complaint-skeleton-${index}`} style={styles.skeletonCard}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Skeleton width="45%" height={14} />
+            <Skeleton width={70} height={18} radius={999} />
+          </View>
+          <Skeleton width="70%" height={10} style={{ marginTop: 10 }} />
+          <Skeleton width="50%" height={10} style={{ marginTop: 8 }} />
+        </View>
+      ))}
+    </View>
+  );
+
   const renderItem = ({ item }: { item: ComplaintItem }) => {
     const statusInfo = statusConfig[item.status] ?? { label: item.status, color: COLORS.warning };
     return (
@@ -78,7 +139,12 @@ export default function ComplaintsScreen({ navigation }: any) {
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.type}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}20` }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` },
+            ]}
+          >
             <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
           </View>
         </View>
@@ -89,7 +155,7 @@ export default function ComplaintsScreen({ navigation }: any) {
             {item.reporterRole ? ` (${item.reporterRole})` : ''}
           </Text>
         )}
-        {!!item.vehiclePlate && <Text style={styles.metaText}>Vehiculo: {item.vehiclePlate}</Text>}
+        {!!item.vehiclePlate && <Text style={styles.metaText}>Vehículo: {item.vehiclePlate}</Text>}
         <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
       </TouchableOpacity>
     );
@@ -98,38 +164,43 @@ export default function ComplaintsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Denuncias</Text>
-        <TouchableOpacity onPress={loadData}>
-          <Ionicons name="refresh" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncias</Text>
+          <Text style={styles.subtitle}>Seguimiento y resolución</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
+            <Ionicons name="add" size={18} color={COLORS.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.iconBtn}>
+            <Ionicons name="refresh" size={18} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.statsRow}>
-        <TouchableOpacity style={styles.stat} onPress={() => setFilter('resolved')}>
-             <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
-              <Text style={styles.statLabel}>Resueltas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.stat} onPress={() => setFilter('pending')}>
+        <View style={styles.stat}>
+          <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
+          <Text style={styles.statLabel}>Resueltas</Text>
+        </View>
+        <View style={styles.stat}>
           <Text style={{ color: COLORS.error, fontWeight: 'bold', fontSize: 18 }}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.stat} onPress={() => setFilter('all')}>
+        </View>
+        <View style={styles.stat}>
           <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 18 }}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
-        </TouchableOpacity>
-
+        </View>
       </View>
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#666" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por estacion, usuario o vehiculo..."
+          placeholder="Buscar por estación, usuario o vehículo..."
           value={search}
           onChangeText={setSearch}
         />
@@ -152,11 +223,11 @@ export default function ComplaintsScreen({ navigation }: any) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+        renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
+          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: 'white' }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -166,6 +237,17 @@ export default function ComplaintsScreen({ navigation }: any) {
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>No hay denuncias con ese filtro.</Text>
+            </View>
+          }
         />
       )}
     </View>
@@ -176,52 +258,107 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     paddingTop: 50,
-    padding: 20,
-    backgroundColor: 'white',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
   },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', margin: 20 },
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  headerText: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
   stat: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.surface,
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     width: '31%',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 1,
   },
-  statLabel: { fontSize: 10, color: '#666' },
+  statLabel: { fontSize: 10, color: COLORS.textLight },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: COLORS.surface,
     marginHorizontal: 20,
     padding: 10,
-    borderRadius: 10,
-    elevation: 2,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
   },
   searchInput: { marginLeft: 10, flex: 1 },
-  filterRow: { flexDirection: 'row', gap: 10, margin: 20, marginTop: 15 },
+  filterRow: { flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, marginBottom: 6 },
   filterPill: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#EAEAEA',
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
   },
-  filterPillActive: { backgroundColor: COLORS.primary },
-  filterText: { fontSize: 12, color: '#555', fontWeight: '600' },
+  filterPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
   filterTextActive: { color: 'white' },
-  card: { backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15, elevation: 2 },
+  card: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontWeight: 'bold', fontSize: 15 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
   statusText: { fontSize: 11, fontWeight: 'bold' },
-  subtitle: { color: '#666', fontSize: 12, marginTop: 6 },
-  metaText: { fontSize: 12, color: '#444', marginTop: 4 },
-  dateText: { fontSize: 11, color: '#888', marginTop: 6 },
+  subtitle: { color: COLORS.textLight, fontSize: 12, marginTop: 6 },
+  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  dateText: { fontSize: 11, color: COLORS.textLight, marginTop: 6 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
   errorText: { color: COLORS.error, marginBottom: 12 },
   retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  emptyBox: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { color: '#777', fontSize: 12 },
+  skeletonWrap: { padding: 20, gap: 12 },
+  skeletonCard: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
 });
