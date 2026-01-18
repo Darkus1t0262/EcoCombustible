@@ -1,8 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { VehicleItem, VehicleService, VehicleTransaction } from '../../services/VehicleService';
+import { Skeleton } from '../../components/Skeleton';
+
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
+
+const statusColor = (status: string) => {
+  if (status === 'Infracción') {
+    return COLORS.error;
+  }
+  if (status === 'Observación') {
+    return COLORS.warning;
+  }
+  return COLORS.success;
+};
+
+const riskColor = (label?: string | null) => {
+  if (label === 'high') {
+    return COLORS.error;
+  }
+  if (label === 'medium') {
+    return COLORS.warning;
+  }
+  if (label === 'low') {
+    return COLORS.success;
+  }
+  return COLORS.textLight;
+};
+
+const riskLabelText = (label?: string | null) => {
+  if (label === 'high') {
+    return 'IA: Alto';
+  }
+  if (label === 'medium') {
+    return 'IA: Medio';
+  }
+  if (label === 'low') {
+    return 'IA: Bajo';
+  }
+  if (label === 'unknown') {
+    return 'IA: Pendiente';
+  }
+  return '';
+};
 
 const formatDate = (value?: string | null) => {
   if (!value) {
@@ -35,8 +77,27 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
+            <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
+          </View>
+        </View>
+        <ScrollView contentContainerStyle={styles.body}>
+          <View style={styles.card}>
+            <Skeleton width="45%" height={14} />
+            <Skeleton width="70%" height={10} style={{ marginTop: 12 }} />
+            <Skeleton width="60%" height={10} style={{ marginTop: 8 }} />
+          </View>
+          <View style={styles.card}>
+            <Skeleton width="55%" height={14} />
+            <Skeleton width="80%" height={10} style={{ marginTop: 12 }} />
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -44,7 +105,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   if (!vehicle) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>Vehiculo no encontrado.</Text>
+        <Text style={{ color: COLORS.error }}>Vehículo no encontrado.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: 'white' }}>Volver</Text>
         </TouchableOpacity>
@@ -55,15 +116,18 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Detalle de vehiculo</Text>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
+          <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Vehiculo</Text>
+          <Text style={styles.sectionTitle}>Ficha técnica</Text>
           <Text style={styles.metaText}>Placa: {vehicle.plate}</Text>
           <Text style={styles.metaText}>Modelo: {vehicle.model}</Text>
           <Text style={styles.metaText}>Combustible: {vehicle.fuelType}</Text>
@@ -77,28 +141,37 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
           {transactions.length === 0 ? (
             <Text style={styles.metaText}>Sin transacciones registradas.</Text>
           ) : (
-            transactions.slice(0, 5).map((tx) => (
-              <TouchableOpacity
-                key={tx.id}
-                style={styles.txRow}
-                onPress={() => navigation.navigate('TransactionDetail', { transactionId: tx.id })}
-              >
-                <View>
-                  <Text style={styles.txTitle}>{tx.stationName ?? 'Estacion'}</Text>
-                  <Text style={styles.txMeta}>
-                    {tx.liters} L | ${tx.totalAmount.toFixed(2)}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.txDate}>{formatDate(tx.occurredAt)}</Text>
-                  {!!tx.analysis?.status && (
-                    <Text style={[styles.txStatus, { color: statusColor(tx.analysis.status) }]}>
-                      {tx.analysis.status}
+            transactions.slice(0, 5).map((tx) => {
+              const analysisTone = tx.analysis?.status ? statusColor(tx.analysis.status) : COLORS.textLight;
+              const riskTone = riskColor(tx.riskLabel);
+              return (
+                <TouchableOpacity
+                  key={tx.id}
+                  style={styles.txRow}
+                  onPress={() => navigation.navigate('TransactionDetail', { transactionId: tx.id })}
+                >
+                  <View>
+                    <Text style={styles.txTitle}>{tx.stationName ?? 'Estación'}</Text>
+                    <Text style={styles.txMeta}>
+                      {tx.liters} L | ${tx.totalAmount.toFixed(2)}
                     </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.txDate}>{formatDate(tx.occurredAt)}</Text>
+                    {!!tx.analysis?.status && (
+                      <Text style={[styles.txStatus, { color: analysisTone }]}>
+                        {tx.analysis.status}
+                      </Text>
+                    )}
+                    {!!riskLabelText(tx.riskLabel) && (
+                      <Text style={[styles.txStatus, { color: riskTone }]}>
+                        {riskLabelText(tx.riskLabel)}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -106,42 +179,58 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   );
 }
 
-const statusColor = (status: string) => {
-  if (status === 'Infraccion') {
-    return COLORS.error;
-  }
-  if (status === 'Observacion') {
-    return COLORS.warning;
-  }
-  return COLORS.success;
-};
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     paddingTop: 50,
-    padding: 20,
-    backgroundColor: 'white',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
     flexDirection: 'row',
-    gap: 15,
     alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
   },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  card: { backgroundColor: 'white', padding: 18, borderRadius: 12, marginBottom: 15, elevation: 2 },
-  sectionTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8 },
-  metaText: { fontSize: 12, color: '#555', marginTop: 4 },
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  headerText: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  body: { padding: 20, paddingBottom: 30 },
+  card: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: COLORS.text },
+  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
   txRow: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: COLORS.borderColor,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  txTitle: { fontWeight: 'bold', fontSize: 13 },
-  txMeta: { fontSize: 12, color: '#666' },
-  txDate: { fontSize: 11, color: '#888' },
-  txStatus: { fontSize: 11, fontWeight: 'bold', marginTop: 2 },
+  txTitle: { fontWeight: '700', fontSize: 13, color: COLORS.text },
+  txMeta: { fontSize: 12, color: COLORS.textLight },
+  txDate: { fontSize: 11, color: COLORS.textLight },
+  txStatus: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   backBtn: { marginTop: 12, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });
