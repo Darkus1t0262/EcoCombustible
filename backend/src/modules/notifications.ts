@@ -57,7 +57,7 @@ export const registerNotificationRoutes = async (fastify: FastifyInstance) => {
       });
       const body = bodySchema.parse(request.body ?? {});
       const title = body.title ?? 'EcoCombustible';
-      const message = body.body ?? 'Notificacion de prueba';
+      const message = body.body ?? 'Notificación de prueba';
 
       try {
         await enqueueSupervisorNotification({

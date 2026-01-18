@@ -29,15 +29,16 @@ export const registerReportRoutes = async (fastify: FastifyInstance) => {
     { preHandler: [authenticate, requireRole('supervisor')] },
     async (request, reply) => {
       const bodySchema = z.object({
-        period: z.enum(['Semana', 'Mes', 'Anio']),
+        period: z.enum(['Semana', 'Mes', 'Año', 'Anio']),
         format: z.enum(['PDF', 'Excel', 'CSV']),
       });
       const body = bodySchema.parse(request.body);
+      const period = body.period === 'Anio' ? 'Año' : body.period;
 
       const createdAt = new Date();
       let responseReport = await prisma.report.create({
         data: {
-          period: body.period,
+          period,
           format: body.format,
           createdAt,
           sizeMb: 0,
@@ -59,8 +60,8 @@ export const registerReportRoutes = async (fastify: FastifyInstance) => {
       }
 
       return reply.code(201).send({
-        ...responseReport,
-        createdAt: responseReport.createdAt.toISOString(),
+          ...responseReport,
+          createdAt: responseReport.createdAt.toISOString(),
       });
     }
   );
