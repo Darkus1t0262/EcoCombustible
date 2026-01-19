@@ -1,5 +1,5 @@
 import { USE_REMOTE_AUTH } from '../config/env';
-import { apiFetch } from './ApiClient';
+import { apiFetch, apiFetchWithMeta } from './ApiClient';
 import { getDb } from './Database';
 
 export type StationRow = {
@@ -38,6 +38,20 @@ const mapStation = (row: any): StationRow => ({
 });
 
 export const StationService = {
+  getStationsPage: async (page: number, limit: number): Promise<{ items: StationRow[]; total?: number }> => {
+    if (USE_REMOTE_AUTH) {
+      const response = await apiFetchWithMeta<StationRow[]>(`/stations?page=${page}&limit=${limit}`);
+      return { items: response.data, total: response.meta.total };
+    }
+    const db = await getDb();
+    const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM stations;');
+    const rows = await db.getAllAsync<any>(
+      'SELECT * FROM stations ORDER BY name LIMIT ? OFFSET ?;',
+      limit,
+      (page - 1) * limit
+    );
+    return { items: (rows ?? []).map(mapStation), total: totalRow?.count ?? 0 };
+  },
   getAllStations: async (): Promise<StationRow[]> => {
     if (USE_REMOTE_AUTH) {
       return await apiFetch<StationRow[]>('/stations');

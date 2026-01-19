@@ -1,5 +1,5 @@
 import { USE_REMOTE_AUTH } from '../config/env';
-import { apiFetch } from './ApiClient';
+import { apiFetch, apiFetchWithMeta } from './ApiClient';
 import { getDb } from './Database';
 
 export type TransactionItem = {
@@ -15,6 +15,9 @@ export type TransactionItem = {
   reportedBy?: string | null;
   occurredAt: string;
   createdAt: string;
+  riskScore?: number | null;
+  riskLabel?: 'low' | 'medium' | 'high' | 'unknown' | null;
+  mlVersion?: string | null;
   analysis?: {
     status: string;
     score?: number;
@@ -26,18 +29,18 @@ export type TransactionItem = {
 const buildAnalysis = (liters: number, capacity: number | null, history: number[]) => {
   if (capacity && liters > capacity * 1.05) {
     return {
-      status: 'Infraccion',
+      status: 'Infracción',
       score: 95,
-      message: 'Consumo supera la capacidad declarada del vehiculo.',
+      message: 'Consumo supera la capacidad declarada del vehículo.',
       zScore: null,
     };
   }
 
   if (history.length < 3) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: 55,
-      message: 'Historial insuficiente para evaluar consumo del vehiculo.',
+      message: 'Historial insuficiente para evaluar consumo del vehículo.',
       zScore: null,
     };
   }
@@ -50,9 +53,9 @@ const buildAnalysis = (liters: number, capacity: number | null, history: number[
 
   if (Math.abs(zScore) >= 2.5) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: Math.max(score, 70),
-      message: 'Consumo atipico respecto al historial del vehiculo.',
+      message: 'Consumo atípico respecto al historial del vehículo.',
       zScore,
     };
   }
@@ -60,7 +63,7 @@ const buildAnalysis = (liters: number, capacity: number | null, history: number[
   return {
     status: 'Cumplimiento',
     score: Math.max(score, 20),
-    message: 'Consumo dentro del rango esperado para el vehiculo.',
+    message: 'Consumo dentro del rango esperado para el vehículo.',
     zScore,
   };
 };
@@ -78,10 +81,54 @@ const normalizeTransaction = (item: any): TransactionItem => ({
   reportedBy: item.reportedBy ?? null,
   occurredAt: item.occurredAt,
   createdAt: item.createdAt,
+  riskScore: typeof item.riskScore === 'number' ? item.riskScore : null,
+  riskLabel: item.riskLabel ?? null,
+  mlVersion: item.mlVersion ?? null,
   analysis: item.analysis ?? undefined,
 });
 
 export const TransactionService = {
+  getTransactionsPage: async (page: number, limit: number): Promise<{ items: TransactionItem[]; total?: number }> => {
+    if (USE_REMOTE_AUTH) {
+      const response = await apiFetchWithMeta<any[]>(`/transactions?page=${page}&limit=${limit}`);
+      return { items: response.data.map(normalizeTransaction), total: response.meta.total };
+    }
+    const db = await getDb();
+    const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM transactions;');
+    const rows = await db.getAllAsync<any>(
+      `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
+              v.capacityLiters as capacityLiters,
+              t.liters, t.unitPrice, t.totalAmount, t.paymentMethod, t.reportedBy, t.occurredAt, t.createdAt
+       FROM transactions t
+       JOIN stations s ON s.id = t.stationId
+       JOIN vehicles v ON v.id = t.vehicleId
+       ORDER BY t.occurredAt DESC
+       LIMIT ? OFFSET ?;`,
+      limit,
+      (page - 1) * limit
+    );
+    const vehicleIds = Array.from(new Set((rows ?? []).map((row) => row.vehicleId)));
+    const historyByVehicle = new Map<number, number[]>();
+    if (vehicleIds.length > 0) {
+      const placeholders = vehicleIds.map(() => '?').join(',');
+      const historyRows = await db.getAllAsync<any>(
+        `SELECT vehicleId, liters FROM transactions WHERE vehicleId IN (${placeholders}) ORDER BY occurredAt DESC;`,
+        ...vehicleIds
+      );
+      for (const row of historyRows ?? []) {
+        const list = historyByVehicle.get(row.vehicleId) ?? [];
+        list.push(row.liters);
+        historyByVehicle.set(row.vehicleId, list);
+      }
+    }
+    return {
+      items: (rows ?? []).map((row: any) => ({
+        ...normalizeTransaction(row),
+        analysis: buildAnalysis(row.liters, row.capacityLiters ?? null, historyByVehicle.get(row.vehicleId) ?? []),
+      })),
+      total: totalRow?.count ?? 0,
+    };
+  },
   getTransaction: async (id: number): Promise<TransactionItem | null> => {
     if (USE_REMOTE_AUTH) {
       return await apiFetch<TransactionItem>(`/transactions/${id}`);
