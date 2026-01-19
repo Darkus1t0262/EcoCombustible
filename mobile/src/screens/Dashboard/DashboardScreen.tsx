@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform,Modal } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
@@ -37,7 +37,7 @@ const KPICard = ({ label, val, icon, color }: any) => (
 export default function DashboardScreen({ navigation }: any) {
   const [stats, setStats] = useState({ stations: 0, auditsThisMonth: 0, pendingComplaints: 0 });
   const [loading, setLoading] = useState(true);
-
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   useEffect(() => {
     const load = async () => {
       try {
@@ -50,10 +50,16 @@ export default function DashboardScreen({ navigation }: any) {
     load();
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
     await AuthService.logout();
     navigation.replace('Login');
   };
+
+
 
   return (
     <View style={styles.container}>
@@ -162,6 +168,44 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         )}
       </ScrollView>
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showLogoutModal}
+          onRequestClose={() => setShowLogoutModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Ionicons
+                name="log-out-outline"
+                size={36}
+                color={COLORS.error}
+                style={{ marginBottom: 10 }}
+              />
+
+              <Text style={styles.modalTitle}>¿Salir de la aplicación?</Text>
+              <Text style={styles.modalText}>
+                ¿Está seguro de que desea cerrar sesión?
+              </Text>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalBtnCancel}
+                  onPress={() => setShowLogoutModal(false)}
+                >
+                  <Text style={styles.modalBtnCancelText}>No</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalBtnConfirm}
+                  onPress={confirmLogout}
+                >
+                  <Text style={styles.modalBtnConfirmText}>Sí</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+         </View>
+      </Modal>
     </View>
   );
 }
@@ -292,4 +336,61 @@ const styles = StyleSheet.create({
   kpiBody: { flex: 1 },
   kpiLabel: { fontSize: 12, color: COLORS.textLight, marginBottom: 4 },
   kpiValue: { fontSize: 18, fontWeight: '700' },
+      modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalCard: {
+      width: '85%',
+      backgroundColor: COLORS.surface,
+      borderRadius: 20,
+      padding: 20,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: COLORS.borderColor,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: COLORS.text,
+      marginBottom: 6,
+      fontFamily: titleFont,
+    },
+    modalText: {
+      fontSize: 13,
+      color: COLORS.textLight,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    modalBtnCancel: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      backgroundColor: COLORS.surfaceAlt,
+    },
+    modalBtnCancelText: {
+      color: COLORS.text,
+      fontWeight: '600',
+      fontSize: 13,
+    },
+    modalBtnConfirm: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      backgroundColor: `${COLORS.error}15`,
+      borderWidth: 1,
+      borderColor: `${COLORS.error}40`,
+    },
+    modalBtnConfirmText: {
+      color: COLORS.error,
+      fontWeight: '700',
+      fontSize: 13,
+    },
+
 });
