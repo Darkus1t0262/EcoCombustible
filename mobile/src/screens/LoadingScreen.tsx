@@ -1,73 +1,87 @@
-import * as React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-// LinearGradient's TS types can occasionally cause JSX typing errors in some configs.
-// Use a typed alias to ensure it can be used as a JSX component.
-const Gradient = LinearGradient as unknown as React.ComponentType<any>;
+import React from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 
+type Props = {
+  label?: string;
+};
 
-type Props = { label?: string };
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function LoadingScreen({ label }: Props) {
-  const [activeDot, setActiveDot] = React.useState(0);
-
-  React.useEffect(() => {
-    const id = setInterval(() => setActiveDot((d) => (d + 1) % 3), 400);
-    return () => clearInterval(id);
-  }, []);
-
   return (
-    <Gradient
-      colors={[COLORS.warning, COLORS.primary, COLORS.error]}
-      start={[0, 0]}
-      end={[1, 1]}
-      style={styles.container}
-    >
-      <View style={styles.center}>
+    <View style={styles.container}>
+      <View style={styles.glowPrimary} />
+      <View style={styles.glowSecondary} />
+
+      <View style={styles.card}>
         <View style={styles.iconWrap}>
-          <FontAwesome5 name="gas-pump" size={78} color={COLORS.white} solid />
+          <MaterialCommunityIcons name="gas-station" size={26} color={COLORS.primary} />
         </View>
-        <Text style={styles.title}>EcoCombustible Regulador</Text>
-        <Text style={styles.subtitle}>Sistema de Supervisión de Combustibles</Text>
-
-        <View style={styles.dots}>
-          {[0, 1, 2].map((i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === activeDot ? styles.dotActive : undefined,
-              ]}
-            />
-          ))}
-        </View>
-
+        <Text style={styles.title}>EcoCombustible</Text>
+        <Text style={styles.subtitle}>{label || 'Cargando datos...'}</Text>
+        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 14 }} />
       </View>
-
-      <Text style={styles.footer}>Gobierno del Ecuador{"\n"}ARCERNNR</Text>
-    </Gradient>
+    </View>
   );
 }
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  iconWrap: {
-    width: 140,
-    height: 140,
+  container: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    backgroundColor: COLORS.background,
   },
-  icon: { width: 80, height: 80, tintColor: COLORS.white },
-  title: { color: COLORS.white, fontSize: 20, fontWeight: '600', marginTop: 6 },
-  subtitle: { color: COLORS.white, opacity: 0.95, marginTop: 8, textAlign: 'center', fontSize: 15 },
-  dots: { flexDirection: 'row', marginTop: 22 },
-  dot: { width: 10, height: 10, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.9)', marginHorizontal: 8 },
-  dotActive: { width: 14, height: 14, borderRadius: 8, backgroundColor: COLORS.white },
-  footer: { textAlign: 'center', color: 'rgba(255,255,255,0.95)', padding: 18, fontSize: 13 },
+  glowPrimary: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 999,
+    backgroundColor: `${COLORS.primary}1A`,
+    top: -40,
+    right: -60,
+  },
+  glowSecondary: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 999,
+    backgroundColor: `${COLORS.success}14`,
+    bottom: -20,
+    left: -40,
+  },
+  card: {
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 24,
+    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
+  title: {
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    fontFamily: titleFont,
+  },
+  subtitle: { marginTop: 6, color: COLORS.textLight, fontSize: 12 },
 });
