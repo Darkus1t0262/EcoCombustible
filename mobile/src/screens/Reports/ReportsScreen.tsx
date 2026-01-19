@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { ReportService, ReportItem } from '../../services/ReportService';
+import { Skeleton } from '../../components/Skeleton';
 
 const periods = ['Semana', 'Mes', 'Año'];
-const formats = ['PDF', 'Excel', 'CSV'];
+const formats = [
+  { label: 'PDF', color: COLORS.error },
+  { label: 'Excel', color: COLORS.success },
+  { label: 'CSV', color: COLORS.primary },
+];
+
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function ReportsScreen({ navigation }: any) {
   const [period, setPeriod] = useState('Mes');
@@ -45,91 +52,120 @@ export default function ReportsScreen({ navigation }: any) {
     }
   };
 
+  const renderSkeleton = () => (
+    <View style={styles.skeletonWrap}>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <View key={`report-skeleton-${index}`} style={styles.skeletonCard}>
+          <Skeleton width="50%" height={12} />
+          <Skeleton width="70%" height={10} style={{ marginTop: 10 }} />
+          <Skeleton width="45%" height={10} style={{ marginTop: 8 }} />
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Reportes automaticos</Text>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Reportes</Text>
+          <Text style={styles.subtitle}>Exportación automática y manual</Text>
+        </View>
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>{reports.length}</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20,paddingBottom:40 }}>
-        <View style={styles.card}>
-          <Text style={{ fontWeight: 'bold', marginBottom: 15 }}>Generar nuevo reporte</Text>
-
-          <Text style={styles.label}>Periodo</Text>
-          <View style={styles.tabsRow}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Generar nuevo reporte</Text>
+          <Text style={styles.label}>Período</Text>
+          <View style={styles.pillRow}>
             {periods.map((p) => (
               <TouchableOpacity
                 key={p}
-                style={[styles.tab, { backgroundColor: p === period ? COLORS.primary : 'transparent' }]}
+                style={[styles.pill, p === period && styles.pillActive]}
                 onPress={() => setPeriod(p)}
               >
-                <Text style={{ color: p === period ? 'white' : '#333' }}>{p}</Text>
+                <Text style={[styles.pillText, p === period && styles.pillTextActive]}>{p}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={styles.label}>Formato de exportacion</Text>
+          <Text style={styles.label}>Formato de exportación</Text>
           <View style={styles.formatRow}>
-            {formats.map((f) => {
-              const btnColor = f === 'PDF' ? COLORS.error : f === 'Excel' ? COLORS.success : COLORS.primary;
-              return (
-                <TouchableOpacity
-                  key={f}
-                  style={[styles.exportBtn, { backgroundColor: f === format ? btnColor : '#eee' }]}
-                  onPress={() => setFormat(f)}
-                >
-                  <Text style={{ color: f === format ? 'white' : '#333' }}>{f}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {formats.map((f) => (
+              <TouchableOpacity
+                key={f.label}
+                style={[
+                  styles.formatBtn,
+                  f.label === format && { backgroundColor: f.color, borderColor: f.color },
+                ]}
+                onPress={() => setFormat(f.label)}
+              >
+                <Text style={[styles.formatText, f.label === format && styles.formatTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           <TouchableOpacity style={styles.generateBtn} onPress={handleCreate} disabled={creating}>
             {creating ? (
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color={COLORS.white} />
             ) : (
               <>
-                <Ionicons name="document-text" color="white" size={20} style={{ marginRight: 10 }} />
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>Generar reporte</Text>
+                <Ionicons name="document-text" color={COLORS.white} size={18} style={{ marginRight: 8 }} />
+                <Text style={styles.generateText}>Generar reporte</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
 
-        <Text style={{ fontWeight: 'bold', marginTop: 20, marginBottom: 10 }}>Reportes recientes</Text>
+        <Text style={styles.sectionTitle}>Reportes recientes</Text>
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} />
+          renderSkeleton()
+        ) : reports.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>Aún no hay reportes disponibles.</Text>
+          </View>
         ) : (
           reports.map((report) => {
-            const canShare = Boolean(report.fileUri || report.fileUrl) && report.status !== 'queued' && report.status !== 'processing';
+            const canShare =
+              Boolean(report.fileUri || report.fileUrl) &&
+              report.status !== 'queued' &&
+              report.status !== 'processing';
             const status = report.status ?? (canShare ? 'ready' : 'queued');
             const statusLabel =
-              status === 'ready'
-                ? 'Disponible'
-                : status === 'failed'
-                  ? 'Error'
-                  : 'En proceso';
+              status === 'ready' ? 'Disponible' : status === 'failed' ? 'Error' : 'En proceso';
+            const statusColor =
+              status === 'ready' ? COLORS.success : status === 'failed' ? COLORS.error : COLORS.warning;
+
             return (
-            <TouchableOpacity
-              key={report.id}
-              style={[styles.fileRow, !canShare && styles.fileRowDisabled]}
-              onPress={() => handleShare(report)}
-              disabled={!canShare}
-            >
-              <View>
-                <Text style={{ fontWeight: 'bold' }}>{report.period} - {report.format}</Text>
-                <Text style={{ fontSize: 12, color: '#888' }}>
-                  {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
-                </Text>
-                <Text style={{ fontSize: 12, color: '#888' }}>Estado: {statusLabel}</Text>
-              </View>
-              <Text style={{ color: COLORS.primary }}>{canShare ? 'Compartir' : 'No disponible'}</Text>
-            </TouchableOpacity>
-          );
-        })
+              <TouchableOpacity
+                key={report.id}
+                style={[styles.fileRow, !canShare && styles.fileRowDisabled]}
+                onPress={() => handleShare(report)}
+                disabled={!canShare}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fileTitle}>{report.period} - {report.format}</Text>
+                  <Text style={styles.fileMeta}>
+                    {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
+                  </Text>
+                  <View style={[styles.statusBadge, { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` }]}>
+                    <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+                  </View>
+                </View>
+                <View style={[styles.shareChip, !canShare && styles.shareChipDisabled]}>
+                  <Text style={[styles.shareText, !canShare && styles.shareTextDisabled]}>
+                    {canShare ? 'Compartir' : 'No disponible'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -138,15 +174,138 @@ export default function ReportsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingTop: 50, padding: 20, backgroundColor: 'white', flexDirection: 'row', gap: 15, alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  card: { backgroundColor: 'white', padding: 20, borderRadius: 15 },
-  label: { marginBottom: 10, color: '#555', fontWeight: '600' },
-  tabsRow: { flexDirection: 'row', backgroundColor: '#eee', borderRadius: 8, padding: 2, marginBottom: 15 },
-  tab: { flex: 1, alignItems: 'center', padding: 8, borderRadius: 6 },
-  formatRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  exportBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8 },
-  generateBtn: { backgroundColor: COLORS.purple, padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
-  fileRow: { backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
+  },
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  headerText: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  headerBadge: {
+    minWidth: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    alignItems: 'center',
+  },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  scroll: { padding: 20, paddingBottom: 30 },
+  panel: {
+    backgroundColor: COLORS.surface,
+    padding: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  panelTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 10 },
+  label: { marginTop: 10, marginBottom: 8, color: COLORS.textLight, fontWeight: '600', fontSize: 12 },
+  pillRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  pill: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  pillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  pillText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
+  pillTextActive: { color: COLORS.white },
+  formatRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  formatBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  formatText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
+  formatTextActive: { color: COLORS.white },
+  generateBtn: {
+    backgroundColor: COLORS.purple,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  generateText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  sectionTitle: {
+    marginTop: 20,
+    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  fileRow: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   fileRowDisabled: { opacity: 0.6 },
+  fileTitle: { fontWeight: '700', fontSize: 14, color: COLORS.text },
+  fileMeta: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  statusText: { fontSize: 11, fontWeight: '700' },
+  shareChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
+  shareChipDisabled: { backgroundColor: COLORS.surfaceAlt },
+  shareText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  shareTextDisabled: { color: COLORS.textLight },
+  emptyBox: { paddingVertical: 30, alignItems: 'center' },
+  emptyText: { fontSize: 12, color: COLORS.textLight },
+  skeletonWrap: { gap: 12 },
+  skeletonCard: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
 });
