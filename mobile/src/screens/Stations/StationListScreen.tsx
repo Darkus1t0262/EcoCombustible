@@ -1,39 +1,90 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
+import { Skeleton } from '../../components/Skeleton';
+
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function StationListScreen({ navigation }: any) {
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const PAGE_SIZE = 20;
 
-  const loadData = async () => {
+  const loadData = useCallback(async (pageToLoad: number, replace: boolean, showLoader = true) => {
     try {
       setError('');
-      setLoading(true);
-      const data = await StationService.getAllStations();
-      const processed = data.map((s) => ({
+      if (replace) {
+        if (showLoader) {
+          setLoading(true);
+        }
+      } else {
+        setLoadingMore(true);
+      }
+      const response = await StationService.getStationsPage(pageToLoad, PAGE_SIZE);
+      const processed = response.items.map((s) => ({
         ...s,
         analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
       }));
-      setStations(processed);
+      let nextCount = 0;
+      setStations((prev) => {
+        const next = replace ? processed : [...prev, ...processed];
+        nextCount = next.length;
+        return next;
+      });
+      const nextTotal = response.total ?? 0;
+      setHasMore(nextTotal ? nextCount < nextTotal : processed.length === PAGE_SIZE);
+      setPage(pageToLoad);
     } catch (err) {
       setError('No se pudieron cargar las estaciones.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadData(1, true);
+  }, [loadData]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData(1, true, false);
+    setRefreshing(false);
+  }, [loadData]);
+
+  const handleLoadMore = () => {
+    if (loading || loadingMore || refreshing || !hasMore) {
+      return;
+    }
+    void loadData(page + 1, false);
   };
 
-  const filteredStations = stations.filter((s) =>
-    `${s.name} ${s.address}`.toLowerCase().includes(search.toLowerCase())
+  const filteredStations = useMemo(
+    () => stations.filter((s) => `${s.name} ${s.address}`.toLowerCase().includes(search.toLowerCase())),
+    [stations, search]
+  );
+
+  const renderSkeleton = () => (
+    <View style={styles.skeletonWrap}>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <View key={`station-skeleton-${index}`} style={styles.skeletonCard}>
+          <Skeleton width="60%" height={14} />
+          <Skeleton width="80%" height={10} style={{ marginTop: 10 }} />
+          <Skeleton width="45%" height={10} style={{ marginTop: 8 }} />
+          <Skeleton width={90} height={18} radius={999} style={{ marginTop: 12 }} />
+        </View>
+      ))}
+    </View>
   );
 
   const renderItem = ({ item }: any) => (
@@ -50,7 +101,12 @@ export default function StationListScreen({ navigation }: any) {
         <Text style={{ fontSize: 12 }}>Stock: {item.stock} gl</Text>
       </View>
 
-      <View style={[styles.badge, { backgroundColor: item.analysis.color + '20' }]}>
+      <View
+        style={[
+          styles.badge,
+          { backgroundColor: `${item.analysis.color}1A`, borderColor: `${item.analysis.color}33` },
+        ]}
+      >
         <Ionicons
           name={item.analysis.status === 'Cumplimiento' ? 'checkmark-circle' : 'alert-circle'}
           size={16}
@@ -64,10 +120,16 @@ export default function StationListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Estaciones</Text>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Estaciones</Text>
+          <Text style={styles.subtitle}>Estado, precio y stock reportado</Text>
+        </View>
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>{stations.length}</Text>
+        </View>
       </View>
 
       <View style={styles.searchBox}>
@@ -81,11 +143,11 @@ export default function StationListScreen({ navigation }: any) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
+          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: 'white' }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -94,7 +156,18 @@ export default function StationListScreen({ navigation }: any) {
           data={filteredStations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 20,paddingBottom:50 }}
+          contentContainerStyle={{ padding: 20 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>No hay estaciones con ese filtro.</Text>
+            </View>
+          }
         />
       )}
     </View>
@@ -103,17 +176,90 @@ export default function StationListScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingTop: 50, padding: 20, backgroundColor: 'white', flexDirection: 'row', gap: 15, alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', margin: 20, padding: 10, borderRadius: 10, elevation: 2 },
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
+  },
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceAlt,
+  },
+  headerText: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  headerBadge: {
+    minWidth: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    alignItems: 'center',
+  },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
   input: { marginLeft: 10, flex: 1 },
-  card: { backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15, elevation: 2 },
+  card: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
   stationName: { fontWeight: 'bold', fontSize: 16 },
-  address: { color: '#666', fontSize: 12, marginBottom: 10 },
+  address: { color: COLORS.textLight, fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', gap: 15, marginBottom: 10 },
-  badge: { flexDirection: 'row', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignItems: 'center', gap: 5 },
+  badge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+  },
   badgeText: { fontWeight: 'bold', fontSize: 12 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
   errorText: { color: COLORS.error, marginBottom: 12 },
   retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  emptyBox: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { color: '#777', fontSize: 12 },
+  skeletonWrap: { padding: 20, gap: 12 },
+  skeletonCard: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderColor,
+  },
 });
