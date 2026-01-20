@@ -101,6 +101,11 @@ export default function LoginScreen({ navigation }: any) {
               {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Ingresar</Text>}
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.forgotContainer}  onPress={() => navigation.navigate('ChangePassword')}>
+                <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+
+
             <View style={styles.demoRow}>
               <MaterialCommunityIcons name="information-outline" size={16} color={COLORS.textLight} />
               <Text style={styles.demoText}>Usuario demo: admin / admin123</Text>
@@ -211,4 +216,14 @@ const styles = StyleSheet.create({
   flagStripe: { height: '100%' },
   govText: { fontSize: 10, fontWeight: '700', color: COLORS.textLight },
   errorText: { color: COLORS.error, marginTop: 8 },
+  forgotContainer: {
+  marginTop: 14,
+  alignItems: 'center',
+},
+forgotText: {
+  fontSize: 12,
+  color: COLORS.primary,
+  fontWeight: '600',
+},
+
 });

@@ -19,6 +19,7 @@ import TransactionDetailScreen from '../screens/Transactions/TransactionDetailSc
 import LoadingScreen from '../screens/LoadingScreen';
 import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
+import ChangePasswordScreen from '../screens/Auth/ChangePasswordScreen';
 
 const Stack = createStackNavigator();
 
@@ -54,6 +55,7 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen   name="ChangePassword"   component={ChangePasswordScreen}   options={{ title: 'Cambiar contraseña' }} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="StationList" component={StationListScreen} />
         <Stack.Screen name="StationDetail" component={StationDetailScreen} />

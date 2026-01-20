@@ -87,6 +87,15 @@ export default function DashboardScreen({ navigation }: any) {
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Monitoreo nacional en tiempo real</Text>
           </View>
+
+           <TouchableOpacity
+            style={styles.changePassBtn}
+              onPress={() => navigation.navigate('ChangePassword')}
+            >
+              <Ionicons name="key-outline" size={16} color={COLORS.primary} />
+              <Text style={styles.changePassText}>Cambio de Contraseña</Text>
+          </TouchableOpacity>
+
         </View>
 
         <Text style={styles.sectionTitle}>Acciones rápidas</Text>
@@ -392,5 +401,23 @@ const styles = StyleSheet.create({
       fontWeight: '700',
       fontSize: 13,
     },
+    changePassBtn: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  borderRadius: 999,
+  borderWidth: 1,
+  borderColor: `${COLORS.primary}33`,
+  backgroundColor: `${COLORS.primary}12`,
+  alignSelf: 'flex-start', 
+},
+changePassText: {
+  color: COLORS.primary,
+  fontWeight: '600',
+  fontSize: 12,
+},
+
 
 });
