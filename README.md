@@ -97,7 +97,15 @@ npm --prefix backend run db:migrate
 npm --prefix backend run db:seed
 npm run mobile:start -- -c
 ```
+## Si solo modificaste schema.prisma y quieres reflejar los cambios sin borrar nada:
+```bash
+npx prisma migrate dev --name tu_cambio
+npx prisma generate
+npm run seed   # si quieres llenar datos
+```
 
+
+npx prisma migrate reset
 Servicios locales:
 - API: `http://localhost:4000`
 - Postgres: `localhost:5432`
