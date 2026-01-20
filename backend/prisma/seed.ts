@@ -1,5 +1,11 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const prisma = new PrismaClient();
 
@@ -18,152 +24,20 @@ const seed = async () => {
     });
   }
 
-  const stations = [
-    {
-      name: 'Estación Petroecuador Norte',
-      address: 'Av. 6 de Diciembre, Quito',
-      lat: -0.1807,
-      lng: -78.4678,
-      stock: 15000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [1200, 1150, 1220, 1180, 1210],
-      lastAudit: new Date('2025-11-28'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera El Oro',
-      address: 'Machala, Centro',
-      lat: -3.2581,
-      lng: -79.9551,
-      stock: 45000,
-      price: 2.58,
-      officialPrice: 2.55,
-      history: [300, 200, 4500, 100, 300],
-      lastAudit: new Date('2025-11-25'),
-      status: 'Observación',
-    },
-    {
-      name: 'Estación Primax Centro',
-      address: 'Guayaquil',
-      lat: -2.1962,
-      lng: -79.8862,
-      stock: 2000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [0, 0, 0, 0, 0],
-      lastAudit: new Date('2025-11-30'),
-      status: 'Infracción',
-    },
-    {
-      name: 'Estación Andina Sur',
-      address: 'Av. Loja, Cuenca',
-      lat: -2.8974,
-      lng: -79.0045,
-      stock: 12000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [900, 880, 910, 930, 920],
-      lastAudit: new Date('2025-11-20'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera Rio Verde',
-      address: 'Esmeraldas',
-      lat: 0.9529,
-      lng: -79.6522,
-      stock: 8000,
-      price: 2.6,
-      officialPrice: 2.55,
-      history: [300, 320, 340, 310, 350],
-      lastAudit: new Date('2025-11-18'),
-      status: 'Observación',
-    },
-    {
-      name: 'Estación Sierra Norte',
-      address: 'Ibarra',
-      lat: 0.3392,
-      lng: -78.1222,
-      stock: 6000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [700, 680, 710, 690, 705],
-      lastAudit: new Date('2025-11-19'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'PetroQ Oriente',
-      address: 'Tena',
-      lat: -0.9902,
-      lng: -77.8129,
-      stock: 22000,
-      price: 2.52,
-      officialPrice: 2.55,
-      history: [1400, 1500, 1350, 1420, 1480],
-      lastAudit: new Date('2025-11-22'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera Litoral',
-      address: 'Manta',
-      lat: -0.9677,
-      lng: -80.7089,
-      stock: 5000,
-      price: 2.75,
-      officialPrice: 2.55,
-      history: [400, 390, 410, 395, 405],
-      lastAudit: new Date('2025-11-27'),
-      status: 'Infracción',
-    },
-    {
-      name: 'Estación Centro Sur',
-      address: 'Ambato',
-      lat: -1.2417,
-      lng: -78.6197,
-      stock: 9000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [0, 0, 0, 0, 0],
-      lastAudit: new Date('2025-11-21'),
-      status: 'Observación',
-    },
-    {
-      name: 'Gasolinera Valle',
-      address: 'Latacunga',
-      lat: -0.9352,
-      lng: -78.6155,
-      stock: 11000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [1000, 1050, 980, 1200, 1150],
-      lastAudit: new Date('2025-11-23'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Estación Frontera',
-      address: 'Tulcan',
-      lat: 0.8224,
-      lng: -77.7329,
-      stock: 3000,
-      price: 2.9,
-      officialPrice: 2.55,
-      history: [200, 210, 190, 205, 215],
-      lastAudit: new Date('2025-11-26'),
-      status: 'Infracción',
-    },
-    {
-      name: 'Estación Pacifico',
-      address: 'Salinas',
-      lat: -2.2149,
-      lng: -80.9524,
-      stock: 7000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [650, 600, 700, 620, 680],
-      lastAudit: new Date('2025-11-24'),
-      status: 'Cumplimiento',
-    },
-  ];
+  const geojsonPath = path.join(__dirname, '..', 'export.geojson');
+  const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));
+  const stations = geojsonData.features.map((feature: any) => ({
+    name: feature.properties.name || 'Sin nombre',
+    address: feature.properties.name || '',
+    lat: feature.geometry.coordinates[1],
+    lng: feature.geometry.coordinates[0],
+    stock: 10000, // Valor por defecto
+    price: 2.55, // Valor por defecto
+    officialPrice: 2.55, // Valor por defecto
+    history: [], // Array vacío por defecto
+    lastAudit: null,
+    status: 'Cumplimiento', // Estado por defecto
+  }));
 
   for (const station of stations) {
     const existing = await prisma.station.findFirst({ where: { name: station.name } });
@@ -490,7 +364,7 @@ const seed = async () => {
     {
       stationName: 'Estación Sierra Norte',
       stationId: stationMap.get('Estación Sierra Norte'),
-      type: 'Dispensador sin calibracion',
+      type: 'Dispensador sin calibración',
       detail: 'La bomba 3 reporta menos volumen.',
       source: 'despachador',
       reporterName: 'Mario C.',
