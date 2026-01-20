@@ -106,6 +106,12 @@ Servicios locales:
 
 Credenciales demo: `admin` / `admin123`.
 
+## Si solo modificaste schema.prisma y quieres reflejar los cambios sin borrar nada:
+```bash
+npx prisma migrate dev --name tu_cambio
+npx prisma generate
+npm run seed   # si quieres llenar datos
+
 ## Desarrollo backend sin Docker
 Necesitas Postgres y Redis en local (y MinIO/ML si quieres esas funciones).
 
