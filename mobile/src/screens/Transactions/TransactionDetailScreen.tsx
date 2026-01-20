@@ -140,6 +140,8 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
           <Text style={styles.sectionTitle}>Resumen</Text>
           <Text style={styles.metaText}>Estación: {transaction.stationName ?? 'No disponible'}</Text>
           <Text style={styles.metaText}>Vehículo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
+          <Text style={styles.metaText}>Modelo: {transaction.vehicleModel ?? 'No disponible'}</Text>
+          <Text style={styles.metaText}>Combustible: {transaction.vehicleFuelType ?? 'No disponible'}</Text>
           <Text style={styles.metaText}>Fecha: {formatDate(transaction.occurredAt)}</Text>
         </View>
 

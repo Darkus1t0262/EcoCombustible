@@ -17,6 +17,7 @@ import VehicleDetailScreen from '../screens/Vehicles/VehicleDetailScreen';
 import TransactionListScreen from '../screens/Transactions/TransactionListScreen';
 import TransactionDetailScreen from '../screens/Transactions/TransactionDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
+import { USE_REMOTE_AUTH } from '../config/env';
 import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
 
@@ -30,11 +31,13 @@ export default function AppNavigator() {
   useEffect(() => {
     const load = async () => {
       try {
-        await initDatabase();
+        if (!USE_REMOTE_AUTH) {
+          await initDatabase();
+        }
         const session = await AuthService.getSession();
         setInitialRoute(session ? 'Dashboard' : 'Login');
       } catch (error) {
-        setInitError('No se pudieron cargar los datos locales.');
+        setInitError(USE_REMOTE_AUTH ? 'No se pudo iniciar la app.' : 'No se pudieron cargar los datos locales.');
       } finally {
         setIsReady(true);
       }
@@ -43,7 +46,7 @@ export default function AppNavigator() {
   }, []);
 
   if (!isReady) {
-    return <LoadingScreen label="Cargando datos locales..." />;
+    return <LoadingScreen label={USE_REMOTE_AUTH ? 'Cargando...' : 'Cargando datos locales...'} />;
   }
 
   if (initError) {

@@ -46,6 +46,7 @@ Basicos
 - `PORT`: puerto del API (default 4000).
 - `HOST`: host de escucha (default 0.0.0.0).
 - `DATABASE_URL`: URL de PostgreSQL (obligatorio).
+- `SHADOW_DATABASE_URL`: URL de PostgreSQL para shadow DB de Prisma (solo migraciones locales).
 - `PUBLIC_BASE_URL`: base publica del API; en produccion es obligatorio y debe ser https.
 - `FILES_BASE_URL`: base para URLs de archivos (reportes/denuncias). Si no se define, usa `PUBLIC_BASE_URL`. Es obligatorio cuando `STORAGE_DRIVER=s3`.
 
@@ -113,6 +114,31 @@ Necesitas Postgres y Redis en local (y MinIO/ML si quieres esas funciones).
 npm --prefix backend run db:migrate
 npm --prefix backend run db:seed
 npm run backend:dev
+```
+
+## Reset total de DB y migraciones (dev)
+Usalo si Prisma falla con `P3006` o si el historial de migraciones quedo inconsistente.
+Esto borra datos locales y recrea migraciones desde el schema actual.
+
+```bash
+docker compose -f backend/docker-compose.yml down -v
+```
+
+Windows PowerShell:
+```bash
+Remove-Item -Recurse -Force backend\prisma\migrations
+```
+
+macOS/Linux:
+```bash
+rm -rf backend/prisma/migrations
+```
+
+```bash
+docker compose -f backend/docker-compose.yml up -d --build
+docker exec -e PGPASSWORD=postgres ecocombustible-db psql -U postgres -c "CREATE DATABASE ecocombustible_shadow;"
+npm --prefix backend run db:migrate -- --name init
+npm --prefix backend run db:seed
 ```
 
 Worker (reportes y notificaciones):

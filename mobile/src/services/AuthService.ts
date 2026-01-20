@@ -59,6 +59,9 @@ export const AuthService = {
     if (stored?.user) {
       return stored.user as SessionUser;
     }
+    if (USE_REMOTE_AUTH) {
+      return null;
+    }
 
     const db = await getDb();
     const session = await db.getFirstAsync<SessionUser>(
@@ -72,8 +75,10 @@ export const AuthService = {
   },
 
   logout: async (): Promise<void> => {
-    const db = await getDb();
-    await db.runAsync('DELETE FROM session;');
+    if (!USE_REMOTE_AUTH) {
+      const db = await getDb();
+      await db.runAsync('DELETE FROM session;');
+    }
     await SecureSession.clear();
   },
 };

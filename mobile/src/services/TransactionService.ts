@@ -8,6 +8,8 @@ export type TransactionItem = {
   stationName?: string | null;
   vehicleId: number;
   vehiclePlate?: string | null;
+  vehicleModel?: string | null;
+  vehicleFuelType?: string | null;
   liters: number;
   unitPrice: number;
   totalAmount: number;
@@ -74,6 +76,8 @@ const normalizeTransaction = (item: any): TransactionItem => ({
   stationName: item.station?.name ?? item.stationName ?? null,
   vehicleId: item.vehicleId,
   vehiclePlate: item.vehicle?.plate ?? item.vehiclePlate ?? null,
+  vehicleModel: item.vehicle?.model ?? item.vehicleModel ?? null,
+  vehicleFuelType: item.vehicle?.fuelType ?? item.vehicleFuelType ?? null,
   liters: item.liters,
   unitPrice: item.unitPrice,
   totalAmount: item.totalAmount,
@@ -97,7 +101,7 @@ export const TransactionService = {
     const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM transactions;');
     const rows = await db.getAllAsync<any>(
       `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
-              v.capacityLiters as capacityLiters,
+              v.model as vehicleModel, v.fuelType as vehicleFuelType, v.capacityLiters as capacityLiters,
               t.liters, t.unitPrice, t.totalAmount, t.paymentMethod, t.reportedBy, t.occurredAt, t.createdAt
        FROM transactions t
        JOIN stations s ON s.id = t.stationId
@@ -131,12 +135,13 @@ export const TransactionService = {
   },
   getTransaction: async (id: number): Promise<TransactionItem | null> => {
     if (USE_REMOTE_AUTH) {
-      return await apiFetch<TransactionItem>(`/transactions/${id}`);
+      const item = await apiFetch<any>(`/transactions/${id}`);
+      return item ? normalizeTransaction(item) : null;
     }
     const db = await getDb();
     const row = await db.getFirstAsync<any>(
       `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
-              v.capacityLiters as capacityLiters,
+              v.model as vehicleModel, v.fuelType as vehicleFuelType, v.capacityLiters as capacityLiters,
               t.liters, t.unitPrice, t.totalAmount, t.paymentMethod, t.reportedBy, t.occurredAt, t.createdAt
        FROM transactions t
        JOIN stations s ON s.id = t.stationId
@@ -166,7 +171,7 @@ export const TransactionService = {
     const db = await getDb();
     const rows = await db.getAllAsync<any>(
       `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
-              v.capacityLiters as capacityLiters,
+              v.model as vehicleModel, v.fuelType as vehicleFuelType, v.capacityLiters as capacityLiters,
               t.liters, t.unitPrice, t.totalAmount, t.paymentMethod, t.reportedBy, t.occurredAt, t.createdAt
        FROM transactions t
        JOIN stations s ON s.id = t.stationId

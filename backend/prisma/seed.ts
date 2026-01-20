@@ -9,6 +9,20 @@ const __dirname = path.dirname(__filename);
 
 const prisma = new PrismaClient();
 
+const buildAddress = (props: Record<string, any>) => {
+  const street = typeof props['addr:street'] === 'string' ? props['addr:street'].trim() : '';
+  const number = typeof props['addr:housenumber'] === 'string' ? props['addr:housenumber'].trim() : '';
+  const city = typeof props['addr:city'] === 'string' ? props['addr:city'].trim() : '';
+  const parts: string[] = [];
+  if (street) {
+    parts.push(number ? `${street} ${number}` : street);
+  }
+  if (city) {
+    parts.push(city);
+  }
+  return parts.join(', ');
+};
+
 const seed = async () => {
   const existingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
   if (!existingUser) {
@@ -26,21 +40,38 @@ const seed = async () => {
 
   const geojsonPath = path.join(__dirname, '..', 'export.geojson');
   const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));
-  const stations = geojsonData.features.map((feature: any) => ({
-    name: feature.properties.name || 'Sin nombre',
-    address: feature.properties.name || '',
-    lat: feature.geometry.coordinates[1],
-    lng: feature.geometry.coordinates[0],
-    stock: 10000, // Valor por defecto
-    price: 2.55, // Valor por defecto
-    officialPrice: 2.55, // Valor por defecto
-    history: [], // Array vacío por defecto
-    lastAudit: null,
-    status: 'Cumplimiento', // Estado por defecto
-  }));
+  const stations = geojsonData.features
+    .map((feature: any) => {
+      const props = feature.properties ?? {};
+      const coords = feature.geometry?.coordinates ?? [];
+      const lng = Number(coords[0]);
+      const lat = Number(coords[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return null;
+      }
+      const rawName = typeof props.name === 'string' ? props.name.trim() : '';
+      const osmId = props['@id'] ?? feature.id;
+      const name = rawName || (osmId ? `Sin nombre ${osmId}` : 'Sin nombre');
+      const address = buildAddress(props) || rawName || name;
+      return {
+        name,
+        address,
+        lat,
+        lng,
+        stock: 10000, // Valor por defecto
+        price: 2.55, // Valor por defecto
+        officialPrice: 2.55, // Valor por defecto
+        history: [], // Array vacío por defecto
+        lastAudit: null,
+        status: 'Cumplimiento', // Estado por defecto
+      };
+    })
+    .filter((station: any) => station !== null);
 
   for (const station of stations) {
-    const existing = await prisma.station.findFirst({ where: { name: station.name } });
+    const existing = await prisma.station.findFirst({
+      where: { name: station.name, lat: station.lat, lng: station.lng },
+    });
     if (!existing) {
       await prisma.station.create({ data: station });
     }
