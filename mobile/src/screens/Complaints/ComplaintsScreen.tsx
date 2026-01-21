@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
@@ -136,107 +138,110 @@ export default function ComplaintsScreen({ navigation }: any) {
     </View>
   );
 
-  const renderItem = ({ item }: { item: ComplaintItem }) => {
+  const renderItem = ({ item, index }: { item: ComplaintItem; index: number }) => {
     const statusInfo = statusConfig[item.status as keyof typeof statusConfig] ?? { label: item.status, color: colors.warning };
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item.id })}
-      >
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{item.type}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` },
-            ]}
-          >
-            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+      <ScreenReveal delay={Math.min(index * 40, 200)}>
+        <PressableScale
+          style={styles.card}
+          onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item.id })}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>{item.type}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` }]}>
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            </View>
           </View>
-        </View>
-        <Text style={styles.subtitle}>{item.stationName}</Text>
-        {!!item.reporterName && (
-          <Text style={styles.metaText}>
-            Reporta: {item.reporterName}
-            {item.reporterRole ? ` (${item.reporterRole})` : ''}
-          </Text>
-        )}
-        {!!item.vehiclePlate && <Text style={styles.metaText}>Vehículo: {item.vehiclePlate}</Text>}
-        <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
-      </TouchableOpacity>
+          <Text style={styles.subtitle}>{item.stationName}</Text>
+          {!!item.reporterName && (
+            <Text style={styles.metaText}>
+              Reporta: {item.reporterName}
+              {item.reporterRole ? ` (${item.reporterRole})` : ''}
+            </Text>
+          )}
+          {!!item.vehiclePlate && <Text style={styles.metaText}>Vehiculo: {item.vehiclePlate}</Text>}
+          <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
+        </PressableScale>
+      </ScreenReveal>
     );
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncias</Text>
-          <Text style={styles.subtitle}>Seguimiento y resolución</Text>
+          <Text style={styles.subtitle}>Seguimiento y resolucion</Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
+          <PressableScale onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
             <Ionicons name="add" size={18} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.iconBtn}>
+          </PressableScale>
+          <PressableScale onPress={() => loadData(1, true)} style={styles.iconBtn}>
             <Ionicons name="refresh" size={18} color={colors.primary} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={{ color: colors.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
-          <Text style={styles.statLabel}>Resueltas</Text>
+      <ScreenReveal delay={80}>
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Text style={{ color: colors.success, fontWeight: '700', fontSize: 18 }}>{stats.resolved}</Text>
+            <Text style={styles.statLabel}>Resueltas</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={{ color: colors.error, fontWeight: '700', fontSize: 18 }}>{stats.pending}</Text>
+            <Text style={styles.statLabel}>Pendientes</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 18 }}>{stats.total}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
         </View>
-        <View style={styles.stat}>
-          <Text style={{ color: colors.error, fontWeight: 'bold', fontSize: 18 }}>{stats.pending}</Text>
-          <Text style={styles.statLabel}>Pendientes</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-      </View>
+      </ScreenReveal>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color={colors.textLight} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar por estación, usuario o vehículo..."
-          placeholderTextColor={colors.textLight}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      <ScreenReveal delay={120}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={20} color={colors.textLight} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por estacion, usuario o vehiculo..."
+            placeholderTextColor={colors.textLight}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </ScreenReveal>
 
-      <View style={styles.filterRow}>
-        {(['all', 'pending', 'resolved'] as StatusFilter[]).map((value) => {
-          const label = value === 'all' ? 'Todas' : value === 'pending' ? 'Pendientes' : 'Resueltas';
-          const isActive = filter === value;
-          return (
-            <TouchableOpacity
-              key={value}
-              onPress={() => setFilter(value)}
-              style={[styles.filterPill, isActive && styles.filterPillActive]}
-            >
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <ScreenReveal delay={160}>
+        <View style={styles.filterRow}>
+          {(['all', 'pending', 'resolved'] as StatusFilter[]).map((value) => {
+            const label = value === 'all' ? 'Todas' : value === 'pending' ? 'Pendientes' : 'Resueltas';
+            const isActive = filter === value;
+            return (
+              <PressableScale
+                key={value}
+                onPress={() => setFilter(value)}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
+              >
+                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{label}</Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </ScreenReveal>
 
       {loading ? (
         renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
+          <PressableScale onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: colors.white }}>Reintentar</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : (
         <FlatList
@@ -349,9 +354,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     elevation: 2,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontWeight: 'bold', fontSize: 15, color: colors.text },
+  cardTitle: { fontWeight: '700', fontSize: 15, color: colors.text },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
-  statusText: { fontSize: 11, fontWeight: 'bold' },
+  statusText: { fontSize: 11, fontWeight: '700' },
   metaText: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   dateText: { fontSize: 11, color: colors.textLight, marginTop: 6 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },

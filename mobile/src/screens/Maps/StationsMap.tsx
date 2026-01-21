@@ -4,10 +4,10 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import { detectAnomalies } from '../../services/AnomalyDetection';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import { ScreenReveal } from '../../components/ScreenReveal';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
-// Datos simulados (referencia local).
 const STATIONS_DATA = [
   {
     id: 1,
@@ -60,11 +60,7 @@ export default function StationsMap() {
         }}
       >
         {stations.map((s) => (
-          <Marker
-            key={s.id}
-            coordinate={{ latitude: s.lat, longitude: s.lon }}
-            pinColor={s.mlResult.color}
-          >
+          <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lon }} pinColor={s.mlResult.color}>
             <Callout>
               <View style={styles.callout}>
                 <Text style={styles.calloutTitle}>{s.name}</Text>
@@ -76,25 +72,29 @@ export default function StationsMap() {
         ))}
       </MapView>
 
-      <View style={styles.overlay}>
-        <Text style={styles.title}>Mapa de monitoreo inteligente</Text>
-        <Text style={styles.subtitle}>Detección de anomalías en tiempo real</Text>
-      </View>
+      <ScreenReveal delay={80}>
+        <View style={styles.overlay}>
+          <Text style={styles.title}>Mapa de monitoreo inteligente</Text>
+          <Text style={styles.subtitle}>Deteccion de anomalias en tiempo real</Text>
+        </View>
+      </ScreenReveal>
 
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: colors.success }]} />
-          <Text style={styles.legendText}>Normal</Text>
+      <ScreenReveal delay={120}>
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.dot, { backgroundColor: colors.success }]} />
+            <Text style={styles.legendText}>Normal</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.dot, { backgroundColor: colors.error }]} />
+            <Text style={styles.legendText}>Excesivo</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.dot, { backgroundColor: colors.warning }]} />
+            <Text style={styles.legendText}>Bajo</Text>
+          </View>
         </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: colors.error }]} />
-          <Text style={styles.legendText}>Excesivo</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: colors.warning }]} />
-          <Text style={styles.legendText}>Bajo</Text>
-        </View>
-      </View>
+      </ScreenReveal>
     </View>
   );
 }

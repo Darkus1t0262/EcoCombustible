@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { VehicleItem, VehicleService } from '../../services/VehicleService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
@@ -43,7 +45,7 @@ export default function VehicleListScreen({ navigation }: any) {
       setHasMore(nextTotal ? nextCount < nextTotal : response.items.length === PAGE_SIZE);
       setPage(pageToLoad);
     } catch (err) {
-      setError('No se pudieron cargar los vehículos.');
+      setError('No se pudieron cargar los vehiculos.');
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -90,11 +92,11 @@ export default function VehicleListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículos</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculos</Text>
           <Text style={styles.subtitle}>Flota registrada y consumo</Text>
         </View>
         <View style={styles.headerBadge}>
@@ -102,25 +104,27 @@ export default function VehicleListScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color={colors.textLight} />
-        <TextInput
-          style={styles.input}
-          placeholder="Buscar por placa o modelo..."
-          placeholderTextColor={colors.textLight}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      <ScreenReveal delay={80}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={20} color={colors.textLight} />
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar por placa o modelo..."
+            placeholderTextColor={colors.textLight}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </ScreenReveal>
 
       {loading ? (
         renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
+          <PressableScale onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: colors.white }}>Reintentar</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : (
         <FlatList
@@ -135,24 +139,26 @@ export default function VehicleListScreen({ navigation }: any) {
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>No hay vehículos con ese filtro.</Text>
+              <Text style={styles.emptyText}>No hay vehiculos con ese filtro.</Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('VehicleDetail', { vehicleId: item.id })}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={styles.plate}>{item.plate}</Text>
-                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-              </View>
-              <Text style={styles.model}>{item.model}</Text>
-              <View style={styles.rowInfo}>
-                <Text style={styles.meta}>Combustible: {item.fuelType}</Text>
-                <Text style={styles.meta}>Capacidad: {item.capacityLiters} L</Text>
-              </View>
-            </TouchableOpacity>
+          renderItem={({ item, index }) => (
+            <ScreenReveal delay={Math.min(index * 40, 200)}>
+              <PressableScale
+                style={styles.card}
+                onPress={() => navigation.navigate('VehicleDetail', { vehicleId: item.id })}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={styles.plate}>{item.plate}</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+                </View>
+                <Text style={styles.model}>{item.model}</Text>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.meta}>Combustible: {item.fuelType}</Text>
+                  <Text style={styles.meta}>Capacidad: {item.capacityLiters} L</Text>
+                </View>
+              </PressableScale>
+            </ScreenReveal>
           )}
         />
       )}
@@ -221,7 +227,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  plate: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  plate: { fontWeight: '700', fontSize: 16, color: colors.text },
   model: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', justifyContent: 'space-between' },
   meta: { fontSize: 12, color: colors.textLight },

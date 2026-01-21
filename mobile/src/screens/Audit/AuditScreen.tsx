@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { AuditService, AuditItem } from '../../services/AuditService';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -28,7 +30,7 @@ export default function AuditScreen({ navigation }: any) {
   const handleUpdate = (auditId: number, status: 'approved' | 'rejected') => {
     Alert.alert(
       'Confirmar',
-      `¿Marcar auditoría como ${status === 'approved' ? 'aprobada' : 'rechazada'}?`,
+      `Marcar auditoria como ${status === 'approved' ? 'aprobada' : 'rechazada'}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -62,104 +64,108 @@ export default function AuditScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Auditorías</Text>
-          <Text style={styles.subtitle}>Revisión remota y validación en campo</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Auditorias</Text>
+          <Text style={styles.subtitle}>Revision remota y validacion en campo</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: colors.primary }]}>{total}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
+        <ScreenReveal delay={80}>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCard}>
+              <Text style={[styles.summaryValue, { color: colors.primary }]}>{total}</Text>
+              <Text style={styles.summaryLabel}>Total</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={[styles.summaryValue, { color: colors.success }]}>{approved}</Text>
+              <Text style={styles.summaryLabel}>Aprobadas</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={[styles.summaryValue, { color: colors.warning }]}>{pending}</Text>
+              <Text style={styles.summaryLabel}>Pendientes</Text>
+            </View>
           </View>
-          <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: colors.success }]}>{approved}</Text>
-            <Text style={styles.summaryLabel}>Aprobadas</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: colors.warning }]}>{pending}</Text>
-            <Text style={styles.summaryLabel}>Pendientes</Text>
-          </View>
-        </View>
+        </ScreenReveal>
 
         {loading ? (
           renderSkeleton()
         ) : audits.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No hay auditorías registradas.</Text>
+            <Text style={styles.emptyText}>No hay auditorias registradas.</Text>
           </View>
         ) : (
-          audits.map((audit) => {
+          audits.map((audit, index) => {
             const statusLabel =
               audit.status === 'approved' ? 'Aprobada' : audit.status === 'rejected' ? 'Rechazada' : 'Pendiente';
             const statusColor =
               audit.status === 'approved' ? colors.success : audit.status === 'rejected' ? colors.error : colors.warning;
 
             return (
-              <View key={audit.id} style={styles.card}>
-                <View style={styles.cardTop}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.cardTitle}>{audit.stationName}</Text>
-                    <Text style={styles.cardMeta}>Código: {audit.code}</Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
-                    ]}
-                  >
-                    <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.checkItem}>
-                  <View>
-                    <Text style={styles.checkTitle}>Precio de combustible</Text>
-                    <Text style={styles.checkMeta}>
-                      Esperado: ${audit.priceExpected} | Reportado: ${audit.priceReported}
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name={audit.priceExpected === audit.priceReported ? 'checkmark-circle' : 'alert-circle'}
-                    size={22}
-                    color={audit.priceExpected === audit.priceReported ? colors.success : colors.error}
-                  />
-                </View>
-
-                <View style={styles.checkItem}>
-                  <View>
-                    <Text style={styles.checkTitle}>Calibración del dispensador</Text>
-                    <Text style={styles.checkMeta}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
-                  </View>
-                  <Ionicons
-                    name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
-                    size={22}
-                    color={audit.dispenserOk ? colors.success : colors.error}
-                  />
-                </View>
-
-                {audit.status === 'pending' && (
-                  <View style={styles.actions}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.approveBtn]}
-                      onPress={() => handleUpdate(audit.id, 'approved')}
+              <ScreenReveal key={audit.id} delay={Math.min(index * 50, 200)}>
+                <View style={styles.card}>
+                  <View style={styles.cardTop}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.cardTitle}>{audit.stationName}</Text>
+                      <Text style={styles.cardMeta}>Codigo: {audit.code}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
+                      ]}
                     >
-                      <Text style={styles.actionText}>Aprobar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.rejectBtn]}
-                      onPress={() => handleUpdate(audit.id, 'rejected')}
-                    >
-                      <Text style={styles.actionText}>Rechazar</Text>
-                    </TouchableOpacity>
+                      <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+                    </View>
                   </View>
-                )}
-              </View>
+
+                  <View style={styles.checkItem}>
+                    <View>
+                      <Text style={styles.checkTitle}>Precio de combustible</Text>
+                      <Text style={styles.checkMeta}>
+                        Esperado: ${audit.priceExpected} | Reportado: ${audit.priceReported}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name={audit.priceExpected === audit.priceReported ? 'checkmark-circle' : 'alert-circle'}
+                      size={22}
+                      color={audit.priceExpected === audit.priceReported ? colors.success : colors.error}
+                    />
+                  </View>
+
+                  <View style={styles.checkItem}>
+                    <View>
+                      <Text style={styles.checkTitle}>Calibracion del dispensador</Text>
+                      <Text style={styles.checkMeta}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
+                    </View>
+                    <Ionicons
+                      name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
+                      size={22}
+                      color={audit.dispenserOk ? colors.success : colors.error}
+                    />
+                  </View>
+
+                  {audit.status === 'pending' && (
+                    <View style={styles.actions}>
+                      <PressableScale
+                        style={[styles.actionBtn, styles.approveBtn]}
+                        onPress={() => handleUpdate(audit.id, 'approved')}
+                      >
+                        <Text style={styles.actionText}>Aprobar</Text>
+                      </PressableScale>
+                      <PressableScale
+                        style={[styles.actionBtn, styles.rejectBtn]}
+                        onPress={() => handleUpdate(audit.id, 'rejected')}
+                      >
+                        <Text style={styles.actionText}>Rechazar</Text>
+                      </PressableScale>
+                    </View>
+                  )}
+                </View>
+              </ScreenReveal>
             );
           })
         )}

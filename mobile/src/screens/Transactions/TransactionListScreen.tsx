@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { TransactionItem, TransactionService } from '../../services/TransactionService';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -124,6 +126,27 @@ export default function TransactionListScreen({ navigation }: any) {
     );
   }, [search, transactions]);
 
+  const summary = useMemo(() => {
+    let totalAmount = 0;
+    let totalLiters = 0;
+    let alerts = 0;
+    let observations = 0;
+    filtered.forEach((tx) => {
+      totalAmount += tx.totalAmount ?? 0;
+      totalLiters += tx.liters ?? 0;
+      const status = tx.analysis?.status ?? '';
+      const normalized = status.toLowerCase();
+      const high = normalized.includes('infracci') || tx.riskLabel === 'high';
+      const medium = normalized.includes('observaci') || tx.riskLabel === 'medium';
+      if (high) {
+        alerts += 1;
+      } else if (medium) {
+        observations += 1;
+      }
+    });
+    return { totalAmount, totalLiters, alerts, observations };
+  }, [filtered]);
+
   const renderSkeleton = () => (
     <View style={styles.skeletonWrap}>
       {Array.from({ length: 4 }).map((_, index) => (
@@ -143,9 +166,9 @@ export default function TransactionListScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Transacciones</Text>
           <Text style={styles.subtitle}>Consumo, riesgo IA y trazabilidad</Text>
@@ -155,31 +178,61 @@ export default function TransactionListScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color={colors.textLight} />
-        <TextInput
-          style={styles.input}
-          placeholder="Buscar por estación o placa..."
-          placeholderTextColor={colors.textLight}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      <ScreenReveal delay={80}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={20} color={colors.textLight} />
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar por estacion o placa..."
+            placeholderTextColor={colors.textLight}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </ScreenReveal>
+
+      {!loading && !error && (
+        <ScreenReveal delay={140}>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryTop}>
+              <Text style={styles.summaryTitle}>Resumen rapido</Text>
+              <View style={[styles.summaryChip, { borderColor: `${colors.error}40`, backgroundColor: `${colors.error}15` }]}>
+                <Text style={[styles.summaryChipText, { color: colors.error }]}>{summary.alerts} alertas</Text>
+              </View>
+            </View>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryBlock}>
+                <Text style={styles.summaryValue}>${summary.totalAmount.toFixed(2)}</Text>
+                <Text style={styles.summaryLabel}>Monto total</Text>
+              </View>
+              <View style={styles.summaryBlock}>
+                <Text style={styles.summaryValue}>{summary.totalLiters.toFixed(1)} L</Text>
+                <Text style={styles.summaryLabel}>Litros</Text>
+              </View>
+            </View>
+            <View style={styles.summaryFooter}>
+              <View style={[styles.summaryChip, { borderColor: `${colors.warning}40`, backgroundColor: `${colors.warning}12` }]}>
+                <Text style={[styles.summaryChipText, { color: colors.warning }]}>{summary.observations} observaciones</Text>
+              </View>
+            </View>
+          </View>
+        </ScreenReveal>
+      )}
 
       {loading ? (
         renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
+          <PressableScale onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: colors.white }}>Reintentar</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 20 }}
+          contentContainerStyle={{ padding: 20, paddingTop: 10 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
@@ -191,24 +244,28 @@ export default function TransactionListScreen({ navigation }: any) {
               <Text style={styles.emptyText}>No hay transacciones con ese filtro.</Text>
             </View>
           }
-          renderItem={({ item }) => {
-            const analysisColor = item.analysis?.status ? statusColor(item.analysis.status, colors) : colors.textLight;
+          renderItem={({ item, index }) => {
+            const analysisColor = item.analysis?.status ? statusColor(item.analysis.status, colors) : colors.accent;
             const riskTone = riskColor(item.riskLabel, colors);
+            const revealDelay = index < 8 ? index * 40 : 0;
             return (
-              <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('TransactionDetail', { transactionId: item.id })}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-                </View>
-                <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
-                <Text style={styles.meta}>
-                  {item.liters} L | ${item.totalAmount.toFixed(2)}
-                </Text>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.date}>{formatDate(item.occurredAt)}</Text>
+              <ScreenReveal delay={revealDelay}>
+                <PressableScale
+                  style={styles.card}
+                  onPress={() => navigation.navigate('TransactionDetail', { transactionId: item.id })}
+                >
+                  <View style={[styles.cardAccent, { backgroundColor: analysisColor }]} />
+                  <View style={styles.cardTop}>
+                    <View style={styles.cardLeft}>
+                      <Text style={styles.station}>{item.stationName ?? 'Estacion'}</Text>
+                      <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
+                      <Text style={styles.meta}>{formatDate(item.occurredAt)}</Text>
+                    </View>
+                    <View style={styles.amountBlock}>
+                      <Text style={styles.amount}>${item.totalAmount.toFixed(2)}</Text>
+                      <Text style={styles.amountSub}>{item.liters} L</Text>
+                    </View>
+                  </View>
                   <View style={styles.badgeRow}>
                     {!!item.analysis?.status && (
                       <Text
@@ -239,8 +296,8 @@ export default function TransactionListScreen({ navigation }: any) {
                       </Text>
                     )}
                   </View>
-                </View>
-              </TouchableOpacity>
+                </PressableScale>
+              </ScreenReveal>
             );
           }}
         />
@@ -297,9 +354,39 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.borderColor,
   },
   input: { marginLeft: 10, flex: 1, color: colors.text },
+  summaryCard: {
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 6,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  summaryTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryTitle: { fontSize: 13, fontWeight: '700', color: colors.text },
+  summaryChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  summaryChipText: { fontSize: 11, fontWeight: '700' },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
+  summaryBlock: { flex: 1 },
+  summaryValue: { fontSize: 18, fontWeight: '700', color: colors.text },
+  summaryLabel: { fontSize: 11, color: colors.textLight, marginTop: 4 },
+  summaryFooter: { marginTop: 10, flexDirection: 'row', gap: 8 },
   card: {
     backgroundColor: colors.surface,
     padding: 16,
+    paddingLeft: 20,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
@@ -309,13 +396,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    position: 'relative',
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  station: { fontWeight: 'bold', fontSize: 15, color: colors.text },
-  meta: { fontSize: 12, color: colors.textLight, marginTop: 6 },
-  rowInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  badgeRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  date: { fontSize: 11, color: colors.textLight },
+  cardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 12,
+    bottom: 12,
+    width: 4,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  cardLeft: { flex: 1 },
+  station: { fontWeight: '700', fontSize: 15, color: colors.text },
+  meta: { fontSize: 11, color: colors.textLight, marginTop: 4 },
+  amountBlock: { alignItems: 'flex-end' },
+  amount: { fontSize: 16, fontWeight: '700', color: colors.text },
+  amountSub: { fontSize: 11, color: colors.textLight, marginTop: 4 },
+  badgeRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 12 },
   badge: {
     fontSize: 11,
     fontWeight: '700',

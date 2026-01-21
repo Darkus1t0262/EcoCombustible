@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { VehicleItem, VehicleService, VehicleTransaction } from '../../services/VehicleService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
@@ -83,11 +85,11 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
+          </PressableScale>
           <View style={styles.headerText}>
-            <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
+            <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculo</Text>
             <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
           </View>
         </View>
@@ -109,10 +111,10 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   if (!vehicle) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Vehículo no encontrado.</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Text style={{ color: colors.error }}>Vehiculo no encontrado.</Text>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     );
   }
@@ -120,60 +122,64 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculo</Text>
           <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ficha técnica</Text>
-          <Text style={styles.metaText}>Placa: {vehicle.plate}</Text>
-          <Text style={styles.metaText}>Modelo: {vehicle.model}</Text>
-          <Text style={styles.metaText}>Combustible: {vehicle.fuelType}</Text>
-          <Text style={styles.metaText}>Capacidad: {vehicle.capacityLiters} L</Text>
-          <Text style={styles.metaText}>Propietario: {vehicle.ownerName ?? 'No disponible'}</Text>
-          <Text style={styles.metaText}>Registrado: {formatDate(vehicle.createdAt)}</Text>
-        </View>
+        <ScreenReveal delay={80}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Ficha tecnica</Text>
+            <Text style={styles.metaText}>Placa: {vehicle.plate}</Text>
+            <Text style={styles.metaText}>Modelo: {vehicle.model}</Text>
+            <Text style={styles.metaText}>Combustible: {vehicle.fuelType}</Text>
+            <Text style={styles.metaText}>Capacidad: {vehicle.capacityLiters} L</Text>
+            <Text style={styles.metaText}>Propietario: {vehicle.ownerName ?? 'No disponible'}</Text>
+            <Text style={styles.metaText}>Registrado: {formatDate(vehicle.createdAt)}</Text>
+          </View>
+        </ScreenReveal>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Transacciones recientes</Text>
-          {transactions.length === 0 ? (
-            <Text style={styles.metaText}>Sin transacciones registradas.</Text>
-          ) : (
-            transactions.slice(0, 5).map((tx) => {
-              const analysisTone = tx.analysis?.status ? statusColor(tx.analysis.status, colors) : colors.textLight;
-              const riskTone = riskColor(tx.riskLabel, colors);
-              return (
-                <TouchableOpacity
-                  key={tx.id}
-                  style={styles.txRow}
-                  onPress={() => navigation.navigate('TransactionDetail', { transactionId: tx.id })}
-                >
-                  <View>
-                    <Text style={styles.txTitle}>{tx.stationName ?? 'Estación'}</Text>
-                    <Text style={styles.txMeta}>
-                      {tx.liters} L | ${tx.totalAmount.toFixed(2)}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.txDate}>{formatDate(tx.occurredAt)}</Text>
-                    {!!tx.analysis?.status && (
-                      <Text style={[styles.txStatus, { color: analysisTone }]}>{tx.analysis.status}</Text>
-                    )}
-                    {!!riskLabelText(tx.riskLabel) && (
-                      <Text style={[styles.txStatus, { color: riskTone }]}>{riskLabelText(tx.riskLabel)}</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+        <ScreenReveal delay={140}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Transacciones recientes</Text>
+            {transactions.length === 0 ? (
+              <Text style={styles.metaText}>Sin transacciones registradas.</Text>
+            ) : (
+              transactions.slice(0, 5).map((tx) => {
+                const analysisTone = tx.analysis?.status ? statusColor(tx.analysis.status, colors) : colors.textLight;
+                const riskTone = riskColor(tx.riskLabel, colors);
+                return (
+                  <PressableScale
+                    key={tx.id}
+                    style={styles.txRow}
+                    onPress={() => navigation.navigate('TransactionDetail', { transactionId: tx.id })}
+                  >
+                    <View>
+                      <Text style={styles.txTitle}>{tx.stationName ?? 'Estacion'}</Text>
+                      <Text style={styles.txMeta}>
+                        {tx.liters} L | ${tx.totalAmount.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.txDate}>{formatDate(tx.occurredAt)}</Text>
+                      {!!tx.analysis?.status && (
+                        <Text style={[styles.txStatus, { color: analysisTone }]}>{tx.analysis.status}</Text>
+                      )}
+                      {!!riskLabelText(tx.riskLabel) && (
+                        <Text style={[styles.txStatus, { color: riskTone }]}>{riskLabelText(tx.riskLabel)}</Text>
+                      )}
+                    </View>
+                  </PressableScale>
+                );
+              })
+            )}
+          </View>
+        </ScreenReveal>
       </ScrollView>
     </View>
   );

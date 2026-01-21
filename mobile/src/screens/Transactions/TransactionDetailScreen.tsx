@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { TransactionItem, TransactionService } from '../../services/TransactionService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
@@ -85,12 +87,12 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
+          </PressableScale>
           <View style={styles.headerText}>
-            <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
-            <Text style={styles.subtitle}>Detalle y evaluación IA</Text>
+            <Text style={[styles.title, { fontFamily: titleFont }]}>Transaccion</Text>
+            <Text style={styles.subtitle}>Detalle y evaluacion IA</Text>
           </View>
         </View>
         <ScrollView contentContainerStyle={styles.body}>
@@ -116,10 +118,10 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
   if (!transaction) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Transacción no encontrada.</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Text style={{ color: colors.error }}>Transaccion no encontrada.</Text>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     );
   }
@@ -130,65 +132,75 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
-          <Text style={styles.subtitle}>Detalle y evaluación IA</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Transaccion</Text>
+          <Text style={styles.subtitle}>Detalle y evaluacion IA</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Resumen</Text>
-          <Text style={styles.metaText}>Estación: {transaction.stationName ?? 'No disponible'}</Text>
-          <Text style={styles.metaText}>Vehículo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
-          <Text style={styles.metaText}>Fecha: {formatDate(transaction.occurredAt)}</Text>
-        </View>
+        <ScreenReveal delay={80}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Resumen</Text>
+            <Text style={styles.metaText}>Estacion: {transaction.stationName ?? 'No disponible'}</Text>
+            <Text style={styles.metaText}>Vehiculo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
+            <Text style={styles.metaText}>Fecha: {formatDate(transaction.occurredAt)}</Text>
+          </View>
+        </ScreenReveal>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Consumo</Text>
-          <Text style={styles.metaText}>Litros: {transaction.liters}</Text>
-          <Text style={styles.metaText}>Precio unitario: ${transaction.unitPrice}</Text>
-          <Text style={styles.metaText}>Total: ${transaction.totalAmount.toFixed(2)}</Text>
-          {!!transaction.paymentMethod && <Text style={styles.metaText}>Pago: {transaction.paymentMethod}</Text>}
-          {!!transaction.reportedBy && <Text style={styles.metaText}>Fuente: {transaction.reportedBy}</Text>}
-        </View>
+        <ScreenReveal delay={120}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Consumo</Text>
+            <Text style={styles.metaText}>Litros: {transaction.liters}</Text>
+            <Text style={styles.metaText}>Precio unitario: ${transaction.unitPrice}</Text>
+            <Text style={styles.metaText}>Total: ${transaction.totalAmount.toFixed(2)}</Text>
+            {!!transaction.paymentMethod && <Text style={styles.metaText}>Pago: {transaction.paymentMethod}</Text>}
+            {!!transaction.reportedBy && <Text style={styles.metaText}>Fuente: {transaction.reportedBy}</Text>}
+          </View>
+        </ScreenReveal>
 
         {!!transaction.analysis && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Análisis</Text>
-            <View style={[styles.pill, { backgroundColor: `${analysisTone}1A`, borderColor: `${analysisTone}33` }]}>
-              <Text style={[styles.pillText, { color: analysisTone }]}>{transaction.analysis.status}</Text>
+          <ScreenReveal delay={160}>
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Analisis</Text>
+              <View style={[styles.pill, { backgroundColor: `${analysisTone}1A`, borderColor: `${analysisTone}33` }]}>
+                <Text style={[styles.pillText, { color: analysisTone }]}>{transaction.analysis.status}</Text>
+              </View>
+              {!!transaction.analysis.message && <Text style={styles.metaText}>{transaction.analysis.message}</Text>}
+              {!!transaction.analysis.score && <Text style={styles.metaText}>Puntaje: {transaction.analysis.score}</Text>}
             </View>
-            {!!transaction.analysis.message && <Text style={styles.metaText}>{transaction.analysis.message}</Text>}
-            {!!transaction.analysis.score && <Text style={styles.metaText}>Puntaje: {transaction.analysis.score}</Text>}
-          </View>
+          </ScreenReveal>
         )}
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Riesgo IA</Text>
-          <View style={[styles.pill, { backgroundColor: `${riskTone}1A`, borderColor: `${riskTone}33` }]}>
-            <Text style={[styles.pillText, { color: riskTone }]}>{riskLabelText(transaction.riskLabel)}</Text>
+        <ScreenReveal delay={200}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Riesgo IA</Text>
+            <View style={[styles.pill, { backgroundColor: `${riskTone}1A`, borderColor: `${riskTone}33` }]}>
+              <Text style={[styles.pillText, { color: riskTone }]}>{riskLabelText(transaction.riskLabel)}</Text>
+            </View>
+            <Text style={styles.metaText}>Score: {formatScore(transaction.riskScore)}</Text>
           </View>
-          <Text style={styles.metaText}>Score: {formatScore(transaction.riskScore)}</Text>
-        </View>
+        </ScreenReveal>
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.primary }]}
-            onPress={() => navigation.navigate('StationDetail', { stationId: transaction.stationId })}
-          >
-            <Text style={styles.actionText}>Ver estación</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
-            onPress={() => navigation.navigate('VehicleDetail', { vehicleId: transaction.vehicleId })}
-          >
-            <Text style={styles.actionText}>Ver vehículo</Text>
-          </TouchableOpacity>
-        </View>
+        <ScreenReveal delay={240}>
+          <View style={styles.actionsRow}>
+            <PressableScale
+              style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('StationDetail', { stationId: transaction.stationId })}
+            >
+              <Text style={styles.actionText}>Ver estacion</Text>
+            </PressableScale>
+            <PressableScale
+              style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
+              onPress={() => navigation.navigate('VehicleDetail', { vehicleId: transaction.vehicleId })}
+            >
+              <Text style={styles.actionText}>Ver vehiculo</Text>
+            </PressableScale>
+          </View>
+        </ScreenReveal>
       </ScrollView>
     </View>
   );

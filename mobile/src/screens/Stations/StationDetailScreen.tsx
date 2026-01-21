@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
@@ -7,6 +7,8 @@ import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { USE_REMOTE_AUTH } from '../../config/env';
 import { Skeleton } from '../../components/Skeleton';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -32,11 +34,11 @@ export default function StationDetailScreen({ route, navigation }: any) {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
             <Ionicons name="arrow-back" size={20} color={colors.white} />
-          </TouchableOpacity>
+          </PressableScale>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Cargando estación</Text>
+            <Text style={styles.headerTitle}>Cargando estacion</Text>
             <Text style={styles.headerSubtitle}>Resumen operativo</Text>
           </View>
         </View>
@@ -65,10 +67,10 @@ export default function StationDetailScreen({ route, navigation }: any) {
   if (!station) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Estación no encontrada.</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Text style={{ color: colors.error }}>Estacion no encontrada.</Text>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     );
   }
@@ -76,12 +78,12 @@ export default function StationDetailScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { backgroundColor: station.analysis.color }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={20} color={colors.white} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{station.name}</Text>
-          <Text style={styles.headerSubtitle}>Estación regulada</Text>
+          <Text style={styles.headerSubtitle}>Estacion regulada</Text>
         </View>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>{station.analysis.status}</Text>
@@ -89,54 +91,62 @@ export default function StationDetailScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Diagnóstico IA</Text>
-          <View style={styles.analysisRow}>
-            <Ionicons name="analytics" size={22} color={station.analysis.color} />
-            <Text style={[styles.analysisStatus, { color: station.analysis.color }]}>{station.analysis.status}</Text>
-          </View>
-          <Text style={styles.bodyText}>{station.analysis.message}</Text>
-          {typeof station.analysis.score === 'number' && (
-            <Text style={styles.bodyText}>Puntaje IA: {station.analysis.score}</Text>
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.sectionTitle}>Inventario y ventas</Text>
-            <Text style={styles.cardHint}>Fuente: {USE_REMOTE_AUTH ? 'API' : 'BD local'}</Text>
-          </View>
-
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.label}>Stock actual</Text>
-              <Text style={styles.value}>{station.stock} gal</Text>
+        <ScreenReveal delay={80}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Diagnostico IA</Text>
+            <View style={styles.analysisRow}>
+              <Ionicons name="analytics" size={22} color={station.analysis.color} />
+              <Text style={[styles.analysisStatus, { color: station.analysis.color }]}>{station.analysis.status}</Text>
             </View>
-            <View>
-              <Text style={styles.label}>Precio de venta</Text>
-              <Text style={styles.value}>${station.price}</Text>
+            <Text style={styles.bodyText}>{station.analysis.message}</Text>
+            {typeof station.analysis.score === 'number' && (
+              <Text style={styles.bodyText}>Puntaje IA: {station.analysis.score}</Text>
+            )}
+          </View>
+        </ScreenReveal>
+
+        <ScreenReveal delay={120}>
+          <View style={styles.card}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.sectionTitle}>Inventario y ventas</Text>
+              <Text style={styles.cardHint}>Fuente: {USE_REMOTE_AUTH ? 'API' : 'BD local'}</Text>
+            </View>
+
+            <View style={styles.row}>
+              <View>
+                <Text style={styles.label}>Stock actual</Text>
+                <Text style={styles.value}>{station.stock} gal</Text>
+              </View>
+              <View>
+                <Text style={styles.label}>Precio de venta</Text>
+                <Text style={styles.value}>${station.price}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </ScreenReveal>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.sectionTitle}>Tendencia de ventas</Text>
-            <Text style={[styles.cardHint, { color: colors.purple }]}>Fuente: Historial</Text>
+        <ScreenReveal delay={160}>
+          <View style={styles.card}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.sectionTitle}>Tendencia de ventas</Text>
+              <Text style={[styles.cardHint, { color: colors.purple }]}>Fuente: Historial</Text>
+            </View>
+            <Text style={styles.value}>
+              {Array.isArray(station.history) && station.history.length > 0
+                ? `${Math.round(
+                    station.history.reduce((acc: number, val: number) => acc + Number(val), 0) / station.history.length
+                  )} gal/dia`
+                : 'Sin historial'}
+            </Text>
+            <Text style={styles.label}>Promedio de ventas recientes</Text>
           </View>
-          <Text style={styles.value}>
-            {Array.isArray(station.history) && station.history.length > 0
-              ? `${Math.round(
-                  station.history.reduce((acc: number, val: number) => acc + Number(val), 0) / station.history.length
-                )} gal/día`
-              : 'Sin historial'}
-          </Text>
-          <Text style={styles.label}>Promedio de ventas recientes</Text>
-        </View>
+        </ScreenReveal>
 
-        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.warning }]} onPress={() => navigation.navigate('Audit')}>
-          <Text style={styles.btnText}>Iniciar auditoría manual</Text>
-        </TouchableOpacity>
+        <ScreenReveal delay={200}>
+          <PressableScale style={[styles.btn, { backgroundColor: colors.warning }]} onPress={() => navigation.navigate('Audit')}>
+            <Text style={styles.btnText}>Iniciar auditoria manual</Text>
+          </PressableScale>
+        </ScreenReveal>
       </ScrollView>
     </View>
   );

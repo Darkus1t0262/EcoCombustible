@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
@@ -90,42 +92,39 @@ export default function StationListScreen({ navigation }: any) {
     </View>
   );
 
-  const renderItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={styles.stationName}>{item.name}</Text>
-        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-      </View>
+  const renderItem = ({ item, index }: any) => (
+    <ScreenReveal delay={Math.min(index * 40, 200)}>
+      <PressableScale style={styles.card} onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={styles.stationName}>{item.name}</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+        </View>
 
-      <Text style={styles.address}>{item.address}</Text>
+        <Text style={styles.address}>{item.address}</Text>
 
-      <View style={styles.rowInfo}>
-        <Text style={{ fontSize: 12, color: colors.text }}>Precio: ${item.price}</Text>
-        <Text style={{ fontSize: 12, color: colors.text }}>Stock: {item.stock} gl</Text>
-      </View>
+        <View style={styles.rowInfo}>
+          <Text style={{ fontSize: 12, color: colors.text }}>Precio: ${item.price}</Text>
+          <Text style={{ fontSize: 12, color: colors.text }}>Stock: {item.stock} gl</Text>
+        </View>
 
-      <View
-        style={[
-          styles.badge,
-          { backgroundColor: `${item.analysis.color}1A`, borderColor: `${item.analysis.color}33` },
-        ]}
-      >
-        <Ionicons
-          name={item.analysis.status === 'Cumplimiento' ? 'checkmark-circle' : 'alert-circle'}
-          size={16}
-          color={item.analysis.color}
-        />
-        <Text style={[styles.badgeText, { color: item.analysis.color }]}>{item.analysis.status}</Text>
-      </View>
-    </TouchableOpacity>
+        <View style={[styles.badge, { backgroundColor: `${item.analysis.color}1A`, borderColor: `${item.analysis.color}33` }]}>
+          <Ionicons
+            name={item.analysis.status === 'Cumplimiento' ? 'checkmark-circle' : 'alert-circle'}
+            size={16}
+            color={item.analysis.color}
+          />
+          <Text style={[styles.badgeText, { color: item.analysis.color }]}>{item.analysis.status}</Text>
+        </View>
+      </PressableScale>
+    </ScreenReveal>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Estaciones</Text>
           <Text style={styles.subtitle}>Estado, precio y stock reportado</Text>
@@ -135,25 +134,27 @@ export default function StationListScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color={colors.textLight} />
-        <TextInput
-          style={styles.input}
-          placeholder="Buscar por nombre o zona..."
-          placeholderTextColor={colors.textLight}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      <ScreenReveal delay={80}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={20} color={colors.textLight} />
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar por nombre o zona..."
+            placeholderTextColor={colors.textLight}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </ScreenReveal>
 
       {loading ? (
         renderSkeleton()
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
+          <PressableScale onPress={() => loadData(1, true)} style={styles.retryBtn}>
             <Text style={{ color: colors.white }}>Reintentar</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : (
         <FlatList
@@ -239,7 +240,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  stationName: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  stationName: { fontWeight: '700', fontSize: 16, color: colors.text },
   address: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', gap: 15, marginBottom: 10 },
   badge: {
@@ -252,7 +253,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 5,
     borderWidth: 1,
   },
-  badgeText: { fontWeight: 'bold', fontSize: 12 },
+  badgeText: { fontWeight: '700', fontSize: 12 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
   errorText: { color: colors.error, marginBottom: 12 },
   retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },

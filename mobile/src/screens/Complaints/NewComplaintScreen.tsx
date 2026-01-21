@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { ComplaintService } from '../../services/ComplaintService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -31,7 +33,7 @@ export default function NewComplaintScreen({ navigation }: any) {
   const handleSave = async () => {
     setError('');
     if (!stationName.trim() || !type.trim()) {
-      setError('Estación y tipo son obligatorios.');
+      setError('Estacion y tipo son obligatorios.');
       return;
     }
 
@@ -60,124 +62,130 @@ export default function NewComplaintScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Nueva denuncia</Text>
-          <Text style={styles.subtitle}>Registra una observación o irregularidad</Text>
+          <Text style={styles.subtitle}>Registra una observacion o irregularidad</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Datos principales</Text>
-          <Text style={styles.label}>Estación *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre de la estación"
-            placeholderTextColor={colors.textLight}
-            value={stationName}
-            onChangeText={setStationName}
-          />
+        <ScreenReveal delay={80}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Datos principales</Text>
+            <Text style={styles.label}>Estacion *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre de la estacion"
+              placeholderTextColor={colors.textLight}
+              value={stationName}
+              onChangeText={setStationName}
+            />
 
-          <Text style={styles.label}>Tipo *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: Precio irregular"
-            placeholderTextColor={colors.textLight}
-            value={type}
-            onChangeText={setType}
-          />
+            <Text style={styles.label}>Tipo *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: Precio irregular"
+              placeholderTextColor={colors.textLight}
+              value={type}
+              onChangeText={setType}
+            />
 
-          <Text style={styles.label}>Detalle</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Describe el problema"
-            placeholderTextColor={colors.textLight}
-            value={detail}
-            onChangeText={setDetail}
-            multiline
-          />
-        </View>
+            <Text style={styles.label}>Detalle</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Describe el problema"
+              placeholderTextColor={colors.textLight}
+              value={detail}
+              onChangeText={setDetail}
+              multiline
+            />
+          </View>
+        </ScreenReveal>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Reportante</Text>
-          <Text style={styles.label}>Nombre</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre y apellido"
-            placeholderTextColor={colors.textLight}
-            value={reporterName}
-            onChangeText={setReporterName}
-          />
-          <Text style={styles.label}>Rol</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Cliente / despachador"
-            placeholderTextColor={colors.textLight}
-            value={reporterRole}
-            onChangeText={setReporterRole}
-          />
-        </View>
+        <ScreenReveal delay={120}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Reportante</Text>
+            <Text style={styles.label}>Nombre</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre y apellido"
+              placeholderTextColor={colors.textLight}
+              value={reporterName}
+              onChangeText={setReporterName}
+            />
+            <Text style={styles.label}>Rol</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Cliente / despachador"
+              placeholderTextColor={colors.textLight}
+              value={reporterRole}
+              onChangeText={setReporterRole}
+            />
+          </View>
+        </ScreenReveal>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Vehículo (opcional)</Text>
-          <Text style={styles.label}>Placa</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="ABC-1234"
-            placeholderTextColor={colors.textLight}
-            value={vehiclePlate}
-            onChangeText={setVehiclePlate}
-          />
-          <Text style={styles.label}>Modelo</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Marca y modelo"
-            placeholderTextColor={colors.textLight}
-            value={vehicleModel}
-            onChangeText={setVehicleModel}
-          />
-          <Text style={styles.label}>Combustible</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Diésel"
-            placeholderTextColor={colors.textLight}
-            value={fuelType}
-            onChangeText={setFuelType}
-          />
-          <View style={styles.inlineRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Litros</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0.0"
-                placeholderTextColor={colors.textLight}
-                keyboardType="decimal-pad"
-                value={liters}
-                onChangeText={setLiters}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Precio unitario</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0.00"
-                placeholderTextColor={colors.textLight}
-                keyboardType="decimal-pad"
-                value={unitPrice}
-                onChangeText={setUnitPrice}
-              />
+        <ScreenReveal delay={160}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Vehiculo (opcional)</Text>
+            <Text style={styles.label}>Placa</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ABC-1234"
+              placeholderTextColor={colors.textLight}
+              value={vehiclePlate}
+              onChangeText={setVehiclePlate}
+            />
+            <Text style={styles.label}>Modelo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Marca y modelo"
+              placeholderTextColor={colors.textLight}
+              value={vehicleModel}
+              onChangeText={setVehicleModel}
+            />
+            <Text style={styles.label}>Combustible</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Diesel"
+              placeholderTextColor={colors.textLight}
+              value={fuelType}
+              onChangeText={setFuelType}
+            />
+            <View style={styles.inlineRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Litros</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.0"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="decimal-pad"
+                  value={liters}
+                  onChangeText={setLiters}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Precio unitario</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="decimal-pad"
+                  value={unitPrice}
+                  onChangeText={setUnitPrice}
+                />
+              </View>
             </View>
           </View>
-        </View>
+        </ScreenReveal>
 
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
+        <PressableScale style={styles.saveBtn} onPress={handleSave} disabled={loading}>
           {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.saveText}>Guardar denuncia</Text>}
-        </TouchableOpacity>
+        </PressableScale>
       </ScrollView>
     </View>
   );

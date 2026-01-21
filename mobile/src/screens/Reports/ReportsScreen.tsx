@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { ReportService, ReportItem } from '../../services/ReportService';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
-const periods = ['Semana', 'Mes', 'Año'];
+const periods = ['Semana', 'Mes', 'Ano'];
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function ReportsScreen({ navigation }: any) {
@@ -72,12 +74,12 @@ export default function ReportsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Reportes</Text>
-          <Text style={styles.subtitle}>Exportación automática y manual</Text>
+          <Text style={styles.subtitle}>Exportacion automatica y manual</Text>
         </View>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>{reports.length}</Text>
@@ -85,58 +87,57 @@ export default function ReportsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Generar nuevo reporte</Text>
-          <Text style={styles.label}>Período</Text>
-          <View style={styles.pillRow}>
-            {periods.map((p) => (
-              <TouchableOpacity
-                key={p}
-                style={[styles.pill, p === period && styles.pillActive]}
-                onPress={() => setPeriod(p)}
-              >
-                <Text style={[styles.pillText, p === period && styles.pillTextActive]}>{p}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <ScreenReveal delay={80}>
+          <View style={styles.panel}>
+            <Text style={styles.panelTitle}>Generar nuevo reporte</Text>
+            <Text style={styles.label}>Periodo</Text>
+            <View style={styles.pillRow}>
+              {periods.map((p) => (
+                <PressableScale
+                  key={p}
+                  style={[styles.pill, p === period && styles.pillActive]}
+                  onPress={() => setPeriod(p)}
+                >
+                  <Text style={[styles.pillText, p === period && styles.pillTextActive]}>{p}</Text>
+                </PressableScale>
+              ))}
+            </View>
 
-          <Text style={styles.label}>Formato de exportación</Text>
-          <View style={styles.formatRow}>
-            {formats.map((f) => (
-              <TouchableOpacity
-                key={f.label}
-                style={[
-                  styles.formatBtn,
-                  f.label === format && { backgroundColor: f.color, borderColor: f.color },
-                ]}
-                onPress={() => setFormat(f.label)}
-              >
-                <Text style={[styles.formatText, f.label === format && styles.formatTextActive]}>{f.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            <Text style={styles.label}>Formato de exportacion</Text>
+            <View style={styles.formatRow}>
+              {formats.map((f) => (
+                <PressableScale
+                  key={f.label}
+                  style={[styles.formatBtn, f.label === format && { backgroundColor: f.color, borderColor: f.color }]}
+                  onPress={() => setFormat(f.label)}
+                >
+                  <Text style={[styles.formatText, f.label === format && styles.formatTextActive]}>{f.label}</Text>
+                </PressableScale>
+              ))}
+            </View>
 
-          <TouchableOpacity style={styles.generateBtn} onPress={handleCreate} disabled={creating}>
-            {creating ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <>
-                <Ionicons name="document-text" color={colors.white} size={18} style={{ marginRight: 8 }} />
-                <Text style={styles.generateText}>Generar reporte</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+            <PressableScale style={styles.generateBtn} onPress={handleCreate} disabled={creating}>
+              {creating ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="document-text" color={colors.white} size={18} style={{ marginRight: 8 }} />
+                  <Text style={styles.generateText}>Generar reporte</Text>
+                </>
+              )}
+            </PressableScale>
+          </View>
+        </ScreenReveal>
 
         <Text style={styles.sectionTitle}>Reportes recientes</Text>
         {loading ? (
           renderSkeleton()
         ) : reports.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>Aún no hay reportes disponibles.</Text>
+            <Text style={styles.emptyText}>Aun no hay reportes disponibles.</Text>
           </View>
         ) : (
-          reports.map((report) => {
+          reports.map((report, index) => {
             const canShare =
               Boolean(report.fileUri || report.fileUrl) &&
               report.status !== 'queued' &&
@@ -148,34 +149,30 @@ export default function ReportsScreen({ navigation }: any) {
               status === 'ready' ? colors.success : status === 'failed' ? colors.error : colors.warning;
 
             return (
-              <TouchableOpacity
-                key={report.id}
-                style={[styles.fileRow, !canShare && styles.fileRowDisabled]}
-                onPress={() => handleShare(report)}
-                disabled={!canShare}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.fileTitle}>
-                    {report.period} - {report.format}
-                  </Text>
-                  <Text style={styles.fileMeta}>
-                    {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
-                  </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
-                    ]}
-                  >
-                    <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+              <ScreenReveal key={report.id} delay={Math.min(index * 40, 200)}>
+                <PressableScale
+                  style={[styles.fileRow, !canShare && styles.fileRowDisabled]}
+                  onPress={() => handleShare(report)}
+                  disabled={!canShare}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fileTitle}>
+                      {report.period} - {report.format}
+                    </Text>
+                    <Text style={styles.fileMeta}>
+                      {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
+                    </Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` }]}>
+                      <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={[styles.shareChip, !canShare && styles.shareChipDisabled]}>
-                  <Text style={[styles.shareText, !canShare && styles.shareTextDisabled]}>
-                    {canShare ? 'Compartir' : 'No disponible'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                  <View style={[styles.shareChip, !canShare && styles.shareChipDisabled]}>
+                    <Text style={[styles.shareText, !canShare && styles.shareTextDisabled]}>
+                      {canShare ? 'Compartir' : 'No disponible'}
+                    </Text>
+                  </View>
+                </PressableScale>
+              </ScreenReveal>
             );
           })
         )}

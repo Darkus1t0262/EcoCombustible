@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useTheme } from '../../theme/theme';
@@ -7,6 +7,8 @@ import type { ThemeColors } from '../../theme/colors';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -17,8 +19,8 @@ export default function MapScreen({ navigation }: any) {
     () => [
       { label: 'Todas', value: 'Todas', color: colors.primary },
       { label: 'OK', value: 'Cumplimiento', color: colors.success },
-      { label: 'Obs', value: 'Observación', color: colors.warning },
-      { label: 'Alerta', value: 'Infracción', color: colors.error },
+      { label: 'Obs', value: 'Observacion', color: colors.warning },
+      { label: 'Alerta', value: 'Infraccion', color: colors.error },
     ],
     [colors]
   );
@@ -92,17 +94,26 @@ export default function MapScreen({ navigation }: any) {
     mapRef.current?.animateToRegion(initialRegion, 500);
   };
 
-  const filteredStations = filter === 'Todas' ? stations : stations.filter((s) => s.analysis.status === filter);
+  const normalizeStatus = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+  const filteredStations =
+    filter === 'Todas'
+      ? stations
+      : stations.filter((s) => normalizeStatus(s.analysis.status) === normalizeStatus(filter));
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Mapa de estaciones</Text>
-          <Text style={styles.subtitle}>Monitoreo geográfico en tiempo real</Text>
+          <Text style={styles.subtitle}>Monitoreo geografico en tiempo real</Text>
         </View>
       </View>
 
@@ -127,49 +138,53 @@ export default function MapScreen({ navigation }: any) {
                   <Text style={[styles.calloutStatus, { color: s.analysis.color }]}>{s.analysis.status}</Text>
                   <Text style={styles.calloutText}>Stock: {s.stock} gal</Text>
                   <Text style={styles.calloutText}>Precio: ${s.price}</Text>
-                  <Text style={styles.calloutText}>Análisis: {s.analysis.message}</Text>
+                  <Text style={styles.calloutText}>Analisis: {s.analysis.message}</Text>
                 </View>
               </Callout>
             </Marker>
           ))}
         </MapView>
 
-        <View style={styles.filterBar}>
-          <Text style={styles.filterLabel}>Filtro</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {filters.map((item) => (
-              <TouchableOpacity
-                key={item.value}
-                onPress={() => setFilter(item.value)}
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
-                    borderColor: filter === item.value ? item.color : colors.borderColor,
-                  },
-                ]}
-              >
-                <Text style={[styles.filterText, filter === item.value && styles.filterTextActive]}>{item.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <ScreenReveal delay={80}>
+          <View style={styles.filterBar}>
+            <Text style={styles.filterLabel}>Filtro</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+              {filters.map((item) => (
+                <PressableScale
+                  key={item.value}
+                  onPress={() => setFilter(item.value)}
+                  style={[
+                    styles.filterPill,
+                    {
+                      backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
+                      borderColor: filter === item.value ? item.color : colors.borderColor,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.filterText, filter === item.value && styles.filterTextActive]}>{item.label}</Text>
+                </PressableScale>
+              ))}
+            </ScrollView>
+          </View>
+        </ScreenReveal>
 
-        <View style={styles.legend}>
-          <Text style={styles.legendTitle}>Leyenda IA</Text>
-          <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: colors.success }]} />
-            <Text style={styles.legText}>Normal</Text>
+        <ScreenReveal delay={120}>
+          <View style={styles.legend}>
+            <Text style={styles.legendTitle}>Leyenda IA</Text>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.success }]} />
+              <Text style={styles.legText}>Normal</Text>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.warning }]} />
+              <Text style={styles.legText}>Observacion</Text>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.error }]} />
+              <Text style={styles.legText}>Infraccion</Text>
+            </View>
           </View>
-          <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: colors.warning }]} />
-            <Text style={styles.legText}>Observación</Text>
-          </View>
-          <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: colors.error }]} />
-            <Text style={styles.legText}>Infracción</Text>
-          </View>
-        </View>
+        </ScreenReveal>
 
         {loading && (
           <View style={styles.overlay}>
@@ -181,38 +196,40 @@ export default function MapScreen({ navigation }: any) {
         {!!error && !loading && (
           <View style={styles.overlay}>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={loadStations}>
+            <PressableScale style={styles.retryBtn} onPress={loadStations}>
               <Text style={styles.retryText}>Reintentar</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         )}
 
         {!!selectedStation && (
-          <View style={styles.detailCard}>
-            <View style={styles.detailHeader}>
-              <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-              <TouchableOpacity onPress={handleDeselectStation}>
-                <Ionicons name="close" size={18} color={colors.textLight} />
-              </TouchableOpacity>
+          <ScreenReveal delay={40}>
+            <View style={styles.detailCard}>
+              <View style={styles.detailHeader}>
+                <Text style={styles.detailTitle}>{selectedStation.name}</Text>
+                <PressableScale onPress={handleDeselectStation}>
+                  <Ionicons name="close" size={18} color={colors.textLight} />
+                </PressableScale>
+              </View>
+              <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
+                {selectedStation.analysis.status}
+              </Text>
+              <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
+              {typeof selectedStation.analysis.score === 'number' && (
+                <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
+              )}
+              <View style={styles.detailRow}>
+                <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
+                <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
+              </View>
+              <PressableScale
+                style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
+                onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
+              >
+                <Text style={styles.detailBtnText}>Ver detalle</Text>
+              </PressableScale>
             </View>
-            <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
-              {selectedStation.analysis.status}
-            </Text>
-            <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
-            {typeof selectedStation.analysis.score === 'number' && (
-              <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
-            )}
-            <View style={styles.detailRow}>
-              <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
-              <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
-              onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
-            >
-              <Text style={styles.detailBtnText}>Ver detalle</Text>
-            </TouchableOpacity>
-          </View>
+          </ScreenReveal>
         )}
       </View>
     </View>

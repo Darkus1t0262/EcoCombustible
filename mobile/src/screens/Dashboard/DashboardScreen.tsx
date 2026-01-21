@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal, Image } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { AuthService } from '../../services/AuthService';
 import { StatsService } from '../../services/StatsService';
 
@@ -42,152 +45,202 @@ export default function DashboardScreen({ navigation }: any) {
   const isDark = resolvedMode === 'dark';
   const handleToggleTheme = () => setMode(isDark ? 'light' : 'dark');
 
-  const MenuCard = ({ title, sub, icon, color, onPress }: any) => (
-    <TouchableOpacity style={styles.menuCard} onPress={onPress} activeOpacity={0.85}>
-      <View style={styles.menuHeaderRow}>
-        <View style={[styles.menuIcon, { backgroundColor: `${color}1A`, borderColor: `${color}40` }]}>
-          {typeof icon === 'string' ? <Ionicons name={icon as any} size={24} color={color} /> : icon}
-        </View>
-        <Ionicons name="arrow-forward" size={16} color={colors.textLight} />
+  const HeroStat = ({ label, value, icon, tone }: any) => (
+    <View style={[styles.heroStat, { borderColor: `${tone}40`, backgroundColor: `${tone}12` }]}>
+      <View style={[styles.heroStatIcon, { backgroundColor: `${tone}1A`, borderColor: `${tone}33` }]}>
+        {typeof icon === 'string' ? <Ionicons name={icon as any} size={16} color={tone} /> : icon}
       </View>
-      <Text style={styles.menuTitle}>{title}</Text>
-      <Text style={styles.menuSub}>{sub}</Text>
-    </TouchableOpacity>
-  );
-
-  const KPICard = ({ label, val, icon, color }: any) => (
-    <View style={styles.kpiCard}>
-      <View style={[styles.kpiIcon, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
-        {typeof icon === 'string' ? <Ionicons name={icon as any} size={18} color={color} /> : icon}
-      </View>
-      <View style={styles.kpiBody}>
-        <Text style={styles.kpiLabel}>{label}</Text>
-        <Text style={[styles.kpiValue, { color }]}>{val}</Text>
+      <View style={styles.heroStatBody}>
+        <Text style={styles.heroStatValue}>{value}</Text>
+        <Text style={styles.heroStatLabel}>{label}</Text>
       </View>
     </View>
+  );
+
+  const AlertCard = ({ title, value, hint, icon, color, onPress }: any) => (
+    <PressableScale style={[styles.alertCard, { borderColor: `${color}33` }]} onPress={onPress}>
+      <View style={styles.alertTop}>
+        <View style={[styles.alertIcon, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
+          {typeof icon === 'string' ? <Ionicons name={icon as any} size={18} color={color} /> : icon}
+        </View>
+        <Text style={[styles.alertValue, { color }]}>{value}</Text>
+      </View>
+      <Text style={styles.alertTitle}>{title}</Text>
+      <Text style={styles.alertHint}>{hint}</Text>
+    </PressableScale>
+  );
+
+  const ActionCard = ({ title, sub, icon, color, onPress }: any) => (
+    <PressableScale style={styles.actionCard} onPress={onPress}>
+      <View style={[styles.actionIcon, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
+        {typeof icon === 'string' ? <Ionicons name={icon as any} size={20} color={color} /> : icon}
+      </View>
+      <View style={styles.actionBody}>
+        <Text style={styles.actionTitle}>{title}</Text>
+        <Text style={styles.actionSub}>{sub}</Text>
+      </View>
+      <View style={[styles.actionChevron, { borderColor: `${color}33` }]}>
+        <Ionicons name="arrow-forward" size={14} color={color} />
+      </View>
+    </PressableScale>
   );
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: Math.max(insets.top, 16) }]}>
-        <View style={styles.hero}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroGlowAlt} />
-
-          <View style={styles.heroTop}>
-            <View style={styles.brandRow}>
-              <View style={styles.brandIcon}>
-                <MaterialCommunityIcons name="gas-station" size={22} color={colors.white} />
+        <ScreenReveal delay={80}>
+          <View style={styles.hero}>
+            <LinearGradient
+              colors={[`${colors.accent}3D`, `${colors.primary}22`, `${colors.surface}00`]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroGradient}
+            />
+            <View style={styles.heroTop}>
+              <View style={styles.brandRow}>
+                <View style={styles.brandIcon}>
+                  <Image source={require('../../../assets/logo.jpg')} style={styles.brandLogo} resizeMode="contain" />
+                </View>
+                <View style={styles.brandText}>
+                  <Text style={styles.heroTitle} numberOfLines={1} ellipsizeMode="tail">
+                    EcoCombustible
+                  </Text>
+                  <Text style={styles.heroSubtitle}>Panel operativo en tiempo real</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.heroTitle}>EcoCombustible</Text>
-                <Text style={styles.heroSubtitle}>Control inteligente del subsidio</Text>
+              <View style={styles.heroActions}>
+                <PressableScale style={styles.themeToggle} onPress={handleToggleTheme}>
+                  <Ionicons name={isDark ? 'moon' : 'sunny'} size={16} color={colors.accent} />
+                  <Text style={styles.themeToggleText}>{isDark ? 'Oscuro' : 'Claro'}</Text>
+                </PressableScale>
+                <PressableScale style={styles.logoutBtn} onPress={handleLogout}>
+                  <Ionicons name="log-out-outline" size={16} color={colors.white} />
+                  <Text style={styles.logoutText}>Salir</Text>
+                </PressableScale>
               </View>
             </View>
-            <View style={styles.heroActions}>
-              <TouchableOpacity style={styles.themeToggle} onPress={handleToggleTheme} activeOpacity={0.85}>
-                <Ionicons name={isDark ? 'moon' : 'sunny'} size={16} color={colors.primary} />
-                <Text style={styles.themeToggleText}>{isDark ? 'Oscuro' : 'Claro'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={16} color={colors.white} />
-                <Text style={styles.logoutText}>Salir</Text>
-              </TouchableOpacity>
+
+            <View style={styles.heroBullets}>
+              <View style={styles.heroBullet}>
+                <Ionicons name="flash-outline" size={14} color={colors.accent} />
+                <Text style={styles.heroBulletText}>Alertas IA y trazabilidad inmediata</Text>
+              </View>
+              <View style={styles.heroBullet}>
+                <Ionicons name="pulse-outline" size={14} color={colors.accent} />
+                <Text style={styles.heroBulletText}>Consumo y auditorias siempre visibles</Text>
+              </View>
+              <View style={styles.heroBullet}>
+                <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
+                <Text style={styles.heroBulletText}>Prioridades claras para tomar accion</Text>
+              </View>
             </View>
+
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 12 }} />
+            ) : (
+              <View style={styles.heroStats}>
+                <HeroStat
+                  label="Estaciones activas"
+                  value={stats.stations}
+                  icon={<MaterialCommunityIcons name="gas-station" size={16} color={colors.accent} />}
+                  tone={colors.accent}
+                />
+                <HeroStat
+                  label="Auditorias del mes"
+                  value={stats.auditsThisMonth}
+                  icon="checkmark-circle"
+                  tone={colors.success}
+                />
+                <HeroStat
+                  label="Denuncias pendientes"
+                  value={stats.pendingComplaints}
+                  icon="alert-circle"
+                  tone={colors.error}
+                />
+              </View>
+            )}
           </View>
+        </ScreenReveal>
 
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>Monitoreo nacional en tiempo real</Text>
+        <ScreenReveal delay={160}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Alertas activas</Text>
+            <Text style={styles.sectionNote}>Ir directo a lo importante</Text>
           </View>
-            <TouchableOpacity
-              style={styles.changePassBtn}
-              onPress={() => navigation.navigate('ChangePassword')}
-            >
-              <Ionicons name="key-outline" size={16} color={colors.primary} />
-              <Text style={styles.changePassText}>Cambio de Contraseña</Text>
-            </TouchableOpacity>   
-
-
-        </View>
-
-        <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-        <View style={styles.grid}>
-          <MenuCard
-            title="Estaciones"
-            sub="Listado y estado"
-            icon={<MaterialCommunityIcons name="gas-station" size={24} color={colors.primary} />}
-            color={colors.primary}
-            onPress={() => navigation.navigate('StationList')}
-          />
-          <MenuCard
-            title="Mapa"
-            sub="Vista geográfica"
-            icon="map"
-            color={colors.success}
-            onPress={() => navigation.navigate('Map')}
-          />
-          <MenuCard
-            title="Auditorías"
-            sub="Revisión remota"
-            icon="checkmark-circle"
-            color={colors.warning}
-            onPress={() => navigation.navigate('Audit')}
-          />
-          <MenuCard
-            title="Denuncias" 
-            sub="Bandeja"
-            icon="alert-circle"
-            color={colors.purple}
-            onPress={() => navigation.navigate('Complaints')}
-          />
-          <MenuCard
-            title="Reportes"
-            sub="Estadísticas"
-            icon="stats-chart"
-            color={colors.secondary}
-            onPress={() => navigation.navigate('Reports')}
-          />
-          <MenuCard
-            title="Vehículos"
-            sub="Registro"
-            icon="car"
-            color={colors.primary}
-            onPress={() => navigation.navigate('VehicleList')}
-          />
-          <MenuCard
-            title="Transacciones"
-            sub="Consumo"
-            icon="list"
-            color={colors.success}
-            onPress={() => navigation.navigate('TransactionList')}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>Resumen</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 10 }} />
-        ) : (
-          <View style={styles.kpiGrid}>
-            <KPICard
-              label="Estaciones activas"
-              val={stats.stations}
-              icon={<MaterialCommunityIcons name="gas-station" size={18} color={colors.primary} />}
-              color={colors.primary}
-            />
-            <KPICard
-              label="Auditorías del mes"
-              val={stats.auditsThisMonth}
-              icon="checkmark-circle"
-              color={colors.success}
-            />
-            <KPICard
-              label="Denuncias pendientes"
-              val={stats.pendingComplaints}
+          <PressableScale style={styles.changePassBtn} onPress={() => navigation.navigate('ChangePassword')}>
+            <Ionicons name="key-outline" size={16} color={colors.primary} />
+            <Text style={styles.changePassText}>Cambiar contrasena</Text>
+          </PressableScale>
+          <View style={styles.alertGrid}>
+            <AlertCard
+              title="Denuncias pendientes"
+              value={loading ? '--' : stats.pendingComplaints}
+              hint="Revisar casos abiertos"
               icon="alert-circle"
               color={colors.error}
+              onPress={() => navigation.navigate('Complaints')}
+            />
+            <AlertCard
+              title="Auditorias del mes"
+              value={loading ? '--' : stats.auditsThisMonth}
+              hint="Inspecciones en proceso"
+              icon="checkmark-circle"
+              color={colors.warning}
+              onPress={() => navigation.navigate('Audit')}
             />
           </View>
-        )}
+        </ScreenReveal>
+
+        <ScreenReveal delay={220}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Acciones rapidas</Text>
+            <Text style={styles.sectionNote}>Entrar directo al punto</Text>
+          </View>
+          <View style={styles.actionGrid}>
+            <ActionCard
+              title="Mapa"
+              sub="Riesgo en tiempo real"
+              icon="map"
+              color={colors.accent}
+              onPress={() => navigation.navigate('Map')}
+            />
+            <ActionCard
+              title="Estaciones"
+              sub="Listado y control"
+              icon={<MaterialCommunityIcons name="gas-station" size={20} color={colors.primary} />}
+              color={colors.primary}
+              onPress={() => navigation.navigate('StationList')}
+            />
+            <ActionCard
+              title="Transacciones"
+              sub="Consumo y trazas"
+              icon="list"
+              color={colors.success}
+              onPress={() => navigation.navigate('TransactionList')}
+            />
+            <ActionCard
+              title="Reportes"
+              sub="Datos ejecutivos"
+              icon="stats-chart"
+              color={colors.secondary}
+              onPress={() => navigation.navigate('Reports')}
+            />
+            <ActionCard
+              title="Denuncias"
+              sub="Bandeja prioritaria"
+              icon="alert-circle"
+              color={colors.error}
+              onPress={() => navigation.navigate('Complaints')}
+            />
+            <ActionCard
+              title="Vehiculos"
+              sub="Registro y control"
+              icon="car"
+              color={colors.primary}
+              onPress={() => navigation.navigate('VehicleList')}
+            />
+          </View>
+        </ScreenReveal>
       </ScrollView>
       <Modal
         transparent
@@ -204,9 +257,9 @@ export default function DashboardScreen({ navigation }: any) {
               style={{ marginBottom: 10 }}
             />
 
-            <Text style={styles.modalTitle}>¿Salir de la aplicación?</Text>
+            <Text style={styles.modalTitle}>Salir de la aplicacion?</Text>
             <Text style={styles.modalText}>
-              ¿Está seguro de que desea cerrar sesión?
+              Seguro que deseas cerrar sesion?
             </Text>
 
             <View style={styles.modalActions}>
@@ -221,7 +274,7 @@ export default function DashboardScreen({ navigation }: any) {
                 style={styles.modalBtnConfirm}
                 onPress={confirmLogout}
               >
-                <Text style={styles.modalBtnConfirmText}>Sí</Text>
+                <Text style={styles.modalBtnConfirmText}>Si</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -233,54 +286,49 @@ export default function DashboardScreen({ navigation }: any) {
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: 30 },
+  scroll: { paddingBottom: 36 },
   hero: {
     margin: 20,
     padding: 18,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.borderColor,
     overflow: 'hidden',
   },
-  heroGlow: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 999,
-    backgroundColor: `${colors.primary}22`,
-    top: -40,
-    right: -60,
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
-  heroGlowAlt: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 999,
-    backgroundColor: `${colors.success}1A`,
-    bottom: -30,
-    left: -40,
-  },
-  heroTop: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
-  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  heroTop: { gap: 12 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
   brandIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
   },
-  heroTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: titleFont },
-  heroSubtitle: { fontSize: 12, color: colors.textLight },
+  brandLogo: { width: 36, height: 36 },
+  brandText: { flex: 1, minWidth: 0 },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: titleFont,
+    includeFontPadding: false,
+  },
+  heroSubtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   heroActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
-    width: '100%',
+    alignSelf: 'flex-end',
   },
   themeToggle: {
     flexDirection: 'row',
@@ -306,31 +354,80 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.error,
   },
   logoutText: { color: colors.white, fontWeight: '700', fontSize: 12 },
-  heroBadge: {
-    marginTop: 16,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+  heroBullets: {
+    marginTop: 14,
+    gap: 6,
   },
-  heroBadgeText: { fontSize: 11, color: colors.textLight, fontWeight: '600' },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-    marginHorizontal: 20,
-    marginTop: 12,
-    marginBottom: 12,
-    fontFamily: titleFont,
+  heroBullet: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroBulletText: { fontSize: 11, color: colors.textLight },
+  heroStats: {
+    marginTop: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 },
-  menuCard: {
+  heroStat: {
+    width: '48%',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroStatIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroStatBody: { flex: 1 },
+  heroStatValue: { fontSize: 16, fontWeight: '700', color: colors.text },
+  heroStatLabel: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+  sectionHeader: { marginHorizontal: 20, marginTop: 12, marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.text, fontFamily: titleFont },
+  sectionNote: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+  alertGrid: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+  alertCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  alertTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  alertIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertValue: { fontSize: 18, fontWeight: '700' },
+  alertTitle: { marginTop: 10, fontSize: 13, fontWeight: '700', color: colors.text },
+  alertHint: { fontSize: 11, color: colors.textLight, marginTop: 4 },
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    gap: 12,
+    paddingBottom: 12,
+  },
+  actionCard: {
     width: '48%',
     backgroundColor: colors.surface,
     padding: 14,
     borderRadius: 16,
-    marginBottom: 14,
     borderWidth: 1,
     borderColor: colors.borderColor,
     shadowColor: '#000',
@@ -339,44 +436,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  menuHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  menuIcon: {
-    width: 40,
-    height: 40,
+  actionIcon: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuTitle: { marginTop: 10, fontWeight: '700', color: colors.text, fontSize: 13 },
-  menuSub: { fontSize: 11, color: colors.textLight, marginTop: 4 },
-  kpiGrid: { paddingHorizontal: 20, gap: 12 },
-  kpiCard: {
-    backgroundColor: colors.surface,
-    padding: 14,
-    borderRadius: 16,
+  actionBody: { marginTop: 10 },
+  actionTitle: { fontWeight: '700', color: colors.text, fontSize: 13 },
+  actionSub: { fontSize: 11, color: colors.textLight, marginTop: 4 },
+  actionChevron: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.borderColor,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
-  kpiIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  kpiBody: { flex: 1 },
-  kpiLabel: { fontSize: 12, color: colors.textLight, marginBottom: 4 },
-  kpiValue: { fontSize: 18, fontWeight: '700' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -434,22 +512,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
   },
   changePassBtn: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 6,
-  paddingHorizontal: 10,
-  paddingVertical: 6,
-  borderRadius: 999,
-  borderWidth: 1,
-  borderColor: `${colors.primary}33`,
-  backgroundColor: `${colors.primary}12`,
-  alignSelf: 'flex-start',
-  marginTop: 12,
-},
-changePassText: {
-  color: colors.primary,
-  fontWeight: '600',
-  fontSize: 12,
-},
-
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: `${colors.primary}33`,
+    backgroundColor: `${colors.primary}12`,
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+  changePassText: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 12,
+  },
 });

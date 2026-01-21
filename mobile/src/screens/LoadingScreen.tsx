@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, Image } from 'react-native';
 import { useTheme } from '../theme/theme';
 import type { ThemeColors } from '../theme/colors';
 
@@ -21,7 +20,7 @@ export default function LoadingScreen({ label }: Props) {
 
       <View style={styles.card}>
         <View style={styles.iconWrap}>
-          <MaterialCommunityIcons name="gas-station" size={26} color={colors.primary} />
+          <Image source={require('../../assets/logo.jpg')} style={styles.logo} resizeMode="contain" />
         </View>
         <Text style={styles.title}>EcoCombustible</Text>
         <Text style={styles.subtitle}>{label || 'Cargando datos...'}</Text>
@@ -80,6 +79,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderColor,
   },
+  logo: { width: 36, height: 36 },
   title: {
     marginTop: 12,
     fontSize: 18,
