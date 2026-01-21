@@ -21,6 +21,7 @@ import { USE_REMOTE_AUTH } from '../config/env';
 import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
 import { useTheme } from '../theme/theme';
+import ChangePasswordScreen from '../screens/Auth/ChangePasswordScreen';
 
 const Stack = createStackNavigator();
 
@@ -89,6 +90,7 @@ export default function AppNavigator() {
         <Stack.Screen name="TransactionList" component={TransactionListScreen} />
         <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
+         <Stack.Screen   name="ChangePassword"   component={ChangePasswordScreen}   options={{ title: 'Cambiar contraseña' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

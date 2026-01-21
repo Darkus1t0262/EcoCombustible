@@ -81,4 +81,28 @@ export const AuthService = {
     }
     await SecureSession.clear();
   },
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+      const session = await SecureSession.get();
+      
+      if (!session?.token) {
+        throw new Error('No session');
+      }
+    
+      const response = await fetch(buildApiUrl('/auth/change-password'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+    
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.error || 'Error changing password');
+      }
+    },
 };

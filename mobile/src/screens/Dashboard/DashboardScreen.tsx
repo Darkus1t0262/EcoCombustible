@@ -99,9 +99,18 @@ export default function DashboardScreen({ navigation }: any) {
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Monitoreo nacional en tiempo real</Text>
           </View>
+            <TouchableOpacity
+              style={styles.changePassBtn}
+              onPress={() => navigation.navigate('ChangePassword')}
+            >
+              <Ionicons name="key-outline" size={16} color={colors.primary} />
+              <Text style={styles.changePassText}>Cambio de Contraseña</Text>
+            </TouchableOpacity>   
+
+
         </View>
 
-        <Text style={styles.sectionTitle}>Acciones r pidas</Text>
+        <Text style={styles.sectionTitle}>Acciones rápidas</Text>
         <View style={styles.grid}>
           <MenuCard
             title="Estaciones"
@@ -112,20 +121,20 @@ export default function DashboardScreen({ navigation }: any) {
           />
           <MenuCard
             title="Mapa"
-            sub="Vista geogr fica"
+            sub="Vista geográfica"
             icon="map"
             color={colors.success}
             onPress={() => navigation.navigate('Map')}
           />
           <MenuCard
-            title="Auditor¡as"
-            sub="Revisi¢n remota"
+            title="Auditorías"
+            sub="Revisión remota"
             icon="checkmark-circle"
             color={colors.warning}
             onPress={() => navigation.navigate('Audit')}
           />
           <MenuCard
-            title="Denuncias"
+            title="Denuncias" 
             sub="Bandeja"
             icon="alert-circle"
             color={colors.purple}
@@ -133,13 +142,13 @@ export default function DashboardScreen({ navigation }: any) {
           />
           <MenuCard
             title="Reportes"
-            sub="Estad¡sticas"
+            sub="Estadísticas"
             icon="stats-chart"
             color={colors.secondary}
             onPress={() => navigation.navigate('Reports')}
           />
           <MenuCard
-            title="Veh¡culos"
+            title="Vehículos"
             sub="Registro"
             icon="car"
             color={colors.primary}
@@ -166,7 +175,7 @@ export default function DashboardScreen({ navigation }: any) {
               color={colors.primary}
             />
             <KPICard
-              label="Auditor¡as del mes"
+              label="Auditorías del mes"
               val={stats.auditsThisMonth}
               icon="checkmark-circle"
               color={colors.success}
@@ -195,9 +204,9 @@ export default function DashboardScreen({ navigation }: any) {
               style={{ marginBottom: 10 }}
             />
 
-            <Text style={styles.modalTitle}>¨Salir de la aplicaci¢n?</Text>
+            <Text style={styles.modalTitle}>¿Salir de la aplicación?</Text>
             <Text style={styles.modalText}>
-              ¨Est  seguro de que desea cerrar sesi¢n?
+              ¿Está seguro de que desea cerrar sesión?
             </Text>
 
             <View style={styles.modalActions}>
@@ -212,7 +221,7 @@ export default function DashboardScreen({ navigation }: any) {
                 style={styles.modalBtnConfirm}
                 onPress={confirmLogout}
               >
-                <Text style={styles.modalBtnConfirmText}>S¡</Text>
+                <Text style={styles.modalBtnConfirmText}>Sí</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -424,4 +433,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+  changePassBtn: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  borderRadius: 999,
+  borderWidth: 1,
+  borderColor: `${colors.primary}33`,
+  backgroundColor: `${colors.primary}12`,
+  alignSelf: 'flex-start',
+  marginTop: 12,
+},
+changePassText: {
+  color: colors.primary,
+  fontWeight: '600',
+  fontSize: 12,
+},
+
 });
