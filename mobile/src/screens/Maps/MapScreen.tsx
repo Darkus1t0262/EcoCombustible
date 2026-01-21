@@ -1,34 +1,59 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
+
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function MapScreen({ navigation }: any) {
+  const { colors, resolvedMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const filters = useMemo(
+    () => [
+      { label: 'Todas', value: 'Todas', color: colors.primary },
+      { label: 'OK', value: 'Cumplimiento', color: colors.success },
+      { label: 'Obs', value: 'Observacion', color: colors.warning },
+      { label: 'Alerta', value: 'Infraccion', color: colors.error },
+    ],
+    [colors]
+  );
   const mapRef = useRef<MapView | null>(null);
   const [filter, setFilter] = useState('Todas');
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLocation, setHasLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState<any | null>(null);
+  const [error, setError] = useState('');
 
   const initialRegion = { latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 };
 
-  useEffect(() => {
-    const load = async () => {
+  const loadStations = useCallback(async () => {
+    try {
+      setError('');
+      setLoading(true);
       const data = await StationService.getAllStations();
       const processed = data.map((s) => ({
         ...s,
-        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
+        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s, colors), colors),
       }));
       setStations(processed);
+    } catch (err) {
+      setError('No se pudieron cargar las estaciones.');
+    } finally {
       setLoading(false);
-    };
-    load();
-  }, []);
+    }
+  }, [colors]);
+
+  useEffect(() => {
+    loadStations();
+  }, [loadStations]);
 
   useEffect(() => {
     const loadLocation = async () => {
@@ -69,39 +94,30 @@ export default function MapScreen({ navigation }: any) {
     mapRef.current?.animateToRegion(initialRegion, 500);
   };
 
+  const normalizeStatus = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
   const filteredStations =
-    filter === 'Todas' ? stations : stations.filter((s) => s.analysis.status === filter);
+    filter === 'Todas'
+      ? stations
+      : stations.filter((s) => normalizeStatus(s.analysis.status) === normalizeStatus(filter));
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Mapa de estaciones</Text>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <Text style={{ fontSize: 12, marginRight: 10, color: '#555' }}>Filtro:</Text>
-        <TouchableOpacity onPress={() => setFilter('Todas')} style={[styles.pill, { backgroundColor: COLORS.primary }]}>
-          <Text style={styles.pillText}>Todas</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setFilter('Cumplimiento')} style={[styles.pill, { backgroundColor: COLORS.success }]}>
-          <Text style={styles.pillText}>OK</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setFilter('Observacion')} style={[styles.pill, { backgroundColor: COLORS.warning }]}>
-          <Text style={styles.pillText}>Obs</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setFilter('Infraccion')} style={[styles.pill, { backgroundColor: COLORS.error }]}>
-          <Text style={styles.pillText}>Alerta</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </PressableScale>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Mapa de estaciones</Text>
+          <Text style={styles.subtitle}>Monitoreo geografico en tiempo real</Text>
         </View>
-      ) : (
+      </View>
+
+      <View style={styles.mapWrap}>
         <MapView
           ref={mapRef}
           style={styles.map}
@@ -128,87 +144,214 @@ export default function MapScreen({ navigation }: any) {
             </Marker>
           ))}
         </MapView>
-      )}
 
-      <View style={styles.legend}>
-        <Text style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 5 }}>Leyenda IA</Text>
-        <View style={styles.row}>
-          <View style={[styles.dot, { backgroundColor: COLORS.success }]} />
-          <Text style={styles.legText}>Normal</Text>
-        </View>
-        <View style={styles.row}>
-          <View style={[styles.dot, { backgroundColor: COLORS.warning }]} />
-          <Text style={styles.legText}>Observacion</Text>
-        </View>
-        <View style={styles.row}>
-          <View style={[styles.dot, { backgroundColor: COLORS.error }]} />
-          <Text style={styles.legText}>Infraccion</Text>
-        </View>
+        <ScreenReveal delay={80}>
+          <View style={styles.filterBar}>
+            <Text style={styles.filterLabel}>Filtro</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+              {filters.map((item) => (
+                <PressableScale
+                  key={item.value}
+                  onPress={() => setFilter(item.value)}
+                  style={[
+                    styles.filterPill,
+                    {
+                      backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
+                      borderColor: filter === item.value ? item.color : colors.borderColor,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.filterText, filter === item.value && styles.filterTextActive]}>{item.label}</Text>
+                </PressableScale>
+              ))}
+            </ScrollView>
+          </View>
+        </ScreenReveal>
+
+        <ScreenReveal delay={120}>
+          <View style={styles.legend}>
+            <Text style={styles.legendTitle}>Leyenda IA</Text>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.success }]} />
+              <Text style={styles.legText}>Normal</Text>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.warning }]} />
+              <Text style={styles.legText}>Observacion</Text>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: colors.error }]} />
+              <Text style={styles.legText}>Infraccion</Text>
+            </View>
+          </View>
+        </ScreenReveal>
+
+        {loading && (
+          <View style={styles.overlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.overlayText}>Cargando estaciones...</Text>
+          </View>
+        )}
+
+        {!!error && !loading && (
+          <View style={styles.overlay}>
+            <Text style={styles.errorText}>{error}</Text>
+            <PressableScale style={styles.retryBtn} onPress={loadStations}>
+              <Text style={styles.retryText}>Reintentar</Text>
+            </PressableScale>
+          </View>
+        )}
+
+        {!!selectedStation && (
+          <ScreenReveal delay={40}>
+            <View style={styles.detailCard}>
+              <View style={styles.detailHeader}>
+                <Text style={styles.detailTitle}>{selectedStation.name}</Text>
+                <PressableScale onPress={handleDeselectStation}>
+                  <Ionicons name="close" size={18} color={colors.textLight} />
+                </PressableScale>
+              </View>
+              <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
+                {selectedStation.analysis.status}
+              </Text>
+              <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
+              {typeof selectedStation.analysis.score === 'number' && (
+                <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
+              )}
+              <View style={styles.detailRow}>
+                <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
+                <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
+              </View>
+              <PressableScale
+                style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
+                onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
+              >
+                <Text style={styles.detailBtnText}>Ver detalle</Text>
+              </PressableScale>
+            </View>
+          </ScreenReveal>
+        )}
       </View>
-
-      {!!selectedStation && (
-        <View style={styles.detailCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-            <TouchableOpacity onPress={handleDeselectStation}>
-              <Ionicons name="close" size={18} color="#666" />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
-            {selectedStation.analysis.status}
-          </Text>
-          <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
-          {typeof selectedStation.analysis.score === 'number' && (
-            <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
-          )}
-          <View style={styles.detailRow}>
-            <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
-            <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
-            onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
-          >
-            <Text style={styles.detailBtnText}>Ver detalle</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingTop: 50, padding: 20, backgroundColor: 'white', flexDirection: 'row', gap: 15, alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  map: { flex: 1 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  filterContainer: { position: 'absolute', top: 110, left: 10, right: 10, zIndex: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', padding: 10, borderRadius: 10 },
-  pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginHorizontal: 3 },
-  pillText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
-  legend: { position: 'absolute', bottom: 30, right: 20, backgroundColor: 'white', padding: 15, borderRadius: 10, elevation: 5 },
-  row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  legText: { fontSize: 10 },
-  callout: { width: 220, backgroundColor: 'white', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#E6E6E6' },
-  calloutTitle: { fontWeight: 'bold', marginBottom: 4, color: '#111' },
-  calloutStatus: { fontWeight: 'bold', marginBottom: 4 },
-  calloutText: { fontSize: 11, color: '#333' },
-  detailCard: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 110,
-    backgroundColor: 'white',
-    borderRadius: 14,
-    padding: 16,
-    elevation: 6,
-  },
-  detailTitle: { fontWeight: 'bold', fontSize: 16, color: '#111' },
-  detailStatus: { fontWeight: 'bold', marginTop: 6 },
-  detailText: { fontSize: 12, color: '#444', marginTop: 6 },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  detailMeta: { fontSize: 12, color: '#555' },
-  detailBtn: { marginTop: 12, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  detailBtnText: { color: 'white', fontWeight: 'bold' },
-});
+const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
+  const overlayBg = resolvedMode === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(248, 249, 251, 0.9)';
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      paddingTop: 50,
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      backgroundColor: colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+    headerAction: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceAlt,
+    },
+    headerText: { flex: 1 },
+    title: { fontSize: 20, fontWeight: '700', color: colors.text },
+    subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
+    mapWrap: { flex: 1 },
+    map: { flex: 1 },
+    filterBar: {
+      position: 'absolute',
+      top: 14,
+      left: 16,
+      right: 16,
+      padding: 12,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    filterLabel: { fontSize: 12, fontWeight: '600', color: colors.textLight },
+    filterScroll: { paddingRight: 6, gap: 8 },
+    filterPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    filterText: { fontSize: 11, fontWeight: '700', color: colors.textLight },
+    filterTextActive: { color: colors.white },
+    legend: {
+      position: 'absolute',
+      bottom: 30,
+      right: 20,
+      backgroundColor: colors.surface,
+      padding: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+    legendTitle: { fontWeight: '700', fontSize: 11, marginBottom: 6, color: colors.text },
+    row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
+    dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    legText: { fontSize: 10, color: colors.textLight },
+    callout: {
+      width: 220,
+      backgroundColor: colors.surface,
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+    calloutTitle: { fontWeight: '700', marginBottom: 4, color: colors.text, fontSize: 12 },
+    calloutStatus: { fontWeight: '700', marginBottom: 4, fontSize: 11 },
+    calloutText: { fontSize: 11, color: colors.textLight },
+    detailCard: {
+      position: 'absolute',
+      left: 20,
+      right: 20,
+      bottom: 110,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+    detailTitle: { fontWeight: '700', fontSize: 16, color: colors.text, flex: 1 },
+    detailStatus: { fontWeight: '700', marginTop: 6 },
+    detailText: { fontSize: 12, color: colors.textLight, marginTop: 6 },
+    detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+    detailMeta: { fontSize: 12, color: colors.textLight },
+    detailBtn: { marginTop: 12, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+    detailBtnText: { color: colors.white, fontWeight: '700' },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: overlayBg,
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    overlayText: { fontSize: 12, color: colors.textLight },
+    errorText: { color: colors.error, textAlign: 'center' },
+    retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+    retryText: { color: colors.white, fontWeight: '700' },
+  });
+};

@@ -5,6 +5,7 @@ import { authenticate } from '../lib/auth.js';
 import { analyzeTransaction } from '../lib/analysis.js';
 import { optionalDate, optionalNumber, optionalString } from '../lib/validation.js';
 import { parsePagination } from '../lib/pagination.js';
+import { evaluateTransactionRisk } from '../services/ml.js';
 
 const formatTransaction = (transaction: any, analysis: any) => ({
   ...transaction,
@@ -109,16 +110,27 @@ export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
     }
 
     const occurredAt = payload.occurredAt ?? new Date();
+    const totalAmount = Number((payload.liters * payload.unitPrice).toFixed(2));
+    const mlRisk = await evaluateTransactionRisk({
+      liters: payload.liters,
+      unitPrice: payload.unitPrice,
+      totalAmount,
+      capacityLiters: vehicle.capacityLiters,
+    });
+
     const transaction = await prisma.transaction.create({
       data: {
         stationId,
         vehicleId: vehicle.id,
         liters: payload.liters,
         unitPrice: payload.unitPrice,
-        totalAmount: Number((payload.liters * payload.unitPrice).toFixed(2)),
+        totalAmount,
         paymentMethod: payload.paymentMethod ?? null,
         reportedBy: payload.reportedBy ?? null,
         occurredAt,
+        riskScore: mlRisk?.score ?? null,
+        riskLabel: mlRisk?.label ?? null,
+        mlVersion: mlRisk?.modelVersion ?? null,
       },
     });
 

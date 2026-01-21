@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const ensureDirAsync = async (dir: string): Promise<void> => {
   const info = await FileSystem.getInfoAsync(dir);

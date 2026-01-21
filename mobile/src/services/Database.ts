@@ -281,7 +281,29 @@ const seedAudits = [
   },
 ];
 
-const seedComplaints = [
+type SeedComplaint = {
+  stationName: string;
+  stationId?: number;
+  type: string;
+  detail?: string | null;
+  source?: string | null;
+  reporterName?: string | null;
+  reporterRole?: string | null;
+  vehiclePlate?: string | null;
+  vehicleModel?: string | null;
+  fuelType?: string | null;
+  liters?: number | null;
+  unitPrice?: number | null;
+  totalAmount?: number | null;
+  occurredAt?: string | null;
+  status: string;
+  resolvedAt?: string | null;
+  resolutionNote?: string | null;
+  createdAt: string;
+  photoUri?: string | null;
+};
+
+const seedComplaints: SeedComplaint[] = [
   {
     stationName: 'Gasolinera El Oro',
     stationId: 2,

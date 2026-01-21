@@ -19,12 +19,19 @@ services:
       RATE_LIMIT_WINDOW: "1 minute"
       EXPO_PUSH_URL: https://exp.host/--/api/v2/push/send
       REDIS_URL: redis://redis:6379
+      METRICS_ENABLED: "true"
+      METRICS_PATH: /metrics
+      ML_ENABLED: "true"
+      ML_API_URL: http://ml:8000
+      ML_TIMEOUT_MS: 2000
+      ML_FALLBACK_LABEL: unknown
     ports:
       - "4000:4000"
     depends_on:
       - db
       - redis
       - minio
+      - ml
     volumes:
       - ecocombustible-storage:/app/storage
 
@@ -46,6 +53,8 @@ services:
       RATE_LIMIT_WINDOW: "1 minute"
       EXPO_PUSH_URL: https://exp.host/--/api/v2/push/send
       REDIS_URL: redis://redis:6379
+      METRICS_ENABLED: "true"
+      METRICS_PATH: /metrics
     depends_on:
       - db
       - redis
@@ -88,8 +97,37 @@ services:
       - "9001:9001"
     volumes:
       - ecocombustible-minio:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ecocombustible-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio minio123;
+      mc mb -p local/ecocombustible;
+      mc anonymous set download local/ecocombustible;
+      exit 0;
+      "
+
+  ml:
+    build:
+      context: ..
+      dockerfile: ml/Dockerfile
+    container_name: ecocombustible-ml
+    restart: unless-stopped
+    environment:
+      MODEL_PATH: /app/models/tx_model.joblib
+      MODEL_VERSION: tx-risk-v1
+      TRAIN_ON_START: "true"
+    ports:
+      - "8001:8000"
+    volumes:
+      - ecocombustible-ml:/app/models
 volumes:
   ecocombustible-db:
   ecocombustible-redis:
   ecocombustible-minio:
   ecocombustible-storage:
+  ecocombustible-ml:

@@ -59,6 +59,9 @@ export const AuthService = {
     if (stored?.user) {
       return stored.user as SessionUser;
     }
+    if (USE_REMOTE_AUTH) {
+      return null;
+    }
 
     const db = await getDb();
     const session = await db.getFirstAsync<SessionUser>(
@@ -72,8 +75,34 @@ export const AuthService = {
   },
 
   logout: async (): Promise<void> => {
-    const db = await getDb();
-    await db.runAsync('DELETE FROM session;');
+    if (!USE_REMOTE_AUTH) {
+      const db = await getDb();
+      await db.runAsync('DELETE FROM session;');
+    }
     await SecureSession.clear();
   },
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+      const session = await SecureSession.get();
+      
+      if (!session?.token) {
+        throw new Error('No session');
+      }
+    
+      const response = await fetch(buildApiUrl('/auth/change-password'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+    
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.error || 'Error changing password');
+      }
+    },
 };

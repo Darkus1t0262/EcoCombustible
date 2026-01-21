@@ -1,11 +1,29 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
+import { PressableScale } from '../../components/PressableScale';
+import { ScreenReveal } from '../../components/ScreenReveal';
 import { AuthService } from '../../services/AuthService';
 import { PushService } from '../../services/PushService';
 
+const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
+
 export default function LoginScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,8 +39,8 @@ export default function LoginScreen({ navigation }: any) {
     try {
       setLoading(true);
       await AuthService.login(username.trim(), password);
-      await PushService.registerDevice().catch(() => undefined);
       navigation.replace('Dashboard');
+      void PushService.registerDevice().catch(() => undefined);
     } catch (err) {
       setError('Credenciales invalidas.');
     } finally {
@@ -32,68 +50,192 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name="gas-station" size={40} color={COLORS.primary} />
-        </View>
-        <Text style={styles.title}>EcoCombustible Regulador</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <ScreenReveal delay={60}>
+            <View style={styles.hero}>
+              <View style={styles.heroGlow} />
+              <View style={styles.heroGlowAlt} />
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Inicio de sesion</Text>
-          <Text style={styles.label}>Usuario</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa usuario"
-            placeholderTextColor="#aaa"
-            autoCapitalize="none"
-            value={username}
-            onChangeText={setUsername}
-          />
+              <View style={styles.brandRow}>
+                <View style={styles.brandIcon}>
+                  <Image source={require('../../../assets/logo.jpg')} style={styles.brandLogo} resizeMode="contain" />
+                </View>
+                <View style={styles.brandText}>
+                  <Text style={styles.brandTitle} numberOfLines={1} ellipsizeMode="tail">
+                    EcoCombustible
+                  </Text>
+                  <Text style={styles.brandSubtitle}>Control del subsidio de combustibles</Text>
+                </View>
+              </View>
 
-          <Text style={styles.label}>Contrasena</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa contrasena"
-            secureTextEntry
-            placeholderTextColor="#aaa"
-            value={password}
-            onChangeText={setPassword}
-          />
+              <View style={styles.heroBadge}>
+                <MaterialCommunityIcons name="shield-check" size={14} color={colors.accent} />
+                <Text style={styles.heroBadgeText}>Acceso regulador</Text>
+              </View>
+            </View>
+          </ScreenReveal>
 
-          {!!error && <Text style={styles.errorText}>{error}</Text>}
+          <ScreenReveal delay={140}>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Inicio de sesion</Text>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Ingresar</Text>}
-          </TouchableOpacity>
-          <Text style={styles.footerText}>Usuario demo: admin / admin123</Text>
-        </View>
+              <Text style={styles.label}>Usuario</Text>
+              <View style={styles.inputRow}>
+                <MaterialCommunityIcons name="account" size={20} color={colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ingresa tu usuario"
+                  placeholderTextColor={colors.textLight}
+                  autoCapitalize="none"
+                  value={username}
+                  onChangeText={setUsername}
+                />
+              </View>
 
-        <View style={styles.flagContainer}>
-          <View style={{ flexDirection: 'row', height: 20, width: 60, marginBottom: 5 }}>
-            <View style={{ flex: 2, backgroundColor: '#FFD100' }} />
-            <View style={{ flex: 1, backgroundColor: '#0033A0' }} />
-            <View style={{ flex: 1, backgroundColor: '#EF3340' }} />
+              <Text style={styles.label}>Contrasena</Text>
+              <View style={styles.inputRow}>
+                <MaterialCommunityIcons name="lock" size={20} color={colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ingresa tu contrasena"
+                  placeholderTextColor={colors.textLight}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+
+              {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+              <PressableScale style={styles.button} onPress={handleLogin} disabled={loading}>
+                {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Ingresar</Text>}
+              </PressableScale>
+
+              <View style={styles.demoRow}>
+                <MaterialCommunityIcons name="information-outline" size={16} color={colors.textLight} />
+                <Text style={styles.demoText}>Usuario demo: admin / admin123</Text>
+              </View>
+            </View>
+          </ScreenReveal>
+
+          <View style={styles.flagContainer}>
+            <View style={styles.flag}>
+              <View style={[styles.flagStripe, { backgroundColor: '#FFD100', flex: 2 }]} />
+              <View style={[styles.flagStripe, { backgroundColor: '#0033A0', flex: 1 }]} />
+              <View style={[styles.flagStripe, { backgroundColor: '#EF3340', flex: 1 }]} />
+            </View>
+            <Text style={styles.govText}>Gobierno del Ecuador - ARCERNNR</Text>
           </View>
-          <Text style={styles.govText}>Gobierno del Ecuador - ARCERNNR</Text>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#D6E4FF' },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  iconContainer: { backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, color: '#000' },
-  card: { backgroundColor: 'white', width: '100%', padding: 25, borderRadius: 20, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1 },
-  cardTitle: { fontSize: 16, marginBottom: 20, color: '#555' },
-  label: { marginBottom: 8, fontWeight: '600', color: '#333' },
-  input: { backgroundColor: '#F5F6FA', padding: 15, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#E0E0E0' },
-  button: { backgroundColor: '#2F60FF', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  footerText: { textAlign: 'center', marginTop: 15, fontSize: 12, color: '#888' },
-  flagContainer: { marginTop: 40, alignItems: 'center' },
-  govText: { fontSize: 10, fontWeight: 'bold' },
-  errorText: { color: COLORS.error, marginBottom: 10 },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
+  hero: {
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  heroGlow: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 999,
+    backgroundColor: `${colors.primary}1A`,
+    top: -50,
+    right: -60,
+  },
+  heroGlowAlt: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 999,
+    backgroundColor: `${colors.accent}1A`,
+    bottom: -40,
+    left: -40,
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  brandIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+  },
+  brandLogo: { width: 36, height: 36 },
+  brandText: { flex: 1, minWidth: 0 },
+  brandTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: titleFont,
+    includeFontPadding: false,
+  },
+  brandSubtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
+  heroBadge: {
+    marginTop: 14,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceAlt,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+  },
+  heroBadgeText: { fontSize: 11, color: colors.textLight, fontWeight: '600' },
+  card: {
+    backgroundColor: colors.surface,
+    padding: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  label: { marginTop: 10, marginBottom: 6, fontWeight: '600', color: colors.textLight, fontSize: 12 },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    paddingHorizontal: 12,
+  },
+  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, color: colors.text },
+  button: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
+  demoRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  demoText: { fontSize: 12, color: colors.textLight },
+  flagContainer: { marginTop: 28, alignItems: 'center' },
+  flag: { flexDirection: 'row', height: 20, width: 70, borderRadius: 6, overflow: 'hidden', marginBottom: 6 },
+  flagStripe: { height: '100%' },
+  govText: { fontSize: 10, fontWeight: '700', color: colors.textLight },
+  errorText: { color: colors.error, marginTop: 8 },
 });

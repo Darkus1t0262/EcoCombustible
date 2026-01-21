@@ -1,7 +1,27 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const prisma = new PrismaClient();
+
+const buildAddress = (props: Record<string, any>) => {
+  const street = typeof props['addr:street'] === 'string' ? props['addr:street'].trim() : '';
+  const number = typeof props['addr:housenumber'] === 'string' ? props['addr:housenumber'].trim() : '';
+  const city = typeof props['addr:city'] === 'string' ? props['addr:city'].trim() : '';
+  const parts: string[] = [];
+  if (street) {
+    parts.push(number ? `${street} ${number}` : street);
+  }
+  if (city) {
+    parts.push(city);
+  }
+  return parts.join(', ');
+};
 
 const seed = async () => {
   const existingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
@@ -12,160 +32,46 @@ const seed = async () => {
         username: 'admin',
         passwordHash,
         name: 'Admin',
-        role: 'supervisor',
+        role: 'admin',
+        active: true,
       },
     });
   }
 
-  const stations = [
-    {
-      name: 'Estacion Petroecuador Norte',
-      address: 'Av. 6 de Diciembre, Quito',
-      lat: -0.1807,
-      lng: -78.4678,
-      stock: 15000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [1200, 1150, 1220, 1180, 1210],
-      lastAudit: new Date('2025-11-28'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera El Oro',
-      address: 'Machala, Centro',
-      lat: -3.2581,
-      lng: -79.9551,
-      stock: 45000,
-      price: 2.58,
-      officialPrice: 2.55,
-      history: [300, 200, 4500, 100, 300],
-      lastAudit: new Date('2025-11-25'),
-      status: 'Observacion',
-    },
-    {
-      name: 'Estacion Primax Centro',
-      address: 'Guayaquil',
-      lat: -2.1962,
-      lng: -79.8862,
-      stock: 2000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [0, 0, 0, 0, 0],
-      lastAudit: new Date('2025-11-30'),
-      status: 'Infraccion',
-    },
-    {
-      name: 'Estacion Andina Sur',
-      address: 'Av. Loja, Cuenca',
-      lat: -2.8974,
-      lng: -79.0045,
-      stock: 12000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [900, 880, 910, 930, 920],
-      lastAudit: new Date('2025-11-20'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera Rio Verde',
-      address: 'Esmeraldas',
-      lat: 0.9529,
-      lng: -79.6522,
-      stock: 8000,
-      price: 2.6,
-      officialPrice: 2.55,
-      history: [300, 320, 340, 310, 350],
-      lastAudit: new Date('2025-11-18'),
-      status: 'Observacion',
-    },
-    {
-      name: 'Estacion Sierra Norte',
-      address: 'Ibarra',
-      lat: 0.3392,
-      lng: -78.1222,
-      stock: 6000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [700, 680, 710, 690, 705],
-      lastAudit: new Date('2025-11-19'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'PetroQ Oriente',
-      address: 'Tena',
-      lat: -0.9902,
-      lng: -77.8129,
-      stock: 22000,
-      price: 2.52,
-      officialPrice: 2.55,
-      history: [1400, 1500, 1350, 1420, 1480],
-      lastAudit: new Date('2025-11-22'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Gasolinera Litoral',
-      address: 'Manta',
-      lat: -0.9677,
-      lng: -80.7089,
-      stock: 5000,
-      price: 2.75,
-      officialPrice: 2.55,
-      history: [400, 390, 410, 395, 405],
-      lastAudit: new Date('2025-11-27'),
-      status: 'Infraccion',
-    },
-    {
-      name: 'Estacion Centro Sur',
-      address: 'Ambato',
-      lat: -1.2417,
-      lng: -78.6197,
-      stock: 9000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [0, 0, 0, 0, 0],
-      lastAudit: new Date('2025-11-21'),
-      status: 'Observacion',
-    },
-    {
-      name: 'Gasolinera Valle',
-      address: 'Latacunga',
-      lat: -0.9352,
-      lng: -78.6155,
-      stock: 11000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [1000, 1050, 980, 1200, 1150],
-      lastAudit: new Date('2025-11-23'),
-      status: 'Cumplimiento',
-    },
-    {
-      name: 'Estacion Frontera',
-      address: 'Tulcan',
-      lat: 0.8224,
-      lng: -77.7329,
-      stock: 3000,
-      price: 2.9,
-      officialPrice: 2.55,
-      history: [200, 210, 190, 205, 215],
-      lastAudit: new Date('2025-11-26'),
-      status: 'Infraccion',
-    },
-    {
-      name: 'Estacion Pacifico',
-      address: 'Salinas',
-      lat: -2.2149,
-      lng: -80.9524,
-      stock: 7000,
-      price: 2.55,
-      officialPrice: 2.55,
-      history: [650, 600, 700, 620, 680],
-      lastAudit: new Date('2025-11-24'),
-      status: 'Cumplimiento',
-    },
-  ];
+  const geojsonPath = path.join(__dirname, '..', 'export.geojson');
+  const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));
+  const stations = geojsonData.features
+    .map((feature: any) => {
+      const props = feature.properties ?? {};
+      const coords = feature.geometry?.coordinates ?? [];
+      const lng = Number(coords[0]);
+      const lat = Number(coords[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return null;
+      }
+      const rawName = typeof props.name === 'string' ? props.name.trim() : '';
+      const osmId = props['@id'] ?? feature.id;
+      const name = rawName || (osmId ? `Sin nombre ${osmId}` : 'Sin nombre');
+      const address = buildAddress(props) || rawName || name;
+      return {
+        name,
+        address,
+        lat,
+        lng,
+        stock: 10000, // Valor por defecto
+        price: 2.55, // Valor por defecto
+        officialPrice: 2.55, // Valor por defecto
+        history: [], // Array vacío por defecto
+        lastAudit: null,
+        status: 'Cumplimiento', // Estado por defecto
+      };
+    })
+    .filter((station: any) => station !== null);
 
   for (const station of stations) {
-    const existing = await prisma.station.findFirst({ where: { name: station.name } });
+    const existing = await prisma.station.findFirst({
+      where: { name: station.name, lat: station.lat, lng: station.lng },
+    });
     if (!existing) {
       await prisma.station.create({ data: station });
     }
@@ -179,14 +85,14 @@ const seed = async () => {
       plate: 'PBA-1024',
       model: 'Toyota Hilux 2019',
       capacityLiters: 120,
-      fuelType: 'Diesel',
+      fuelType: 'Diésel',
       ownerName: 'Andrea G.',
     },
     {
       plate: 'ABC-5531',
       model: 'Chevrolet D-Max 2021',
       capacityLiters: 95,
-      fuelType: 'Diesel',
+      fuelType: 'Diésel',
       ownerName: 'Carlos D.',
     },
     {
@@ -200,7 +106,7 @@ const seed = async () => {
       plate: 'PCE-7740',
       model: 'Hyundai H1 2020',
       capacityLiters: 75,
-      fuelType: 'Diesel',
+      fuelType: 'Diésel',
       ownerName: 'Luis P.',
     },
   ];
@@ -218,7 +124,7 @@ const seed = async () => {
   const transactions = [
     {
       vehiclePlate: 'PBA-1024',
-      stationName: 'Estacion Frontera',
+      stationName: 'Estación Frontera',
       liters: 180,
       unitPrice: 2.6,
       paymentMethod: 'Efectivo',
@@ -227,7 +133,7 @@ const seed = async () => {
     },
     {
       vehiclePlate: 'ABC-5531',
-      stationName: 'Estacion Centro Sur',
+      stationName: 'Estación Centro Sur',
       liters: 95,
       unitPrice: 2.55,
       paymentMethod: 'Tarjeta',
@@ -245,7 +151,7 @@ const seed = async () => {
     },
     {
       vehiclePlate: 'PCE-7740',
-      stationName: 'Estacion Andina Sur',
+      stationName: 'Estación Andina Sur',
       liters: 70,
       unitPrice: 2.55,
       paymentMethod: 'Credito',
@@ -294,7 +200,7 @@ const seed = async () => {
 
   const audits = [
     {
-      stationName: 'Estacion Petroecuador Norte',
+      stationName: 'Estación Petroecuador Norte',
       code: 'AUD-2025-156',
       status: 'pending',
       priceExpected: 2.55,
@@ -312,7 +218,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-02T15:10:00.000Z'),
     },
     {
-      stationName: 'Estacion Primax Centro',
+      stationName: 'Estación Primax Centro',
       code: 'AUD-2025-170',
       status: 'pending',
       priceExpected: 2.55,
@@ -321,7 +227,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-03T09:00:00.000Z'),
     },
     {
-      stationName: 'Estacion Andina Sur',
+      stationName: 'Estación Andina Sur',
       code: 'AUD-2025-175',
       status: 'pending',
       priceExpected: 2.55,
@@ -339,7 +245,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-05T11:00:00.000Z'),
     },
     {
-      stationName: 'Estacion Sierra Norte',
+      stationName: 'Estación Sierra Norte',
       code: 'AUD-2025-189',
       status: 'approved',
       priceExpected: 2.55,
@@ -357,7 +263,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-07T14:40:00.000Z'),
     },
     {
-      stationName: 'Estacion Frontera',
+      stationName: 'Estación Frontera',
       code: 'AUD-2025-195',
       status: 'pending',
       priceExpected: 2.55,
@@ -375,7 +281,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-09T12:00:00.000Z'),
     },
     {
-      stationName: 'Estacion Centro Sur',
+      stationName: 'Estación Centro Sur',
       code: 'AUD-2025-205',
       status: 'rejected',
       priceExpected: 2.55,
@@ -393,7 +299,7 @@ const seed = async () => {
       createdAt: new Date('2025-12-11T09:10:00.000Z'),
     },
     {
-      stationName: 'Estacion Pacifico',
+      stationName: 'Estación Pacifico',
       code: 'AUD-2025-211',
       status: 'pending',
       priceExpected: 2.55,
@@ -433,8 +339,8 @@ const seed = async () => {
       createdAt: new Date('2025-12-02T12:00:00.000Z'),
     },
     {
-      stationName: 'Estacion Primax Centro',
-      stationId: stationMap.get('Estacion Primax Centro'),
+      stationName: 'Estación Primax Centro',
+      stationId: stationMap.get('Estación Primax Centro'),
       type: 'Falta de stock',
       detail: 'No se despacha combustible en horas pico.',
       source: 'cliente',
@@ -446,8 +352,8 @@ const seed = async () => {
       createdAt: new Date('2025-12-01T08:30:00.000Z'),
     },
     {
-      stationName: 'Estacion Andina Sur',
-      stationId: stationMap.get('Estacion Andina Sur'),
+      stationName: 'Estación Andina Sur',
+      stationId: stationMap.get('Estación Andina Sur'),
       type: 'Dispensador defectuoso',
       detail: 'El dispensador 2 marca menos de lo entregado.',
       source: 'despachador',
@@ -467,16 +373,16 @@ const seed = async () => {
       createdAt: new Date('2025-12-05T09:15:00.000Z'),
     },
     {
-      stationName: 'Estacion Frontera',
-      stationId: stationMap.get('Estacion Frontera'),
+      stationName: 'Estación Frontera',
+      stationId: stationMap.get('Estación Frontera'),
       type: 'Consumo inusual',
-      detail: 'Carga fuera de rango para el vehiculo.',
+      detail: 'Carga fuera de rango para el vehículo.',
       source: 'cliente',
       reporterName: 'Andrea G.',
       reporterRole: 'cliente',
       vehiclePlate: 'PBA-1024',
       vehicleModel: 'Toyota Hilux 2019',
-      fuelType: 'Diesel',
+      fuelType: 'Diésel',
       vehicleId: vehicleMap.get('PBA-1024'),
       transactionId: txKey('PBA-1024', '2025-12-06T21:50:00.000Z'),
       liters: 180,
@@ -487,9 +393,9 @@ const seed = async () => {
       createdAt: new Date('2025-12-06T22:10:00.000Z'),
     },
     {
-      stationName: 'Estacion Sierra Norte',
-      stationId: stationMap.get('Estacion Sierra Norte'),
-      type: 'Dispensador sin calibracion',
+      stationName: 'Estación Sierra Norte',
+      stationId: stationMap.get('Estación Sierra Norte'),
+      type: 'Dispensador sin calibración',
       detail: 'La bomba 3 reporta menos volumen.',
       source: 'despachador',
       reporterName: 'Mario C.',
@@ -498,15 +404,15 @@ const seed = async () => {
       createdAt: new Date('2025-12-07T10:40:00.000Z'),
     },
     {
-      stationName: 'Estacion Centro Sur',
-      stationId: stationMap.get('Estacion Centro Sur'),
+      stationName: 'Estación Centro Sur',
+      stationId: stationMap.get('Estación Centro Sur'),
       type: 'Venta fuera de horario',
-      detail: 'Transaccion registrada a las 02:15.',
+      detail: 'Transacción registrada a las 02:15.',
       source: 'sistema',
       reporterRole: 'sistema',
       vehiclePlate: 'ABC-5531',
       vehicleModel: 'Chevrolet D-Max 2021',
-      fuelType: 'Diesel',
+      fuelType: 'Diésel',
       vehicleId: vehicleMap.get('ABC-5531'),
       transactionId: txKey('ABC-5531', '2025-12-07T02:15:00.000Z'),
       liters: 95,
@@ -590,7 +496,7 @@ const seed = async () => {
       sizeMb: 1.6,
     },
     {
-      period: 'Anio',
+      period: 'Año',
       format: 'CSV',
       createdAt: new Date('2025-12-08T18:00:00.000Z'),
       sizeMb: 4.2,

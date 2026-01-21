@@ -1,7 +1,7 @@
-import { COLORS } from '../theme/colors';
+import { LIGHT_COLORS, ThemeColors } from '../theme/colors';
 
 export type StationAnalysis = {
-  status: 'Cumplimiento' | 'Observacion' | 'Infraccion';
+  status: string;
   score: number;
   message: string;
   zScore?: number | null;
@@ -9,14 +9,15 @@ export type StationAnalysis = {
   msg?: string;
 };
 
-export const statusToColor = (status: string) => {
-  if (status === 'Infraccion') {
-    return COLORS.error;
+export const statusToColor = (status: string, colors: ThemeColors = LIGHT_COLORS) => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('infrac')) {
+    return colors.error;
   }
-  if (status === 'Observacion') {
-    return COLORS.warning;
+  if (normalized.includes('observa')) {
+    return colors.warning;
   }
-  return COLORS.success;
+  return colors.success;
 };
 
 const toNumberArray = (value: unknown): number[] => {
@@ -26,8 +27,11 @@ const toNumberArray = (value: unknown): number[] => {
   return value.map((item) => Number(item)).filter((item) => Number.isFinite(item));
 };
 
-export const normalizeAnalysis = (analysis: Partial<StationAnalysis> | null | undefined) => {
-  const status = analysis?.status ?? 'Observacion';
+export const normalizeAnalysis = (
+  analysis: Partial<StationAnalysis> | null | undefined,
+  colors: ThemeColors = LIGHT_COLORS
+) => {
+  const status = analysis?.status ?? 'Observación';
   const message = analysis?.message ?? analysis?.msg ?? 'Sin detalle disponible.';
   const score = analysis?.score ?? 0;
   return {
@@ -35,28 +39,28 @@ export const normalizeAnalysis = (analysis: Partial<StationAnalysis> | null | un
     message,
     score,
     zScore: analysis?.zScore ?? null,
-    color: analysis?.color ?? statusToColor(status),
+    color: analysis?.color ?? statusToColor(status, colors),
   } as StationAnalysis;
 };
 
-export const analyzeStationBehavior = (station: any): StationAnalysis => {
+export const analyzeStationBehavior = (station: any, colors: ThemeColors = LIGHT_COLORS): StationAnalysis => {
   const priceDelta = Number(station.price ?? 0) - Number(station.officialPrice ?? 0);
   if (priceDelta > 0.01) {
     return {
-      status: 'Infraccion',
+      status: 'Infracción',
       score: 90,
       message: 'Precio sobre el oficial reportado.',
-      color: COLORS.error,
+      color: colors.error,
     };
   }
 
   const history = toNumberArray(station.history);
   if (history.length < 3) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: 55,
       message: 'Historial insuficiente para evaluar consumo.',
-      color: COLORS.warning,
+      color: colors.warning,
     };
   }
 
@@ -69,11 +73,11 @@ export const analyzeStationBehavior = (station: any): StationAnalysis => {
 
   if (Math.abs(zScore) >= 2.5) {
     return {
-      status: 'Observacion',
+      status: 'Observación',
       score: Math.max(score, 70),
-      message: 'Variacion atipica en consumo frente al promedio.',
+      message: 'Variación atípica en consumo frente al promedio.',
       zScore,
-      color: COLORS.warning,
+      color: colors.warning,
     };
   }
 
@@ -82,6 +86,6 @@ export const analyzeStationBehavior = (station: any): StationAnalysis => {
     score: Math.max(score, 20),
     message: 'Consumo dentro del rango esperado.',
     zScore,
-    color: COLORS.success,
+    color: colors.success,
   };
 };
