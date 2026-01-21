@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { AuthService } from '../../services/AuthService';
 import { PushService } from '../../services/PushService';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function LoginScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,7 +56,7 @@ export default function LoginScreen({ navigation }: any) {
 
             <View style={styles.brandRow}>
               <View style={styles.brandIcon}>
-                <MaterialCommunityIcons name="gas-station" size={24} color={COLORS.white} />
+                <MaterialCommunityIcons name="gas-station" size={24} color={colors.white} />
               </View>
               <View>
                 <Text style={styles.brandTitle}>EcoCombustible</Text>
@@ -71,11 +74,11 @@ export default function LoginScreen({ navigation }: any) {
 
             <Text style={styles.label}>Usuario</Text>
             <View style={styles.inputRow}>
-              <MaterialCommunityIcons name="account" size={20} color={COLORS.textLight} />
+              <MaterialCommunityIcons name="account" size={20} color={colors.textLight} />
               <TextInput
                 style={styles.input}
                 placeholder="Ingresa tu usuario"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 autoCapitalize="none"
                 value={username}
                 onChangeText={setUsername}
@@ -84,11 +87,11 @@ export default function LoginScreen({ navigation }: any) {
 
             <Text style={styles.label}>Contraseña</Text>
             <View style={styles.inputRow}>
-              <MaterialCommunityIcons name="lock" size={20} color={COLORS.textLight} />
+              <MaterialCommunityIcons name="lock" size={20} color={colors.textLight} />
               <TextInput
                 style={styles.input}
                 placeholder="Ingresa tu contraseña"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -98,11 +101,11 @@ export default function LoginScreen({ navigation }: any) {
             {!!error && <Text style={styles.errorText}>{error}</Text>}
 
             <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-              {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>Ingresar</Text>}
+              {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Ingresar</Text>}
             </TouchableOpacity>
 
             <View style={styles.demoRow}>
-              <MaterialCommunityIcons name="information-outline" size={16} color={COLORS.textLight} />
+              <MaterialCommunityIcons name="information-outline" size={16} color={colors.textLight} />
               <Text style={styles.demoText}>Usuario demo: admin / admin123</Text>
             </View>
           </View>
@@ -121,15 +124,15 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   hero: {
     padding: 18,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     marginBottom: 20,
     overflow: 'hidden',
   },
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 999,
-    backgroundColor: `${COLORS.primary}1A`,
+    backgroundColor: `${colors.primary}1A`,
     top: -50,
     right: -60,
   },
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 999,
-    backgroundColor: `${COLORS.success}1A`,
+    backgroundColor: `${colors.success}1A`,
     bottom: -40,
     left: -40,
   },
@@ -158,57 +161,57 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     marginRight: 12,
   },
-  brandTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text, fontFamily: titleFont },
-  brandSubtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  brandTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: titleFont },
+  brandSubtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   heroBadge: {
     marginTop: 14,
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
-  heroBadgeText: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+  heroBadgeText: { fontSize: 11, color: colors.textLight, fontWeight: '600' },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 12 },
-  label: { marginTop: 10, marginBottom: 6, fontWeight: '600', color: COLORS.textLight, fontSize: 12 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 12 },
+  label: { marginTop: 10, marginBottom: 6, fontWeight: '600', color: colors.textLight, fontSize: 12 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     paddingHorizontal: 12,
   },
-  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, color: COLORS.text },
+  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, color: colors.text },
   button: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonText: { color: COLORS.white, fontWeight: '700', fontSize: 15 },
+  buttonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   demoRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  demoText: { fontSize: 12, color: COLORS.textLight },
+  demoText: { fontSize: 12, color: colors.textLight },
   flagContainer: { marginTop: 28, alignItems: 'center' },
   flag: { flexDirection: 'row', height: 20, width: 70, borderRadius: 6, overflow: 'hidden', marginBottom: 6 },
   flagStripe: { height: '100%' },
-  govText: { fontSize: 10, fontWeight: '700', color: COLORS.textLight },
-  errorText: { color: COLORS.error, marginTop: 8 },
+  govText: { fontSize: 10, fontWeight: '700', color: colors.textLight },
+  errorText: { color: colors.error, marginTop: 8 },
 });

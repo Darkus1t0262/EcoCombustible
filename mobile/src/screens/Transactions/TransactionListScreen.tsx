@@ -1,33 +1,35 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { TransactionItem, TransactionService } from '../../services/TransactionService';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
-const statusColor = (status: string) => {
-  if (status === 'Infracción') {
-    return COLORS.error;
+const statusColor = (status: string, colors: ThemeColors) => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('infracci')) {
+    return colors.error;
   }
-  if (status === 'Observación') {
-    return COLORS.warning;
+  if (normalized.includes('observaci')) {
+    return colors.warning;
   }
-  return COLORS.success;
+  return colors.success;
 };
 
-const riskColor = (label?: string | null) => {
+const riskColor = (label: string | null | undefined, colors: ThemeColors) => {
   if (label === 'high') {
-    return COLORS.error;
+    return colors.error;
   }
   if (label === 'medium') {
-    return COLORS.warning;
+    return colors.warning;
   }
   if (label === 'low') {
-    return COLORS.success;
+    return colors.success;
   }
-  return '#777';
+  return colors.textLight;
 };
 
 const riskLabelText = (label?: string | null) => {
@@ -54,6 +56,8 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function TransactionListScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -140,7 +144,7 @@ export default function TransactionListScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Transacciones</Text>
@@ -152,10 +156,11 @@ export default function TransactionListScreen({ navigation }: any) {
       </View>
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#666" />
+        <Ionicons name="search" size={20} color={colors.textLight} />
         <TextInput
           style={styles.input}
           placeholder="Buscar por estación o placa..."
+          placeholderTextColor={colors.textLight}
           value={search}
           onChangeText={setSearch}
         />
@@ -167,7 +172,7 @@ export default function TransactionListScreen({ navigation }: any) {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
-            <Text style={{ color: 'white' }}>Reintentar</Text>
+            <Text style={{ color: colors.white }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -179,7 +184,7 @@ export default function TransactionListScreen({ navigation }: any) {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+            loadingMore ? <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} /> : null
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
@@ -187,54 +192,54 @@ export default function TransactionListScreen({ navigation }: any) {
             </View>
           }
           renderItem={({ item }) => {
-            const analysisColor = item.analysis?.status ? statusColor(item.analysis.status) : COLORS.textLight;
-            const riskTone = riskColor(item.riskLabel);
+            const analysisColor = item.analysis?.status ? statusColor(item.analysis.status, colors) : colors.textLight;
+            const riskTone = riskColor(item.riskLabel, colors);
             return (
               <TouchableOpacity
                 style={styles.card}
                 onPress={() => navigation.navigate('TransactionDetail', { transactionId: item.id })}
               >
-              <View style={styles.cardHeader}>
-                <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
-              </View>
-              <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
-              <Text style={styles.meta}>
-                {item.liters} L | ${item.totalAmount.toFixed(2)}
-              </Text>
-              <View style={styles.rowInfo}>
-                <Text style={styles.date}>{formatDate(item.occurredAt)}</Text>
-                <View style={styles.badgeRow}>
-                  {!!item.analysis?.status && (
-                    <Text
-                      style={[
-                        styles.badge,
-                        {
-                          color: analysisColor,
-                          backgroundColor: `${analysisColor}1A`,
-                          borderColor: `${analysisColor}33`,
-                        },
-                      ]}
-                    >
-                      {item.analysis.status}
-                    </Text>
-                  )}
-                  {!!riskLabelText(item.riskLabel) && (
-                    <Text
-                      style={[
-                        styles.badge,
-                        {
-                          color: riskTone,
-                          backgroundColor: `${riskTone}1A`,
-                          borderColor: `${riskTone}33`,
-                        },
-                      ]}
-                    >
-                      {riskLabelText(item.riskLabel)}
-                    </Text>
-                  )}
+                <View style={styles.cardHeader}>
+                  <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
                 </View>
-              </View>
+                <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
+                <Text style={styles.meta}>
+                  {item.liters} L | ${item.totalAmount.toFixed(2)}
+                </Text>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.date}>{formatDate(item.occurredAt)}</Text>
+                  <View style={styles.badgeRow}>
+                    {!!item.analysis?.status && (
+                      <Text
+                        style={[
+                          styles.badge,
+                          {
+                            color: analysisColor,
+                            backgroundColor: `${analysisColor}1A`,
+                            borderColor: `${analysisColor}33`,
+                          },
+                        ]}
+                      >
+                        {item.analysis.status}
+                      </Text>
+                    )}
+                    {!!riskLabelText(item.riskLabel) && (
+                      <Text
+                        style={[
+                          styles.badge,
+                          {
+                            color: riskTone,
+                            backgroundColor: `${riskTone}1A`,
+                            borderColor: `${riskTone}33`,
+                          },
+                        ]}
+                      >
+                        {riskLabelText(item.riskLabel)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
               </TouchableOpacity>
             );
           }}
@@ -244,18 +249,18 @@ export default function TransactionListScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -263,42 +268,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   headerBadge: {
     minWidth: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
   },
-  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  input: { marginLeft: 10, flex: 1 },
+  input: { marginLeft: 10, flex: 1, color: colors.text },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -306,11 +311,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  station: { fontWeight: 'bold', fontSize: 15 },
-  meta: { fontSize: 12, color: COLORS.textLight, marginTop: 6 },
+  station: { fontWeight: 'bold', fontSize: 15, color: colors.text },
+  meta: { fontSize: 12, color: colors.textLight, marginTop: 6 },
   rowInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   badgeRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  date: { fontSize: 11, color: COLORS.textLight },
+  date: { fontSize: 11, color: colors.textLight },
   badge: {
     fontSize: 11,
     fontWeight: '700',
@@ -321,16 +326,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
-  errorText: { color: COLORS.error, marginBottom: 12 },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  errorText: { color: colors.error, marginBottom: 12 },
+  retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#777', fontSize: 12 },
+  emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

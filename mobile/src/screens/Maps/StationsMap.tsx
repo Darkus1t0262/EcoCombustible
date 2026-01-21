@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { detectAnomalies } from '../../services/AnomalyDetection';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -35,6 +36,8 @@ const STATIONS_DATA = [
 ];
 
 export default function StationsMap() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [stations, setStations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -80,15 +83,15 @@ export default function StationsMap() {
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: COLORS.success }]} />
+          <View style={[styles.dot, { backgroundColor: colors.success }]} />
           <Text style={styles.legendText}>Normal</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: COLORS.error }]} />
+          <View style={[styles.dot, { backgroundColor: colors.error }]} />
           <Text style={styles.legendText}>Excesivo</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: COLORS.warning }]} />
+          <View style={[styles.dot, { backgroundColor: colors.warning }]} />
           <Text style={styles.legendText}>Bajo</Text>
         </View>
       </View>
@@ -96,7 +99,7 @@ export default function StationsMap() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
   map: { width: Dimensions.get('window').width, height: Dimensions.get('window').height },
   overlay: {
@@ -104,38 +107,38 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     right: 20,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  title: { fontWeight: '700', fontSize: 16, color: COLORS.text, fontFamily: titleFont },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  title: { fontWeight: '700', fontSize: 16, color: colors.text, fontFamily: titleFont },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   callout: {
     width: 180,
     padding: 8,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  calloutTitle: { fontWeight: '700', marginBottom: 5, color: COLORS.text, fontSize: 12 },
-  calloutText: { fontSize: 11, color: COLORS.textLight },
+  calloutTitle: { fontWeight: '700', marginBottom: 5, color: colors.text, fontSize: 12 },
+  calloutText: { fontSize: 11, color: colors.textLight },
   calloutStatus: { fontWeight: '700', marginTop: 6, fontSize: 11 },
   legend: {
     position: 'absolute',
     bottom: 30,
     left: 20,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     flexDirection: 'row',
     gap: 10,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendText: { fontSize: 10, color: COLORS.textLight },
+  legendText: { fontSize: 10, color: colors.textLight },
   dot: { width: 10, height: 10, borderRadius: 5 },
 });

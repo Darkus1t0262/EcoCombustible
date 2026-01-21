@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { AuditService, AuditItem } from '../../services/AuditService';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function AuditScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +63,7 @@ export default function AuditScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Auditorías</Text>
@@ -71,15 +74,15 @@ export default function AuditScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: COLORS.primary }]}>{total}</Text>
+            <Text style={[styles.summaryValue, { color: colors.primary }]}>{total}</Text>
             <Text style={styles.summaryLabel}>Total</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: COLORS.success }]}>{approved}</Text>
+            <Text style={[styles.summaryValue, { color: colors.success }]}>{approved}</Text>
             <Text style={styles.summaryLabel}>Aprobadas</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryValue, { color: COLORS.warning }]}>{pending}</Text>
+            <Text style={[styles.summaryValue, { color: colors.warning }]}>{pending}</Text>
             <Text style={styles.summaryLabel}>Pendientes</Text>
           </View>
         </View>
@@ -95,7 +98,7 @@ export default function AuditScreen({ navigation }: any) {
             const statusLabel =
               audit.status === 'approved' ? 'Aprobada' : audit.status === 'rejected' ? 'Rechazada' : 'Pendiente';
             const statusColor =
-              audit.status === 'approved' ? COLORS.success : audit.status === 'rejected' ? COLORS.error : COLORS.warning;
+              audit.status === 'approved' ? colors.success : audit.status === 'rejected' ? colors.error : colors.warning;
 
             return (
               <View key={audit.id} style={styles.card}>
@@ -104,7 +107,12 @@ export default function AuditScreen({ navigation }: any) {
                     <Text style={styles.cardTitle}>{audit.stationName}</Text>
                     <Text style={styles.cardMeta}>Código: {audit.code}</Text>
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` }]}>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
+                    ]}
+                  >
                     <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
                   </View>
                 </View>
@@ -119,7 +127,7 @@ export default function AuditScreen({ navigation }: any) {
                   <Ionicons
                     name={audit.priceExpected === audit.priceReported ? 'checkmark-circle' : 'alert-circle'}
                     size={22}
-                    color={audit.priceExpected === audit.priceReported ? COLORS.success : COLORS.error}
+                    color={audit.priceExpected === audit.priceReported ? colors.success : colors.error}
                   />
                 </View>
 
@@ -131,7 +139,7 @@ export default function AuditScreen({ navigation }: any) {
                   <Ionicons
                     name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
                     size={22}
-                    color={audit.dispenserOk ? COLORS.success : COLORS.error}
+                    color={audit.dispenserOk ? colors.success : colors.error}
                   />
                 </View>
 
@@ -160,18 +168,18 @@ export default function AuditScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -179,30 +187,30 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   scroll: { padding: 20, paddingBottom: 30 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 10 },
   summaryCard: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
   },
   summaryValue: { fontSize: 18, fontWeight: '700' },
-  summaryLabel: { fontSize: 11, color: COLORS.textLight, marginTop: 4 },
+  summaryLabel: { fontSize: 11, color: colors.textLight, marginTop: 4 },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     marginBottom: 14,
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -211,8 +219,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitle: { fontWeight: '700', fontSize: 16, color: COLORS.text },
-  cardMeta: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  cardTitle: { fontWeight: '700', fontSize: 16, color: colors.text },
+  cardMeta: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   statusBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 11, fontWeight: '700' },
   checkItem: {
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     padding: 12,
     borderRadius: 12,
     marginTop: 12,
@@ -230,21 +238,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  checkTitle: { fontWeight: '600', fontSize: 13, color: COLORS.text },
-  checkMeta: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  checkTitle: { fontWeight: '600', fontSize: 13, color: colors.text },
+  checkMeta: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   actionBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
-  approveBtn: { backgroundColor: COLORS.success },
-  rejectBtn: { backgroundColor: COLORS.error },
-  actionText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  approveBtn: { backgroundColor: colors.success },
+  rejectBtn: { backgroundColor: colors.error },
+  actionText: { color: colors.white, fontWeight: '700', fontSize: 13 },
   emptyBox: { paddingVertical: 30, alignItems: 'center' },
-  emptyText: { fontSize: 12, color: COLORS.textLight },
+  emptyText: { fontSize: 12, color: colors.textLight },
   skeletonWrap: { gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

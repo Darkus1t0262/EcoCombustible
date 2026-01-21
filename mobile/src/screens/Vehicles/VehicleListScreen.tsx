@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { VehicleItem, VehicleService } from '../../services/VehicleService';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function VehicleListScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [vehicles, setVehicles] = useState<VehicleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -88,7 +91,7 @@ export default function VehicleListScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículos</Text>
@@ -100,10 +103,11 @@ export default function VehicleListScreen({ navigation }: any) {
       </View>
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#666" />
+        <Ionicons name="search" size={20} color={colors.textLight} />
         <TextInput
           style={styles.input}
           placeholder="Buscar por placa o modelo..."
+          placeholderTextColor={colors.textLight}
           value={search}
           onChangeText={setSearch}
         />
@@ -115,7 +119,7 @@ export default function VehicleListScreen({ navigation }: any) {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
-            <Text style={{ color: 'white' }}>Reintentar</Text>
+            <Text style={{ color: colors.white }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -127,7 +131,7 @@ export default function VehicleListScreen({ navigation }: any) {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+            loadingMore ? <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} /> : null
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
@@ -141,7 +145,7 @@ export default function VehicleListScreen({ navigation }: any) {
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={styles.plate}>{item.plate}</Text>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
               </View>
               <Text style={styles.model}>{item.model}</Text>
               <View style={styles.rowInfo}>
@@ -156,18 +160,18 @@ export default function VehicleListScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -175,63 +179,63 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   headerBadge: {
     minWidth: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
   },
-  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  input: { marginLeft: 10, flex: 1 },
+  input: { marginLeft: 10, flex: 1, color: colors.text },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  plate: { fontWeight: 'bold', fontSize: 16 },
-  model: { color: COLORS.textLight, fontSize: 12, marginBottom: 10 },
+  plate: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  model: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', justifyContent: 'space-between' },
-  meta: { fontSize: 12, color: COLORS.textLight },
+  meta: { fontSize: 12, color: colors.textLight },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
-  errorText: { color: COLORS.error, marginBottom: 12 },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  errorText: { color: colors.error, marginBottom: 12 },
+  retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#777', fontSize: 12 },
+  emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

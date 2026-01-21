@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -17,12 +18,17 @@ const formatDate = (value?: string | null) => {
   return value.slice(0, 10);
 };
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Pendiente', color: COLORS.error },
-  resolved: { label: 'Resuelto', color: COLORS.success },
-};
-
 export default function ComplaintsScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const statusConfig = useMemo(
+    () => ({
+      pending: { label: 'Pendiente', color: colors.error },
+      resolved: { label: 'Resuelto', color: colors.success },
+    }),
+    [colors]
+  );
+
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -131,7 +137,7 @@ export default function ComplaintsScreen({ navigation }: any) {
   );
 
   const renderItem = ({ item }: { item: ComplaintItem }) => {
-    const statusInfo = statusConfig[item.status] ?? { label: item.status, color: COLORS.warning };
+    const statusInfo = statusConfig[item.status as keyof typeof statusConfig] ?? { label: item.status, color: colors.warning };
     return (
       <TouchableOpacity
         style={styles.card}
@@ -165,7 +171,7 @@ export default function ComplaintsScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncias</Text>
@@ -173,34 +179,35 @@ export default function ComplaintsScreen({ navigation }: any) {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
-            <Ionicons name="add" size={18} color={COLORS.primary} />
+            <Ionicons name="add" size={18} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => loadData(1, true)} style={styles.iconBtn}>
-            <Ionicons name="refresh" size={18} color={COLORS.primary} />
+            <Ionicons name="refresh" size={18} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={{ color: COLORS.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
+          <Text style={{ color: colors.success, fontWeight: 'bold', fontSize: 18 }}>{stats.resolved}</Text>
           <Text style={styles.statLabel}>Resueltas</Text>
         </View>
         <View style={styles.stat}>
-          <Text style={{ color: COLORS.error, fontWeight: 'bold', fontSize: 18 }}>{stats.pending}</Text>
+          <Text style={{ color: colors.error, fontWeight: 'bold', fontSize: 18 }}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
         </View>
         <View style={styles.stat}>
-          <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 18 }}>{stats.total}</Text>
+          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
       </View>
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#666" />
+        <Ionicons name="search" size={20} color={colors.textLight} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por estación, usuario o vehículo..."
+          placeholderTextColor={colors.textLight}
           value={search}
           onChangeText={setSearch}
         />
@@ -228,7 +235,7 @@ export default function ComplaintsScreen({ navigation }: any) {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
-            <Text style={{ color: 'white' }}>Reintentar</Text>
+            <Text style={{ color: colors.white }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -241,7 +248,7 @@ export default function ComplaintsScreen({ navigation }: any) {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+            loadingMore ? <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} /> : null
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
@@ -254,18 +261,18 @@ export default function ComplaintsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -273,68 +280,68 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   iconBtn: {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
   stat: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 15,
     borderRadius: 12,
     width: '31%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
   },
-  statLabel: { fontSize: 10, color: COLORS.textLight },
+  statLabel: { fontSize: 10, color: colors.textLight },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  searchInput: { marginLeft: 10, flex: 1 },
+  searchInput: { marginLeft: 10, flex: 1, color: colors.text },
   filterRow: { flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, marginBottom: 6 },
   filterPill: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  filterPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
-  filterTextActive: { color: 'white' },
+  filterPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
+  filterTextActive: { color: colors.white },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -342,23 +349,22 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontWeight: 'bold', fontSize: 15 },
+  cardTitle: { fontWeight: 'bold', fontSize: 15, color: colors.text },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
   statusText: { fontSize: 11, fontWeight: 'bold' },
-  subtitle: { color: COLORS.textLight, fontSize: 12, marginTop: 6 },
-  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
-  dateText: { fontSize: 11, color: COLORS.textLight, marginTop: 6 },
+  metaText: { fontSize: 12, color: colors.textLight, marginTop: 4 },
+  dateText: { fontSize: 11, color: colors.textLight, marginTop: 6 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
-  errorText: { color: COLORS.error, marginBottom: 12 },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  errorText: { color: colors.error, marginBottom: 12 },
+  retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#777', fontSize: 12 },
+  emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

@@ -1,15 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, ViewStyle } from 'react-native';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../theme/theme';
 
 type SkeletonProps = {
-  width?: number | string;
+  width?: number | `${number}%` | 'auto';
   height?: number;
   radius?: number;
   style?: ViewStyle;
 };
 
 export const Skeleton = ({ width = '100%', height = 12, radius = 10, style }: SkeletonProps) => {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export const Skeleton = ({ width = '100%', height = 12, radius = 10, style }: Sk
           width,
           height,
           borderRadius: radius,
-          backgroundColor: COLORS.surfaceAlt,
+          backgroundColor: colors.surfaceAlt,
           opacity,
         },
         style,

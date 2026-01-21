@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { USE_REMOTE_AUTH } from '../../config/env';
@@ -10,6 +11,8 @@ import { Skeleton } from '../../components/Skeleton';
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function StationDetailScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { stationId } = route.params;
   const [station, setStation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -18,19 +21,19 @@ export default function StationDetailScreen({ route, navigation }: any) {
     const load = async () => {
       const data = await StationService.getStationDetails(stationId);
       if (data) {
-        setStation({ ...data, analysis: normalizeAnalysis(data.analysis ?? analyzeStationBehavior(data)) });
+        setStation({ ...data, analysis: normalizeAnalysis(data.analysis ?? analyzeStationBehavior(data, colors), colors) });
       }
       setLoading(false);
     };
     load();
-  }, [stationId]);
+  }, [stationId, colors]);
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { backgroundColor: COLORS.primary }]}>
+        <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-            <Ionicons name="arrow-back" size={20} color="white" />
+            <Ionicons name="arrow-back" size={20} color={colors.white} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Cargando estación</Text>
@@ -62,9 +65,9 @@ export default function StationDetailScreen({ route, navigation }: any) {
   if (!station) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>Estación no encontrada.</Text>
+        <Text style={{ color: colors.error }}>Estación no encontrada.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={{ color: 'white' }}>Volver</Text>
+          <Text style={{ color: colors.white }}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
@@ -74,7 +77,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
     <View style={styles.container}>
       <View style={[styles.header, { backgroundColor: station.analysis.color }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={20} color="white" />
+          <Ionicons name="arrow-back" size={20} color={colors.white} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{station.name}</Text>
@@ -119,7 +122,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Text style={styles.sectionTitle}>Tendencia de ventas</Text>
-            <Text style={[styles.cardHint, { color: COLORS.purple }]}>Fuente: Historial</Text>
+            <Text style={[styles.cardHint, { color: colors.purple }]}>Fuente: Historial</Text>
           </View>
           <Text style={styles.value}>
             {Array.isArray(station.history) && station.history.length > 0
@@ -131,7 +134,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
           <Text style={styles.label}>Promedio de ventas recientes</Text>
         </View>
 
-        <TouchableOpacity style={[styles.btn, { backgroundColor: COLORS.warning }]} onPress={() => navigation.navigate('Audit')}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.warning }]} onPress={() => navigation.navigate('Audit')}>
           <Text style={styles.btnText}>Iniciar auditoría manual</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -139,8 +142,8 @@ export default function StationDetailScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
@@ -157,7 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: 'white', fontFamily: titleFont },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.white, fontFamily: titleFont },
   headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   headerBadge: {
     paddingHorizontal: 10,
@@ -167,32 +170,32 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.35)',
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  headerBadgeText: { fontSize: 11, fontWeight: '700', color: 'white' },
+  headerBadgeText: { fontSize: 11, fontWeight: '700', color: colors.white },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: COLORS.text },
+  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: colors.text },
   analysisRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   analysisStatus: { fontWeight: '700', fontSize: 16 },
-  bodyText: { color: COLORS.textLight, marginTop: 6 },
+  bodyText: { color: colors.textLight, marginTop: 6 },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  cardHint: { fontSize: 10, color: COLORS.textLight },
+  cardHint: { fontSize: 10, color: colors.textLight },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 14 },
-  label: { color: COLORS.textLight, fontSize: 12, marginTop: 4 },
-  value: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  label: { color: colors.textLight, fontSize: 12, marginTop: 4 },
+  value: { fontSize: 20, fontWeight: '700', color: colors.text },
   btn: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 6 },
-  btnText: { fontWeight: '700', color: '#1F2937' },
+  btnText: { fontWeight: '700', color: colors.text },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  backBtn: { marginTop: 12, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  backBtn: { marginTop: 12, backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });

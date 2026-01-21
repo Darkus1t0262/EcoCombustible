@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Skeleton } from '../../components/Skeleton';
@@ -9,6 +10,8 @@ import { Skeleton } from '../../components/Skeleton';
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function StationListScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -33,7 +36,7 @@ export default function StationListScreen({ navigation }: any) {
       const response = await StationService.getStationsPage(pageToLoad, PAGE_SIZE);
       const processed = response.items.map((s) => ({
         ...s,
-        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
+        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s, colors), colors),
       }));
       let nextCount = 0;
       setStations((prev) => {
@@ -50,7 +53,7 @@ export default function StationListScreen({ navigation }: any) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [colors]);
 
   useEffect(() => {
     loadData(1, true);
@@ -91,14 +94,14 @@ export default function StationListScreen({ navigation }: any) {
     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={styles.stationName}>{item.name}</Text>
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </View>
 
       <Text style={styles.address}>{item.address}</Text>
 
       <View style={styles.rowInfo}>
-        <Text style={{ fontSize: 12 }}>Precio: ${item.price}</Text>
-        <Text style={{ fontSize: 12 }}>Stock: {item.stock} gl</Text>
+        <Text style={{ fontSize: 12, color: colors.text }}>Precio: ${item.price}</Text>
+        <Text style={{ fontSize: 12, color: colors.text }}>Stock: {item.stock} gl</Text>
       </View>
 
       <View
@@ -121,7 +124,7 @@ export default function StationListScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Estaciones</Text>
@@ -133,10 +136,11 @@ export default function StationListScreen({ navigation }: any) {
       </View>
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#666" />
+        <Ionicons name="search" size={20} color={colors.textLight} />
         <TextInput
           style={styles.input}
           placeholder="Buscar por nombre o zona..."
+          placeholderTextColor={colors.textLight}
           value={search}
           onChangeText={setSearch}
         />
@@ -148,7 +152,7 @@ export default function StationListScreen({ navigation }: any) {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => loadData(1, true)} style={styles.retryBtn}>
-            <Text style={{ color: 'white' }}>Reintentar</Text>
+            <Text style={{ color: colors.white }}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -161,7 +165,7 @@ export default function StationListScreen({ navigation }: any) {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} /> : null
+            loadingMore ? <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} /> : null
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
@@ -174,18 +178,18 @@ export default function StationListScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -193,50 +197,50 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   headerBadge: {
     minWidth: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
   },
-  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  input: { marginLeft: 10, flex: 1 },
+  input: { marginLeft: 10, flex: 1, color: colors.text },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  stationName: { fontWeight: 'bold', fontSize: 16 },
-  address: { color: COLORS.textLight, fontSize: 12, marginBottom: 10 },
+  stationName: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  address: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
   rowInfo: { flexDirection: 'row', gap: 15, marginBottom: 10 },
   badge: {
     flexDirection: 'row',
@@ -250,16 +254,16 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontWeight: 'bold', fontSize: 12 },
   errorBox: { alignItems: 'center', marginTop: 40, padding: 20 },
-  errorText: { color: COLORS.error, marginBottom: 12 },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  errorText: { color: colors.error, marginBottom: 12 },
+  retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#777', fontSize: 12 },
+  emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

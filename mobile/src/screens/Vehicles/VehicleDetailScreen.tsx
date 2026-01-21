@@ -1,33 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { VehicleItem, VehicleService, VehicleTransaction } from '../../services/VehicleService';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
-const statusColor = (status: string) => {
-  if (status === 'Infracción') {
-    return COLORS.error;
+const statusColor = (status: string, colors: ThemeColors) => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('infracci')) {
+    return colors.error;
   }
-  if (status === 'Observación') {
-    return COLORS.warning;
+  if (normalized.includes('observaci')) {
+    return colors.warning;
   }
-  return COLORS.success;
+  return colors.success;
 };
 
-const riskColor = (label?: string | null) => {
+const riskColor = (label: string | null | undefined, colors: ThemeColors) => {
   if (label === 'high') {
-    return COLORS.error;
+    return colors.error;
   }
   if (label === 'medium') {
-    return COLORS.warning;
+    return colors.warning;
   }
   if (label === 'low') {
-    return COLORS.success;
+    return colors.success;
   }
-  return COLORS.textLight;
+  return colors.textLight;
 };
 
 const riskLabelText = (label?: string | null) => {
@@ -54,6 +56,8 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function VehicleDetailScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { vehicleId } = route.params;
   const [vehicle, setVehicle] = useState<VehicleItem | null>(null);
   const [transactions, setTransactions] = useState<VehicleTransaction[]>([]);
@@ -80,7 +84,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
@@ -105,9 +109,9 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   if (!vehicle) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>Vehículo no encontrado.</Text>
+        <Text style={{ color: colors.error }}>Vehículo no encontrado.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={{ color: 'white' }}>Volver</Text>
+          <Text style={{ color: colors.white }}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
@@ -117,7 +121,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
@@ -142,8 +146,8 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
             <Text style={styles.metaText}>Sin transacciones registradas.</Text>
           ) : (
             transactions.slice(0, 5).map((tx) => {
-              const analysisTone = tx.analysis?.status ? statusColor(tx.analysis.status) : COLORS.textLight;
-              const riskTone = riskColor(tx.riskLabel);
+              const analysisTone = tx.analysis?.status ? statusColor(tx.analysis.status, colors) : colors.textLight;
+              const riskTone = riskColor(tx.riskLabel, colors);
               return (
                 <TouchableOpacity
                   key={tx.id}
@@ -159,14 +163,10 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.txDate}>{formatDate(tx.occurredAt)}</Text>
                     {!!tx.analysis?.status && (
-                      <Text style={[styles.txStatus, { color: analysisTone }]}>
-                        {tx.analysis.status}
-                      </Text>
+                      <Text style={[styles.txStatus, { color: analysisTone }]}>{tx.analysis.status}</Text>
                     )}
                     {!!riskLabelText(tx.riskLabel) && (
-                      <Text style={[styles.txStatus, { color: riskTone }]}>
-                        {riskLabelText(tx.riskLabel)}
-                      </Text>
+                      <Text style={[styles.txStatus, { color: riskTone }]}>{riskLabelText(tx.riskLabel)}</Text>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -179,18 +179,18 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -198,39 +198,39 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: COLORS.text },
-  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: colors.text },
+  metaText: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   txRow: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  txTitle: { fontWeight: '700', fontSize: 13, color: COLORS.text },
-  txMeta: { fontSize: 12, color: COLORS.textLight },
-  txDate: { fontSize: 11, color: COLORS.textLight },
+  txTitle: { fontWeight: '700', fontSize: 13, color: colors.text },
+  txMeta: { fontSize: 12, color: colors.textLight },
+  txDate: { fontSize: 11, color: colors.textLight },
   txStatus: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  backBtn: { marginTop: 12, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  backBtn: { marginTop: 12, backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });

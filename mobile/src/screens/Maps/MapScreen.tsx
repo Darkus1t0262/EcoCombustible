@@ -1,22 +1,27 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
-const filters = [
-  { label: 'Todas', value: 'Todas', color: COLORS.primary },
-  { label: 'OK', value: 'Cumplimiento', color: COLORS.success },
-  { label: 'Obs', value: 'Observación', color: COLORS.warning },
-  { label: 'Alerta', value: 'Infracción', color: COLORS.error },
-];
-
 export default function MapScreen({ navigation }: any) {
+  const { colors, resolvedMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const filters = useMemo(
+    () => [
+      { label: 'Todas', value: 'Todas', color: colors.primary },
+      { label: 'OK', value: 'Cumplimiento', color: colors.success },
+      { label: 'Obs', value: 'Observación', color: colors.warning },
+      { label: 'Alerta', value: 'Infracción', color: colors.error },
+    ],
+    [colors]
+  );
   const mapRef = useRef<MapView | null>(null);
   const [filter, setFilter] = useState('Todas');
   const [stations, setStations] = useState<any[]>([]);
@@ -34,7 +39,7 @@ export default function MapScreen({ navigation }: any) {
       const data = await StationService.getAllStations();
       const processed = data.map((s) => ({
         ...s,
-        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s)),
+        analysis: normalizeAnalysis(s.analysis ?? analyzeStationBehavior(s, colors), colors),
       }));
       setStations(processed);
     } catch (err) {
@@ -42,7 +47,7 @@ export default function MapScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [colors]);
 
   useEffect(() => {
     loadStations();
@@ -93,7 +98,7 @@ export default function MapScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Mapa de estaciones</Text>
@@ -139,8 +144,8 @@ export default function MapScreen({ navigation }: any) {
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: filter === item.value ? item.color : COLORS.surfaceAlt,
-                    borderColor: filter === item.value ? item.color : COLORS.borderColor,
+                    backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
+                    borderColor: filter === item.value ? item.color : colors.borderColor,
                   },
                 ]}
               >
@@ -153,22 +158,22 @@ export default function MapScreen({ navigation }: any) {
         <View style={styles.legend}>
           <Text style={styles.legendTitle}>Leyenda IA</Text>
           <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: COLORS.success }]} />
+            <View style={[styles.dot, { backgroundColor: colors.success }]} />
             <Text style={styles.legText}>Normal</Text>
           </View>
           <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: COLORS.warning }]} />
+            <View style={[styles.dot, { backgroundColor: colors.warning }]} />
             <Text style={styles.legText}>Observación</Text>
           </View>
           <View style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: COLORS.error }]} />
+            <View style={[styles.dot, { backgroundColor: colors.error }]} />
             <Text style={styles.legText}>Infracción</Text>
           </View>
         </View>
 
         {loading && (
           <View style={styles.overlay}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.overlayText}>Cargando estaciones...</Text>
           </View>
         )}
@@ -187,7 +192,7 @@ export default function MapScreen({ navigation }: any) {
             <View style={styles.detailHeader}>
               <Text style={styles.detailTitle}>{selectedStation.name}</Text>
               <TouchableOpacity onPress={handleDeselectStation}>
-                <Ionicons name="close" size={18} color={COLORS.textLight} />
+                <Ionicons name="close" size={18} color={colors.textLight} />
               </TouchableOpacity>
             </View>
             <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
@@ -214,119 +219,122 @@ export default function MapScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
-  },
-  headerAction: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
-  },
-  headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
-  mapWrap: { flex: 1 },
-  map: { flex: 1 },
-  filterBar: {
-    position: 'absolute',
-    top: 14,
-    left: 16,
-    right: 16,
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.borderColor,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  filterLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
-  filterScroll: { paddingRight: 6, gap: 8 },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  filterText: { fontSize: 11, fontWeight: '700', color: COLORS.textLight },
-  filterTextActive: { color: COLORS.white },
-  legend: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    backgroundColor: COLORS.surface,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.borderColor,
-  },
-  legendTitle: { fontWeight: '700', fontSize: 11, marginBottom: 6, color: COLORS.text },
-  row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  legText: { fontSize: 10, color: COLORS.textLight },
-  callout: {
-    width: 220,
-    backgroundColor: COLORS.surface,
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.borderColor,
-  },
-  calloutTitle: { fontWeight: '700', marginBottom: 4, color: COLORS.text, fontSize: 12 },
-  calloutStatus: { fontWeight: '700', marginBottom: 4, fontSize: 11 },
-  calloutText: { fontSize: 11, color: COLORS.textLight },
-  detailCard: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 110,
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderColor,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
-  detailTitle: { fontWeight: '700', fontSize: 16, color: COLORS.text, flex: 1 },
-  detailStatus: { fontWeight: '700', marginTop: 6 },
-  detailText: { fontSize: 12, color: COLORS.textLight, marginTop: 6 },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  detailMeta: { fontSize: 12, color: COLORS.textLight },
-  detailBtn: { marginTop: 12, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  detailBtnText: { color: COLORS.white, fontWeight: '700' },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(248, 249, 251, 0.9)',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  overlayText: { fontSize: 12, color: COLORS.textLight },
-  errorText: { color: COLORS.error, textAlign: 'center' },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: COLORS.white, fontWeight: '700' },
-});
+const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
+  const overlayBg = resolvedMode === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(248, 249, 251, 0.9)';
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      paddingTop: 50,
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      backgroundColor: colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+    headerAction: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceAlt,
+    },
+    headerText: { flex: 1 },
+    title: { fontSize: 20, fontWeight: '700', color: colors.text },
+    subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
+    mapWrap: { flex: 1 },
+    map: { flex: 1 },
+    filterBar: {
+      position: 'absolute',
+      top: 14,
+      left: 16,
+      right: 16,
+      padding: 12,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    filterLabel: { fontSize: 12, fontWeight: '600', color: colors.textLight },
+    filterScroll: { paddingRight: 6, gap: 8 },
+    filterPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    filterText: { fontSize: 11, fontWeight: '700', color: colors.textLight },
+    filterTextActive: { color: colors.white },
+    legend: {
+      position: 'absolute',
+      bottom: 30,
+      right: 20,
+      backgroundColor: colors.surface,
+      padding: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+    legendTitle: { fontWeight: '700', fontSize: 11, marginBottom: 6, color: colors.text },
+    row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
+    dot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    legText: { fontSize: 10, color: colors.textLight },
+    callout: {
+      width: 220,
+      backgroundColor: colors.surface,
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+    calloutTitle: { fontWeight: '700', marginBottom: 4, color: colors.text, fontSize: 12 },
+    calloutStatus: { fontWeight: '700', marginBottom: 4, fontSize: 11 },
+    calloutText: { fontSize: 11, color: colors.textLight },
+    detailCard: {
+      position: 'absolute',
+      left: 20,
+      right: 20,
+      bottom: 110,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+    detailTitle: { fontWeight: '700', fontSize: 16, color: colors.text, flex: 1 },
+    detailStatus: { fontWeight: '700', marginTop: 6 },
+    detailText: { fontSize: 12, color: colors.textLight, marginTop: 6 },
+    detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+    detailMeta: { fontSize: 12, color: colors.textLight },
+    detailBtn: { marginTop: 12, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+    detailBtnText: { color: colors.white, fontWeight: '700' },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: overlayBg,
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    overlayText: { fontSize: 12, color: colors.textLight },
+    errorText: { color: colors.error, textAlign: 'center' },
+    retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+    retryText: { color: colors.white, fontWeight: '700' },
+  });
+};

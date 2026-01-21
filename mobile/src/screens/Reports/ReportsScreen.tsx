@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { ReportService, ReportItem } from '../../services/ReportService';
 import { Skeleton } from '../../components/Skeleton';
 
 const periods = ['Semana', 'Mes', 'Año'];
-const formats = [
-  { label: 'PDF', color: COLORS.error },
-  { label: 'Excel', color: COLORS.success },
-  { label: 'CSV', color: COLORS.primary },
-];
-
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function ReportsScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formats = useMemo(
+    () => [
+      { label: 'PDF', color: colors.error },
+      { label: 'Excel', color: colors.success },
+      { label: 'CSV', color: colors.primary },
+    ],
+    [colors]
+  );
   const [period, setPeriod] = useState('Mes');
   const [format, setFormat] = useState('PDF');
   const [reports, setReports] = useState<ReportItem[]>([]);
@@ -68,7 +73,7 @@ export default function ReportsScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Reportes</Text>
@@ -113,10 +118,10 @@ export default function ReportsScreen({ navigation }: any) {
 
           <TouchableOpacity style={styles.generateBtn} onPress={handleCreate} disabled={creating}>
             {creating ? (
-              <ActivityIndicator color={COLORS.white} />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <>
-                <Ionicons name="document-text" color={COLORS.white} size={18} style={{ marginRight: 8 }} />
+                <Ionicons name="document-text" color={colors.white} size={18} style={{ marginRight: 8 }} />
                 <Text style={styles.generateText}>Generar reporte</Text>
               </>
             )}
@@ -140,7 +145,7 @@ export default function ReportsScreen({ navigation }: any) {
             const statusLabel =
               status === 'ready' ? 'Disponible' : status === 'failed' ? 'Error' : 'En proceso';
             const statusColor =
-              status === 'ready' ? COLORS.success : status === 'failed' ? COLORS.error : COLORS.warning;
+              status === 'ready' ? colors.success : status === 'failed' ? colors.error : colors.warning;
 
             return (
               <TouchableOpacity
@@ -150,11 +155,18 @@ export default function ReportsScreen({ navigation }: any) {
                 disabled={!canShare}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fileTitle}>{report.period} - {report.format}</Text>
+                  <Text style={styles.fileTitle}>
+                    {report.period} - {report.format}
+                  </Text>
                   <Text style={styles.fileMeta}>
                     {report.createdAt.slice(0, 10)} - {report.sizeMb.toFixed(1)} MB
                   </Text>
-                  <View style={[styles.statusBadge, { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` }]}>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
+                    ]}
+                  >
                     <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
                   </View>
                 </View>
@@ -172,18 +184,18 @@ export default function ReportsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -191,50 +203,50 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   headerBadge: {
     minWidth: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
   },
-  headerBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   scroll: { padding: 20, paddingBottom: 30 },
   panel: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 18,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  panelTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 10 },
-  label: { marginTop: 10, marginBottom: 8, color: COLORS.textLight, fontWeight: '600', fontSize: 12 },
+  panelTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10 },
+  label: { marginTop: 10, marginBottom: 8, color: colors.textLight, fontWeight: '600', fontSize: 12 },
   pillRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   pill: {
     flex: 1,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
-  pillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  pillText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
-  pillTextActive: { color: COLORS.white },
+  pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pillText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
+  pillTextActive: { color: colors.white },
   formatRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   formatBtn: {
     flex: 1,
@@ -242,42 +254,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
-    backgroundColor: COLORS.surfaceAlt,
+    borderColor: colors.borderColor,
+    backgroundColor: colors.surfaceAlt,
   },
-  formatText: { fontSize: 12, color: COLORS.textLight, fontWeight: '600' },
-  formatTextActive: { color: COLORS.white },
+  formatText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
+  formatTextActive: { color: colors.white },
   generateBtn: {
-    backgroundColor: COLORS.purple,
+    backgroundColor: colors.purple,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  generateText: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  generateText: { color: colors.white, fontWeight: '700', fontSize: 13 },
   sectionTitle: {
     marginTop: 20,
     marginBottom: 12,
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.text,
+    color: colors.text,
   },
   fileRow: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
   fileRowDisabled: { opacity: 0.6 },
-  fileTitle: { fontWeight: '700', fontSize: 14, color: COLORS.text },
-  fileMeta: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  fileTitle: { fontWeight: '700', fontSize: 14, color: colors.text },
+  fileMeta: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   statusBadge: {
     alignSelf: 'flex-start',
     marginTop: 8,
@@ -291,21 +303,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
-  shareChipDisabled: { backgroundColor: COLORS.surfaceAlt },
-  shareText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
-  shareTextDisabled: { color: COLORS.textLight },
+  shareChipDisabled: { backgroundColor: colors.surfaceAlt },
+  shareText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  shareTextDisabled: { color: colors.textLight },
   emptyBox: { paddingVertical: 30, alignItems: 'center' },
-  emptyText: { fontSize: 12, color: COLORS.textLight },
+  emptyText: { fontSize: 12, color: colors.textLight },
   skeletonWrap: { gap: 12 },
   skeletonCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
 });

@@ -1,33 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { TransactionItem, TransactionService } from '../../services/TransactionService';
 import { Skeleton } from '../../components/Skeleton';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
-const statusColor = (status: string) => {
-  if (status === 'Infracción') {
-    return COLORS.error;
+const statusColor = (status: string, colors: ThemeColors) => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('infracci')) {
+    return colors.error;
   }
-  if (status === 'Observación') {
-    return COLORS.warning;
+  if (normalized.includes('observaci')) {
+    return colors.warning;
   }
-  return COLORS.success;
+  return colors.success;
 };
 
-const riskColor = (label?: string | null) => {
+const riskColor = (label: string | null | undefined, colors: ThemeColors) => {
   if (label === 'high') {
-    return COLORS.error;
+    return colors.error;
   }
   if (label === 'medium') {
-    return COLORS.warning;
+    return colors.warning;
   }
   if (label === 'low') {
-    return COLORS.success;
+    return colors.success;
   }
-  return COLORS.textLight;
+  return colors.textLight;
 };
 
 const riskLabelText = (label?: string | null) => {
@@ -61,6 +63,8 @@ const formatScore = (score?: number | null) => {
 };
 
 export default function TransactionDetailScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { transactionId } = route.params;
   const [transaction, setTransaction] = useState<TransactionItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +86,7 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
@@ -112,22 +116,22 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
   if (!transaction) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>Transacción no encontrada.</Text>
+        <Text style={{ color: colors.error }}>Transacción no encontrada.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={{ color: 'white' }}>Volver</Text>
+          <Text style={{ color: colors.white }}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const analysisTone = transaction.analysis?.status ? statusColor(transaction.analysis.status) : COLORS.textLight;
-  const riskTone = riskColor(transaction.riskLabel);
+  const analysisTone = transaction.analysis?.status ? statusColor(transaction.analysis.status, colors) : colors.textLight;
+  const riskTone = riskColor(transaction.riskLabel, colors);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
@@ -140,8 +144,6 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
           <Text style={styles.sectionTitle}>Resumen</Text>
           <Text style={styles.metaText}>Estación: {transaction.stationName ?? 'No disponible'}</Text>
           <Text style={styles.metaText}>Vehículo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
-          <Text style={styles.metaText}>Modelo: {transaction.vehicleModel ?? 'No disponible'}</Text>
-          <Text style={styles.metaText}>Combustible: {transaction.vehicleFuelType ?? 'No disponible'}</Text>
           <Text style={styles.metaText}>Fecha: {formatDate(transaction.occurredAt)}</Text>
         </View>
 
@@ -175,13 +177,13 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
 
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: COLORS.primary }]}
+            style={[styles.actionBtn, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('StationDetail', { stationId: transaction.stationId })}
           >
             <Text style={styles.actionText}>Ver estación</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: COLORS.secondary }]}
+            style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
             onPress={() => navigation.navigate('VehicleDetail', { vehicleId: transaction.vehicleId })}
           >
             <Text style={styles.actionText}>Ver vehículo</Text>
@@ -192,18 +194,18 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -211,27 +213,27 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: COLORS.text },
-  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: colors.text },
+  metaText: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   pill: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 11, fontWeight: '700' },
   actionsRow: { flexDirection: 'row', gap: 12, marginTop: 6, marginBottom: 20 },
   actionBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
-  actionText: { color: 'white', fontWeight: '700' },
+  actionText: { color: colors.white, fontWeight: '700' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  backBtn: { marginTop: 12, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  backBtn: { marginTop: 12, backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../theme/theme';
+import type { ThemeColors } from '../theme/colors';
 
 type Props = {
   label?: string;
@@ -10,6 +11,9 @@ type Props = {
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function LoadingScreen({ label }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.glowPrimary} />
@@ -17,29 +21,29 @@ export default function LoadingScreen({ label }: Props) {
 
       <View style={styles.card}>
         <View style={styles.iconWrap}>
-          <MaterialCommunityIcons name="gas-station" size={26} color={COLORS.primary} />
+          <MaterialCommunityIcons name="gas-station" size={26} color={colors.primary} />
         </View>
         <Text style={styles.title}>EcoCombustible</Text>
         <Text style={styles.subtitle}>{label || 'Cargando datos...'}</Text>
-        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 14 }} />
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 14 }} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   glowPrimary: {
     position: 'absolute',
     width: 220,
     height: 220,
     borderRadius: 999,
-    backgroundColor: `${COLORS.primary}1A`,
+    backgroundColor: `${colors.primary}1A`,
     top: -40,
     right: -60,
   },
@@ -48,7 +52,7 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 999,
-    backgroundColor: `${COLORS.success}14`,
+    backgroundColor: `${colors.success}14`,
     bottom: -20,
     left: -40,
   },
@@ -57,9 +61,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingVertical: 24,
     borderRadius: 18,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -72,16 +76,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
   },
   title: {
     marginTop: 12,
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: colors.text,
     fontFamily: titleFont,
   },
-  subtitle: { marginTop: 6, color: COLORS.textLight, fontSize: 12 },
+  subtitle: { marginTop: 6, color: colors.textLight, fontSize: 12 },
 });

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../theme/theme';
+import type { ThemeColors } from '../../theme/colors';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -14,12 +15,17 @@ const formatDate = (value?: string | null) => {
   return value.replace('T', ' ').slice(0, 16);
 };
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Pendiente', color: COLORS.error },
-  resolved: { label: 'Resuelto', color: COLORS.success },
-};
-
 export default function ComplaintDetailScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const statusLabels = useMemo(
+    () => ({
+      pending: { label: 'Pendiente', color: colors.error },
+      resolved: { label: 'Resuelto', color: colors.success },
+    }),
+    [colors]
+  );
+
   const { complaintId } = route.params;
   const [complaint, setComplaint] = useState<ComplaintItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +71,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncia</Text>
@@ -90,17 +96,17 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
   if (!complaint) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: COLORS.error }}>No se encontró la denuncia.</Text>
+        <Text style={{ color: colors.error }}>No se encontró la denuncia.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={{ color: 'white' }}>Volver</Text>
+          <Text style={{ color: colors.white }}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const statusInfo = statusLabels[complaint.status] ?? {
+  const statusInfo = statusLabels[complaint.status as keyof typeof statusLabels] ?? {
     label: complaint.status,
-    color: COLORS.warning,
+    color: colors.warning,
   };
   const photoUri = complaint.photoUrl ?? complaint.photoUri ?? null;
 
@@ -108,7 +114,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerAction}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncia</Text>
@@ -175,7 +181,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
         <View style={styles.actionsRow}>
           {!!complaint.stationId && (
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: COLORS.primary }]}
+              style={[styles.actionBtn, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('StationDetail', { stationId: complaint.stationId })}
             >
               <Text style={styles.actionText}>Ver estación</Text>
@@ -183,7 +189,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
           )}
           {!!complaint.vehicleId && (
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: COLORS.secondary }]}
+              style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
               onPress={() => navigation.navigate('VehicleDetail', { vehicleId: complaint.vehicleId })}
             >
               <Text style={styles.actionText}>Ver vehículo</Text>
@@ -191,7 +197,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
           )}
           {!!complaint.transactionId && (
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: COLORS.purple }]}
+              style={[styles.actionBtn, { backgroundColor: colors.purple }]}
               onPress={() => navigation.navigate('TransactionDetail', { transactionId: complaint.transactionId })}
             >
               <Text style={styles.actionText}>Ver transacción</Text>
@@ -199,7 +205,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
           )}
           {complaint.status !== 'resolved' && (
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: COLORS.success }]}
+              style={[styles.actionBtn, { backgroundColor: colors.success }]}
               onPress={handleResolve}
               disabled={updating}
             >
@@ -212,18 +218,18 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
+    borderBottomColor: colors.borderColor,
   },
   headerAction: {
     width: 36,
@@ -231,19 +237,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  subtitle: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderColor,
+    borderColor: colors.borderColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -251,17 +257,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontWeight: '700', fontSize: 15, color: COLORS.text },
+  cardTitle: { fontWeight: '700', fontSize: 15, color: colors.text },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
   statusText: { fontSize: 11, fontWeight: '700' },
-  subtitleText: { color: COLORS.textLight, fontSize: 12, marginTop: 6 },
-  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 8, color: COLORS.text },
-  bodyText: { fontSize: 13, color: COLORS.textLight },
-  metaText: { fontSize: 12, color: COLORS.textLight, marginTop: 4 },
+  subtitleText: { color: colors.textLight, fontSize: 12, marginTop: 6 },
+  sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 8, color: colors.text },
+  bodyText: { fontSize: 13, color: colors.textLight },
+  metaText: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   photo: { width: '100%', height: 200, borderRadius: 12, marginTop: 10 },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 10, marginBottom: 20 },
   actionBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
-  actionText: { color: 'white', fontWeight: '700' },
+  actionText: { color: colors.white, fontWeight: '700' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  backBtn: { marginTop: 12, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  backBtn: { marginTop: 12, backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
 });

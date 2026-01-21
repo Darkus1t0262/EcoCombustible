@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { USE_REMOTE_AUTH } from '../config/env';
@@ -25,13 +25,15 @@ const estimateSizeMb = (period: string, format: string) => {
 };
 
 const buildSummary = async (db: any) => {
-  const stationsRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM stations;');
-  const auditsRow = await db.getFirstAsync<{ count: number }>(
+  const stationsRow = (await db.getFirstAsync('SELECT COUNT(*) as count FROM stations;')) as
+    | { count: number }
+    | null;
+  const auditsRow = (await db.getFirstAsync(
     "SELECT COUNT(*) as count FROM audits WHERE strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now');"
-  );
-  const complaintsRow = await db.getFirstAsync<{ count: number }>(
+  )) as { count: number } | null;
+  const complaintsRow = (await db.getFirstAsync(
     "SELECT COUNT(*) as count FROM complaints WHERE status = 'pending';"
-  );
+  )) as { count: number } | null;
 
   return {
     stations: stationsRow?.count ?? 0,

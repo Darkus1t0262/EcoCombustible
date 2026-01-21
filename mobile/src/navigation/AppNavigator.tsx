@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 
 import LoginScreen from '../screens/Auth/LoginScreen';
 import DashboardScreen from '../screens/Dashboard/DashboardScreen';
@@ -20,13 +20,32 @@ import LoadingScreen from '../screens/LoadingScreen';
 import { USE_REMOTE_AUTH } from '../config/env';
 import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
+import { useTheme } from '../theme/theme';
 
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
+  const { colors, resolvedMode } = useTheme();
   const [isReady, setIsReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState('Login');
   const [initError, setInitError] = useState<string | null>(null);
+
+  const navigationTheme = useMemo(
+    () => ({
+      ...DefaultTheme,
+      dark: resolvedMode === 'dark',
+      colors: {
+        ...DefaultTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.borderColor,
+        notification: colors.error,
+      },
+    }),
+    [colors, resolvedMode]
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -54,7 +73,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
