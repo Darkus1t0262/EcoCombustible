@@ -10,6 +10,7 @@ export type StationAnalysis = {
 };
 
 export const statusToColor = (status: string, colors: ThemeColors = LIGHT_COLORS) => {
+  // Mapea estado textual a color de UI.
   const normalized = status.toLowerCase();
   if (normalized.includes('infrac')) {
     return colors.error;
@@ -21,6 +22,7 @@ export const statusToColor = (status: string, colors: ThemeColors = LIGHT_COLORS
 };
 
 const toNumberArray = (value: unknown): number[] => {
+  // Convierte historiales desconocidos a arreglo numerico seguro.
   if (!Array.isArray(value)) {
     return [];
   }
@@ -31,6 +33,7 @@ export const normalizeAnalysis = (
   analysis: Partial<StationAnalysis> | null | undefined,
   colors: ThemeColors = LIGHT_COLORS
 ) => {
+  // Normaliza valores faltantes para mantener UI consistente.
   const status = analysis?.status ?? 'Observación';
   const message = analysis?.message ?? analysis?.msg ?? 'Sin detalle disponible.';
   const score = analysis?.score ?? 0;
@@ -44,6 +47,7 @@ export const normalizeAnalysis = (
 };
 
 export const analyzeStationBehavior = (station: any, colors: ThemeColors = LIGHT_COLORS): StationAnalysis => {
+  // Heuristica local usada cuando el backend no provee analisis.
   const priceDelta = Number(station.price ?? 0) - Number(station.officialPrice ?? 0);
   if (priceDelta > 0.01) {
     return {
@@ -64,6 +68,7 @@ export const analyzeStationBehavior = (station: any, colors: ThemeColors = LIGHT
     };
   }
 
+  // Z-score para detectar variaciones atipicas en consumo.
   const mean = history.reduce((acc, value) => acc + value, 0) / history.length;
   const variance = history.reduce((acc, value) => acc + Math.pow(value - mean, 2), 0) / history.length;
   const stdDev = Math.sqrt(variance);

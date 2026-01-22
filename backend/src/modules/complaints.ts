@@ -8,6 +8,7 @@ import { enqueueSupervisorNotification } from '../services/notifications.js';
 import { parsePagination } from '../lib/pagination.js';
 import { storeStream } from '../services/storage.js';
 
+// Normaliza fechas para el cliente.
 const formatComplaint = (complaint: any) => ({
   ...complaint,
   createdAt: complaint.createdAt?.toISOString?.() ?? complaint.createdAt,
@@ -39,6 +40,7 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
   });
 
   fastify.post('/complaints', { preHandler: [authenticate] }, async (request, reply) => {
+    // Acepta tanto JSON como multipart con foto.
     const payloadSchema = z.object({
       stationName: z.string().min(2),
       stationId: optionalNumber(),
@@ -62,6 +64,7 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
     let photoUrl: string | null = null;
 
     if ((request as any).isMultipart?.()) {
+      // Parsea campos y guarda la foto en storage.
       const fields: Record<string, string> = {};
       for await (const part of (request as any).parts()) {
         if (part.type === 'file') {
@@ -109,6 +112,7 @@ export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
       },
     });
 
+    // Notifica a supervisores sin bloquear la respuesta.
     void enqueueSupervisorNotification({
       title: 'Nueva denuncia',
       body: `${payload.stationName}: ${payload.type}`,

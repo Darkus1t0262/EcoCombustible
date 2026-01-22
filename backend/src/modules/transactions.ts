@@ -7,6 +7,7 @@ import { optionalDate, optionalNumber, optionalString } from '../lib/validation.
 import { parsePagination } from '../lib/pagination.js';
 import { evaluateTransactionRisk } from '../services/ml.js';
 
+// Normaliza fechas y adjunta el analisis de riesgo.
 const formatTransaction = (transaction: any, analysis: any) => ({
   ...transaction,
   occurredAt: transaction.occurredAt?.toISOString?.() ?? transaction.occurredAt,
@@ -16,6 +17,7 @@ const formatTransaction = (transaction: any, analysis: any) => ({
 
 export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/transactions', { preHandler: [authenticate] }, async (request, reply) => {
+    // Paginacion opcional para optimizar respuestas grandes.
     const pagination = parsePagination((request as any).query);
     if (pagination) {
       const total = await prisma.transaction.count();
@@ -29,6 +31,7 @@ export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
       orderBy: { occurredAt: 'desc' },
       ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     });
+    // Precalcula historial por vehiculo para analisis de consumos.
     const vehicleIds = Array.from(new Set(transactions.map((tx) => tx.vehicleId)));
     const historyByVehicle = new Map<number, number[]>();
     if (vehicleIds.length > 0) {
@@ -68,6 +71,7 @@ export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
   });
 
   fastify.post('/transactions', { preHandler: [authenticate] }, async (request, reply) => {
+    // Valida payload y crea transaccion, incluyendo ML si esta habilitado.
     const payloadSchema = z.object({
       stationId: optionalNumber(),
       stationName: optionalString(),
@@ -95,6 +99,7 @@ export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
 
     let vehicle = await prisma.vehicle.findFirst({ where: { plate: payload.vehiclePlate } });
     if (!vehicle) {
+      // Crea vehiculo si no existe y se proporcionan datos basicos.
       if (!payload.vehicleModel || !payload.capacityLiters || !payload.fuelType) {
         return reply.code(400).send({ error: 'Vehicle data required for new plate.' });
       }

@@ -1,6 +1,7 @@
 import { prisma } from './prisma.js';
 
 export const authenticate = async (request: any, reply: any) => {
+  // Valida el JWT y carga el usuario activo en el request.
   try {
     await request.jwtVerify();
   } catch (error) {
@@ -8,6 +9,7 @@ export const authenticate = async (request: any, reply: any) => {
     return;
   }
 
+  // Verifica que el usuario exista y este activo.
   const userId = (request.user as { id?: number } | undefined)?.id;
   if (!userId) {
     reply.code(401).send({ error: 'Unauthorized' });
@@ -31,6 +33,7 @@ export const authenticate = async (request: any, reply: any) => {
 };
 
 export const requireRole = (role: string) => async (request: any, reply: any) => {
+  // Solo permite el rol solicitado o admin.
   const user = request.user as { role?: string } | undefined;
   if (!user?.role) {
     reply.code(403).send({ error: 'Forbidden' });

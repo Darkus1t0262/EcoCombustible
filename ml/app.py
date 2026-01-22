@@ -27,6 +27,7 @@ class TransactionPayload(BaseModel):
 
 
 def load_model():
+    # Carga el modelo desde disco o lo entrena si no existe.
     global model
     model_path = Path(MODEL_PATH)
     if model_path.exists():
@@ -36,6 +37,7 @@ def load_model():
     if not TRAIN_ON_START:
         raise RuntimeError("Model not found and TRAIN_ON_START is disabled.")
 
+    # Entrenamiento rapido para entornos de desarrollo.
     model = train_model()
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_path)
@@ -56,6 +58,7 @@ def predict(payload: TransactionPayload):
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
 
+    # Construye vector de caracteristicas en el orden esperado.
     features = build_features(
         liters=payload.liters,
         unit_price=payload.unit_price,
@@ -64,6 +67,7 @@ def predict(payload: TransactionPayload):
     )
     vector = np.array([features], dtype=float)
 
+    # Soporta modelos con predict_proba o decision_function.
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(vector)[0][1]
         score = float(max(0.0, min(1.0, proba)))
@@ -71,6 +75,7 @@ def predict(payload: TransactionPayload):
         score = float(model.decision_function(vector)[0])
         score = float(1 / (1 + np.exp(-score)))
 
+    # Traduce score continuo a etiqueta de riesgo.
     if score >= 0.7:
         label = "high"
     elif score >= 0.4:

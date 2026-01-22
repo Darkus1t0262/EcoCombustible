@@ -28,6 +28,7 @@ export type TransactionItem = {
   };
 };
 
+// Replica la heuristica del backend para analisis offline.
 const buildAnalysis = (liters: number, capacity: number | null, history: number[]) => {
   if (capacity && liters > capacity * 1.05) {
     return {
@@ -70,6 +71,7 @@ const buildAnalysis = (liters: number, capacity: number | null, history: number[
   };
 };
 
+// Normaliza campos provenientes de API o SQLite.
 const normalizeTransaction = (item: any): TransactionItem => ({
   id: item.id,
   stationId: item.stationId,
@@ -93,6 +95,7 @@ const normalizeTransaction = (item: any): TransactionItem => ({
 
 export const TransactionService = {
   getTransactionsPage: async (page: number, limit: number): Promise<{ items: TransactionItem[]; total?: number }> => {
+    // API remota si esta disponible; si no, usa la base local.
     if (USE_REMOTE_AUTH) {
       const response = await apiFetchWithMeta<any[]>(`/transactions?page=${page}&limit=${limit}`);
       return { items: response.data.map(normalizeTransaction), total: response.meta.total };
@@ -114,6 +117,7 @@ export const TransactionService = {
     const vehicleIds = Array.from(new Set((rows ?? []).map((row) => row.vehicleId)));
     const historyByVehicle = new Map<number, number[]>();
     if (vehicleIds.length > 0) {
+      // Consulta historiales para calcular analisis por vehiculo.
       const placeholders = vehicleIds.map(() => '?').join(',');
       const historyRows = await db.getAllAsync<any>(
         `SELECT vehicleId, liters FROM transactions WHERE vehicleId IN (${placeholders}) ORDER BY occurredAt DESC;`,
@@ -134,6 +138,7 @@ export const TransactionService = {
     };
   },
   getTransaction: async (id: number): Promise<TransactionItem | null> => {
+    // Carga una transaccion con su analisis calculado localmente si aplica.
     if (USE_REMOTE_AUTH) {
       const item = await apiFetch<any>(`/transactions/${id}`);
       return item ? normalizeTransaction(item) : null;
@@ -164,6 +169,7 @@ export const TransactionService = {
   },
 
   getTransactions: async (): Promise<TransactionItem[]> => {
+    // Listado completo (sin paginar) con analisis para UI.
     if (USE_REMOTE_AUTH) {
       const items = await apiFetch<any[]>('/transactions');
       return items.map(normalizeTransaction);

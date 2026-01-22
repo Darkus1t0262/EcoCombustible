@@ -35,6 +35,7 @@ export default function MapScreen({ navigation }: any) {
   const initialRegion = { latitude: -1.8312, longitude: -78.1834, latitudeDelta: 5, longitudeDelta: 5 };
 
   const loadStations = useCallback(async () => {
+    // Carga estaciones y normaliza analisis para la UI.
     try {
       setError('');
       setLoading(true);
@@ -56,6 +57,7 @@ export default function MapScreen({ navigation }: any) {
   }, [loadStations]);
 
   useEffect(() => {
+    // Solicita ubicacion para centrar el mapa en el usuario.
     const loadLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -77,6 +79,7 @@ export default function MapScreen({ navigation }: any) {
   }, []);
 
   const handleSelectStation = (station: any) => {
+    // Enfoca el mapa en la estacion seleccionada.
     setSelectedStation(station);
     mapRef.current?.animateToRegion(
       {
@@ -94,6 +97,7 @@ export default function MapScreen({ navigation }: any) {
     mapRef.current?.animateToRegion(initialRegion, 500);
   };
 
+  // Normaliza texto con tildes para comparar estados.
   const normalizeStatus = (value: string) =>
     value
       .normalize('NFD')

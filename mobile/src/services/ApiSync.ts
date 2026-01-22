@@ -22,6 +22,7 @@ export type StationRow = {
   };
 };
 
+// Mapea filas SQLite a modelo de app.
 const mapStation = (row: any): StationRow => ({
   id: row.id,
   name: row.name,
@@ -39,6 +40,7 @@ const mapStation = (row: any): StationRow => ({
 
 export const StationService = {
   getStationsPage: async (page: number, limit: number): Promise<{ items: StationRow[]; total?: number }> => {
+    // Si hay backend remoto, usa API; si no, lee desde SQLite.
     if (USE_REMOTE_AUTH) {
       const response = await apiFetchWithMeta<StationRow[]>(`/stations?page=${page}&limit=${limit}`);
       return { items: response.data, total: response.meta.total };
@@ -53,6 +55,7 @@ export const StationService = {
     return { items: (rows ?? []).map(mapStation), total: totalRow?.count ?? 0 };
   },
   getAllStations: async (): Promise<StationRow[]> => {
+    // Ruta rapida para cargar todo el catalogo.
     if (USE_REMOTE_AUTH) {
       return await apiFetch<StationRow[]>('/stations');
     }
@@ -62,6 +65,7 @@ export const StationService = {
   },
 
   getStationDetails: async (id: number): Promise<StationRow | null> => {
+    // Devuelve detalle desde API o cache local.
     if (USE_REMOTE_AUTH) {
       return await apiFetch<StationRow>(`/stations/${id}`);
     }

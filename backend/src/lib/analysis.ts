@@ -1,3 +1,4 @@
+// Convierte un valor desconocido en arreglo numerico seguro.
 const toNumberArray = (value: unknown): number[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -11,6 +12,7 @@ export const analyzeStation = (station: {
   history: unknown;
   stock: number;
 }) => {
+  // Analisis heuristico usando delta de precio y z-score de historial.
   const history = toNumberArray(station.history);
   const priceDelta = station.price - station.officialPrice;
 
@@ -35,6 +37,7 @@ export const analyzeStation = (station: {
   const mean = history.reduce((acc, value) => acc + value, 0) / history.length;
   const variance = history.reduce((acc, value) => acc + Math.pow(value - mean, 2), 0) / history.length;
   const stdDev = Math.sqrt(variance);
+  // Usa el ultimo registro como valor actual de comparacion.
   const current = history[history.length - 1] ?? station.stock ?? 0;
   const zScore = stdDev === 0 ? 0 : (current - mean) / stdDev;
   const score = Math.min(100, Math.round(Math.abs(zScore) * 18));
@@ -60,6 +63,7 @@ export const analyzeTransaction = (
   transaction: { liters: number; vehicle?: { capacityLiters: number } },
   history: number[]
 ) => {
+  // Si supera la capacidad del vehiculo, es infraccion inmediata.
   const capacity = transaction.vehicle?.capacityLiters ?? 0;
   if (capacity > 0 && transaction.liters > capacity * 1.05) {
     return {
@@ -79,6 +83,7 @@ export const analyzeTransaction = (
     };
   }
 
+  // Z-score para detectar consumos atipicos vs historial.
   const mean = history.reduce((acc, value) => acc + value, 0) / history.length;
   const variance = history.reduce((acc, value) => acc + Math.pow(value - mean, 2), 0) / history.length;
   const stdDev = Math.sqrt(variance);

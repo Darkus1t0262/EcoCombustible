@@ -7,6 +7,7 @@ import { parsePagination } from '../lib/pagination.js';
 
 export const registerStationRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/stations', { preHandler: [authenticate] }, async (request, reply) => {
+    // Soporta paginacion opcional via query params.
     const pagination = parsePagination((request as any).query);
     if (pagination) {
       const total = await prisma.station.count();
@@ -19,6 +20,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
       orderBy: { name: 'asc' },
       ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     });
+    // Incluye analisis derivado para cada estacion.
     return stations.map((station) => ({
       ...station,
       history: station.history ?? [],
@@ -33,6 +35,7 @@ export const registerStationRoutes = async (fastify: FastifyInstance) => {
     if (!station) {
       return reply.code(404).send({ error: 'Not found' });
     }
+    // Responde con analisis y normaliza historial.
     return { ...station, history: station.history ?? [], analysis: analyzeStation(station) };
   });
 };

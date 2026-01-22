@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 def build_dataset(samples: int, seed: int):
+    # Genera un dataset sintetico con patrones normales y anomalias.
     rng = np.random.default_rng(seed)
     capacity = rng.normal(95, 20, samples)
     capacity = np.clip(capacity, 40, 160)
@@ -17,6 +18,7 @@ def build_dataset(samples: int, seed: int):
     total_amount = liters * unit_price
     ratio = liters / capacity
 
+    # Etiquetas iniciales por reglas simples.
     labels = (
         (ratio > 1.1)
         | (ratio < 0.15)
@@ -24,6 +26,7 @@ def build_dataset(samples: int, seed: int):
         | (unit_price < 2.2)
     ).astype(int)
 
+    # Inyecta anomalias para balancear clases.
     anomalies = max(20, int(samples * 0.1))
     for _ in range(anomalies):
         idx = rng.integers(0, samples)
@@ -38,6 +41,7 @@ def build_dataset(samples: int, seed: int):
 
 
 def train_model(samples: int = 600, seed: int = 42):
+    # Pipeline simple: escalado + regresion logistica.
     features, labels = build_dataset(samples, seed)
     pipeline = Pipeline(
         [

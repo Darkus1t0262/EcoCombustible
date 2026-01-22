@@ -5,6 +5,7 @@ import { authenticate } from '../lib/auth.js';
 import { analyzeTransaction } from '../lib/analysis.js';
 import { parsePagination } from '../lib/pagination.js';
 
+// Normaliza fechas y agrega analisis del consumo.
 const formatTransaction = (transaction: any, analysis: any) => ({
   ...transaction,
   occurredAt: transaction.occurredAt?.toISOString?.() ?? transaction.occurredAt,
@@ -14,6 +15,7 @@ const formatTransaction = (transaction: any, analysis: any) => ({
 
 export const registerVehicleRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/vehicles', { preHandler: [authenticate] }, async (request, reply) => {
+    // Paginacion opcional para listados largos.
     const pagination = parsePagination((request as any).query);
     if (pagination) {
       const total = await prisma.vehicle.count();
@@ -59,6 +61,7 @@ export const registerVehicleRoutes = async (fastify: FastifyInstance) => {
       orderBy: { occurredAt: 'desc' },
       ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     });
+    // Si hay paginacion, usa historial completo para el analisis.
     const historySource = pagination
       ? await prisma.transaction.findMany({
           where: { vehicleId },

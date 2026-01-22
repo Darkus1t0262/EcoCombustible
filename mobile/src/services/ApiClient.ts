@@ -13,6 +13,7 @@ type ApiMeta = {
   limit?: number;
 };
 
+// Construye URL absoluta evitando dobles slashes.
 export const buildApiUrl = (path: string) => {
   const base = API_BASE_URL.replace(/\/+$/, '');
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
@@ -20,6 +21,7 @@ export const buildApiUrl = (path: string) => {
 };
 
 export const getAuthHeaders = async () => {
+  // Devuelve Authorization si existe un token guardado.
   const session = await SecureSession.get();
   const headers: Record<string, string> = {};
   if (session?.token) {
@@ -33,6 +35,7 @@ export const apiFetch = async <T>(path: string, options: RequestOptions = {}): P
     throw new Error('API base URL not configured.');
   }
 
+  // Agrega headers base y JWT si existe.
   const session = await SecureSession.get();
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -83,6 +86,7 @@ export const apiFetchWithMeta = async <T>(path: string, options: RequestOptions 
     throw new Error(text || 'Request failed');
   }
 
+  // Lee metadatos de paginacion desde headers.
   const meta: ApiMeta = {};
   const total = response.headers.get('x-total-count');
   const page = response.headers.get('x-page');

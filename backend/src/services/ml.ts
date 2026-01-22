@@ -29,10 +29,12 @@ export const evaluateTransactionRisk = async (input: {
   totalAmount: number;
   capacityLiters?: number | null;
 }): Promise<MlRiskResult | null> => {
+  // Si ML esta deshabilitado o sin URL, se omite el score.
   if (!ML_ENABLED || !ML_API_URL) {
     return null;
   }
 
+  // Timeout defensivo para no bloquear la transaccion si ML tarda.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ML_TIMEOUT_MS);
   try {
@@ -53,11 +55,13 @@ export const evaluateTransactionRisk = async (input: {
     }
 
     const payload = (await response.json()) as MlResponse;
+    // Normaliza score y etiqueta para evitar datos fuera de rango.
     const score = Number.isFinite(payload.risk_score) ? Math.min(1, Math.max(0, payload.risk_score as number)) : null;
     const label = normalizeLabel(payload.risk_label);
     const modelVersion = typeof payload.model_version === 'string' ? payload.model_version : null;
     return { score, label, modelVersion };
   } catch (error) {
+    // Fallback sin romper el flujo principal.
     return { score: null, label: ML_FALLBACK_LABEL, modelVersion: null };
   } finally {
     clearTimeout(timeout);

@@ -21,6 +21,7 @@ export default function DashboardScreen({ navigation }: any) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
+    // Carga estadisticas del dashboard al montar la pantalla.
     const load = async () => {
       try {
         const data = await StatsService.getDashboardStats();
@@ -37,12 +38,14 @@ export default function DashboardScreen({ navigation }: any) {
   };
 
   const confirmLogout = async () => {
+    // Cierra sesion y vuelve al login.
     setShowLogoutModal(false);
     await AuthService.logout();
     navigation.replace('Login');
   };
 
   const isDark = resolvedMode === 'dark';
+  // Alterna el tema sin reiniciar la app.
   const handleToggleTheme = () => setMode(isDark ? 'light' : 'dark');
 
   const HeroStat = ({ label, value, icon, tone }: any) => (
