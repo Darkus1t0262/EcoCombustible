@@ -4,7 +4,10 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import { detectAnomalies } from '../../services/AnomalyDetection';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { ScreenReveal } from '../../components/ScreenReveal';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -36,8 +39,9 @@ const STATIONS_DATA = [
 ];
 
 export default function StationsMap() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
   const [stations, setStations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -74,6 +78,13 @@ export default function StationsMap() {
 
       <ScreenReveal delay={80}>
         <View style={styles.overlay}>
+          <LinearGradient
+            colors={tokens.stripeColors}
+            locations={[0, 0.45, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardStripes}
+          />
           <Text style={styles.title}>Mapa de monitoreo inteligente</Text>
           <Text style={styles.subtitle}>Detección de anomalías en tiempo real</Text>
         </View>
@@ -81,6 +92,13 @@ export default function StationsMap() {
 
       <ScreenReveal delay={120}>
         <View style={styles.legend}>
+          <LinearGradient
+            colors={tokens.stripeColors}
+            locations={[0, 0.45, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardStripes}
+          />
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: colors.success }]} />
             <Text style={styles.legendText}>Normal</Text>
@@ -99,7 +117,7 @@ export default function StationsMap() {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1 },
   map: { width: Dimensions.get('window').width, height: Dimensions.get('window').height },
   overlay: {
@@ -107,21 +125,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     top: 50,
     left: 20,
     right: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
+    overflow: 'hidden',
   },
   title: { fontWeight: '700', fontSize: 16, color: colors.text, fontFamily: titleFont },
   subtitle: { fontSize: 12, color: colors.textLight, marginTop: 4 },
   callout: {
     width: 180,
     padding: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   calloutTitle: { fontWeight: '700', marginBottom: 5, color: colors.text, fontSize: 12 },
   calloutText: { fontSize: 11, color: colors.textLight },
@@ -130,15 +149,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     left: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     flexDirection: 'row',
     gap: 10,
+    overflow: 'hidden',
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendText: { fontSize: 10, color: colors.textLight },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
+  },
 });

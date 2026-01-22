@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { USE_REMOTE_AUTH } from '../../config/env';
@@ -13,8 +17,10 @@ import { ScreenReveal } from '../../components/ScreenReveal';
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function StationDetailScreen({ route, navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const { stationId } = route.params;
   const [station, setStation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,8 +39,22 @@ export default function StationDetailScreen({ route, navigation }: any) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+        <View
+          style={[styles.header, { backgroundColor: colors.primary, paddingTop: Math.max(insets.top, 16) }]}
+        >
+          <LinearGradient
+            colors={tokens.stripeColors}
+            locations={[0, 0.45, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerStripes}
+          />
+          <PressableScale
+            onPress={() => navigation.goBack()}
+            style={styles.headerAction}
+            accessibilityLabel="Volver"
+          >
             <Ionicons name="arrow-back" size={20} color={colors.white} />
           </PressableScale>
           <View style={{ flex: 1 }}>
@@ -44,11 +64,25 @@ export default function StationDetailScreen({ route, navigation }: any) {
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Skeleton width="40%" height={14} />
             <Skeleton width="70%" height={10} style={{ marginTop: 12 }} />
             <Skeleton width="55%" height={10} style={{ marginTop: 8 }} />
           </View>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Skeleton width="60%" height={14} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
               <Skeleton width="40%" height={18} />
@@ -56,6 +90,13 @@ export default function StationDetailScreen({ route, navigation }: any) {
             </View>
           </View>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Skeleton width="55%" height={14} />
             <Skeleton width="65%" height={18} style={{ marginTop: 12 }} />
           </View>
@@ -77,8 +118,25 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { backgroundColor: station.analysis.color }]}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: station.analysis.color, paddingTop: Math.max(insets.top, 16) },
+        ]}
+      >
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerStripes}
+        />
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={20} color={colors.white} />
         </PressableScale>
         <View style={{ flex: 1 }}>
@@ -93,6 +151,13 @@ export default function StationDetailScreen({ route, navigation }: any) {
       <ScrollView contentContainerStyle={styles.body}>
         <ScreenReveal delay={80}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={styles.sectionTitle}>Diagnóstico IA</Text>
             <View style={styles.analysisRow}>
               <Ionicons name="analytics" size={22} color={station.analysis.color} />
@@ -107,6 +172,13 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={120}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <View style={styles.cardHeaderRow}>
               <Text style={styles.sectionTitle}>Inventario y ventas</Text>
               <Text style={styles.cardHint}>Fuente: {USE_REMOTE_AUTH ? 'API' : 'BD local'}</Text>
@@ -127,6 +199,13 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={160}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <View style={styles.cardHeaderRow}>
               <Text style={styles.sectionTitle}>Tendencia de ventas</Text>
               <Text style={[styles.cardHint, { color: colors.purple }]}>Fuente: Historial</Text>
@@ -152,15 +231,22 @@ export default function StationDetailScreen({ route, navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    overflow: 'hidden',
+  },
+  headerStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.5 : 0.25,
   },
   headerAction: {
     width: 36,
@@ -169,6 +255,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: colors.white, fontFamily: titleFont },
   headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
@@ -183,17 +271,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   headerBadgeText: { fontSize: 11, fontWeight: '700', color: colors.white },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   sectionTitle: { fontWeight: '700', fontSize: 15, marginBottom: 10, color: colors.text },
   analysisRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },

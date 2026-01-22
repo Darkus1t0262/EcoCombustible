@@ -9,14 +9,18 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { AuthService } from '../../services/AuthService';
 
 export default function ChangePasswordScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -53,7 +57,15 @@ export default function ChangePasswordScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
       <View style={styles.card}>
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardStripes}
+        />
         <Text style={styles.title}>Cambiar contraseña</Text>
 
         <Text style={styles.label}>Contraseña actual</Text>
@@ -109,7 +121,7 @@ export default function ChangePasswordScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -117,12 +129,21 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       padding: 20,
     },
+    background: {
+      ...StyleSheet.absoluteFillObject,
+    },
     card: {
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       padding: 20,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
+      shadowColor: '#000',
+      shadowOpacity: tokens.shadowOpacity,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 2,
+      overflow: 'hidden',
     },
     title: {
       fontSize: 16,
@@ -138,12 +159,12 @@ const createStyles = (colors: ThemeColors) =>
     },
     input: {
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
       borderRadius: 10,
       padding: 12,
       marginTop: 6,
       color: colors.text,
-      backgroundColor: colors.surfaceAlt,
+      backgroundColor: tokens.cardSurface,
     },
     error: {
       color: colors.error,
@@ -190,5 +211,9 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+    },
+    cardStripes: {
+      ...StyleSheet.absoluteFillObject,
+      opacity: tokens.isDark ? 0.6 : 0.35,
     },
   });

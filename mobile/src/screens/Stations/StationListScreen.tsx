@@ -1,8 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+  Platform,
+  LayoutAnimation,
+  UIManager,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { StationService } from '../../services/ApiSync';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { PressableScale } from '../../components/PressableScale';
@@ -12,8 +27,10 @@ import { Skeleton } from '../../components/Skeleton';
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function StationListScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const [stations, setStations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -62,6 +79,12 @@ export default function StationListScreen({ navigation }: any) {
     loadData(1, true);
   }, [loadData]);
 
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData(1, true, false);
@@ -84,6 +107,11 @@ export default function StationListScreen({ navigation }: any) {
     [stations, search, statusFilter]
   );
 
+  const handleFilterChange = (next: typeof statusFilter) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setStatusFilter(next);
+  };
+
   const renderSkeleton = () => (
     <View style={styles.skeletonWrap}>
       {Array.from({ length: 4 }).map((_, index) => (
@@ -97,9 +125,19 @@ export default function StationListScreen({ navigation }: any) {
     </View>
   );
 
-  const renderItem = ({ item, index }: any) => (
-    <ScreenReveal delay={Math.min(index * 40, 200)}>
-      <PressableScale style={styles.card} onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}>
+  const renderItem = ({ item, index }: any) => {
+    const content = (
+      <PressableScale
+        style={styles.card}
+        onPress={() => navigation.navigate('StationDetail', { stationId: item.id })}
+      >
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardStripes}
+        />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={styles.stationName}>{item.name}</Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
@@ -112,7 +150,12 @@ export default function StationListScreen({ navigation }: any) {
           <Text style={{ fontSize: 12, color: colors.text }}>Stock: {item.stock} gl</Text>
         </View>
 
-        <View style={[styles.badge, { backgroundColor: `${item.analysis.color}1A`, borderColor: `${item.analysis.color}33` }]}>
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: `${item.analysis.color}1A`, borderColor: `${item.analysis.color}33` },
+          ]}
+        >
           <Ionicons
             name={item.analysis.status === 'Cumplimiento' ? 'checkmark-circle' : 'alert-circle'}
             size={16}
@@ -121,13 +164,23 @@ export default function StationListScreen({ navigation }: any) {
           <Text style={[styles.badgeText, { color: item.analysis.color }]}>{item.analysis.status}</Text>
         </View>
       </PressableScale>
-    </ScreenReveal>
-  );
+    );
+
+    if (index < 8) {
+      return <ScreenReveal delay={index * 40}>{content}</ScreenReveal>;
+    }
+    return content;
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -153,16 +206,28 @@ export default function StationListScreen({ navigation }: any) {
       </ScreenReveal>
       <ScreenReveal delay={120}>
         <View style={styles.filterContainer}>
-          <PressableScale style={[styles.filterButton, statusFilter === 'all' && styles.filterButtonActive]} onPress={() => setStatusFilter('all')}>
+          <PressableScale
+            style={[styles.filterButton, statusFilter === 'all' && styles.filterButtonActive]}
+            onPress={() => handleFilterChange('all')}
+          >
             <Text style={[styles.filterButtonText, statusFilter === 'all' && styles.filterButtonTextActive]}>Todos</Text>
           </PressableScale>
-          <PressableScale style={[styles.filterButton, statusFilter === 'Cumplimiento' && styles.filterButtonActive]} onPress={() => setStatusFilter('Cumplimiento')}>
+          <PressableScale
+            style={[styles.filterButton, statusFilter === 'Cumplimiento' && styles.filterButtonActive]}
+            onPress={() => handleFilterChange('Cumplimiento')}
+          >
             <Text style={[styles.filterButtonText, statusFilter === 'Cumplimiento' && styles.filterButtonTextActive]}>Cumplimiento</Text>
           </PressableScale>
-          <PressableScale style={[styles.filterButton, statusFilter === 'Observación' && styles.filterButtonActive]} onPress={() => setStatusFilter('Observación')}>
+          <PressableScale
+            style={[styles.filterButton, statusFilter === 'Observación' && styles.filterButtonActive]}
+            onPress={() => handleFilterChange('Observación')}
+          >
             <Text style={[styles.filterButtonText, statusFilter === 'Observación' && styles.filterButtonTextActive]}>Observación</Text>
           </PressableScale>
-          <PressableScale style={[styles.filterButton, statusFilter === 'Infracción' && styles.filterButtonActive]} onPress={() => setStatusFilter('Infracción')}>
+          <PressableScale
+            style={[styles.filterButton, statusFilter === 'Infracción' && styles.filterButtonActive]}
+            onPress={() => handleFilterChange('Infracción')}
+          >
             <Text style={[styles.filterButtonText, statusFilter === 'Infracción' && styles.filterButtonTextActive]}>Infracción</Text>
           </PressableScale>
         </View>
@@ -200,18 +265,20 @@ export default function StationListScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -219,7 +286,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -229,37 +298,42 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
   },
   headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   input: { marginLeft: 10, flex: 1, color: colors.text },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   stationName: { fontWeight: '700', fontSize: 16, color: colors.text },
   address: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
@@ -282,25 +356,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   filterContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   filterButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: tokens.cardBorder,
   },
   filterButtonActive: {
     backgroundColor: colors.primary,

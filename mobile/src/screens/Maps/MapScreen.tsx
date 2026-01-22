@@ -4,17 +4,23 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { analyzeStationBehavior, normalizeAnalysis } from '../../services/DecisionEngine';
 import { Ionicons } from '@expo/vector-icons';
 import { StationService } from '../../services/ApiSync';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function MapScreen({ navigation }: any) {
   const { colors, resolvedMode } = useTheme();
-  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const filters = useMemo(
     () => [
       { label: 'Todas', value: 'Todas', color: colors.primary },
@@ -121,8 +127,19 @@ export default function MapScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardStripes}
+        />
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -159,7 +176,14 @@ export default function MapScreen({ navigation }: any) {
           ))}
         </MapView>
 
-        <ScreenReveal delay={80} style={styles.filterBar}>
+        <ScreenReveal delay={80} style={[styles.filterBar, { top: 12 }]}>
+          <LinearGradient
+            colors={tokens.stripeColors}
+            locations={[0, 0.45, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardStripes}
+          />
           <Text style={styles.filterLabel}>Filtro</Text>
           <View style={styles.filterRow}>
             {filters.map((item) => (
@@ -180,7 +204,14 @@ export default function MapScreen({ navigation }: any) {
           </View>
         </ScreenReveal>
 
-        <ScreenReveal delay={120} style={styles.legend}>
+        <ScreenReveal delay={120} style={[styles.legend, { bottom: Math.max(insets.bottom, 12) + 18 }]}>
+          <LinearGradient
+            colors={tokens.stripeColors}
+            locations={[0, 0.45, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardStripes}
+          />
           <Text style={styles.legendTitle}>Leyenda IA</Text>
           <View style={styles.row}>
             <View style={[styles.dot, { backgroundColor: colors.success }]} />
@@ -213,10 +244,20 @@ export default function MapScreen({ navigation }: any) {
         )}
 
         {!!selectedStation && (
-          <ScreenReveal delay={40} style={styles.detailCard}>
+          <ScreenReveal
+            delay={40}
+            style={[styles.detailCard, { bottom: Math.max(insets.bottom, 12) + 96 }]}
+          >
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <View style={styles.detailHeader}>
               <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-              <PressableScale onPress={handleDeselectStation}>
+              <PressableScale onPress={handleDeselectStation} accessibilityLabel="Cerrar detalle">
                 <Ionicons name="close" size={18} color={colors.textLight} />
               </PressableScale>
             </View>
@@ -244,20 +285,20 @@ export default function MapScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
-  const overlayBg = resolvedMode === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(248, 249, 251, 0.9)';
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => {
+  const overlayBg = tokens.isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(248, 249, 251, 0.9)';
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     header: {
-      paddingTop: 50,
       paddingHorizontal: 20,
       paddingBottom: 16,
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
+      borderBottomColor: tokens.cardBorder,
+      overflow: 'hidden',
     },
     headerAction: {
       width: 36,
@@ -265,7 +306,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.surfaceAlt,
+      backgroundColor: tokens.cardSurface,
+      borderWidth: 1,
+      borderColor: tokens.cardBorder,
     },
     headerText: { flex: 1 },
     title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -279,14 +322,15 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       right: 16,
       padding: 10,
       borderRadius: 16,
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
       flexDirection: 'column',
       alignItems: 'flex-start',
       gap: 6,
       zIndex: 10,
       elevation: 8,
+      overflow: 'hidden',
     },
     filterLabel: { fontSize: 12, fontWeight: '600', color: colors.textLight },
     filterRow: {
@@ -306,13 +350,14 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       position: 'absolute',
       bottom: 30,
       right: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       padding: 12,
       borderRadius: 14,
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
       zIndex: 10,
       elevation: 8,
+      overflow: 'hidden',
     },
     legendTitle: { fontWeight: '700', fontSize: 11, marginBottom: 6, color: colors.text },
     row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
@@ -320,11 +365,11 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
     legText: { fontSize: 10, color: colors.textLight },
     callout: {
       width: 220,
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       padding: 10,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
     },
     calloutTitle: { fontWeight: '700', marginBottom: 4, color: colors.text, fontSize: 12 },
     calloutStatus: { fontWeight: '700', marginBottom: 4, fontSize: 11 },
@@ -334,17 +379,18 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       left: 20,
       right: 20,
       bottom: 110,
-      backgroundColor: colors.surface,
+      backgroundColor: tokens.cardSurface,
       borderRadius: 16,
       padding: 16,
       borderWidth: 1,
-      borderColor: colors.borderColor,
+      borderColor: tokens.cardBorder,
       shadowColor: '#000',
-      shadowOpacity: 0.08,
+      shadowOpacity: tokens.shadowOpacity,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
       elevation: 4,
       zIndex: 12,
+      overflow: 'hidden',
     },
     detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
     detailTitle: { fontWeight: '700', fontSize: 16, color: colors.text, flex: 1 },
@@ -370,5 +416,9 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
     errorText: { color: colors.error, textAlign: 'center' },
     retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
     retryText: { color: colors.white, fontWeight: '700' },
+    cardStripes: {
+      ...StyleSheet.absoluteFillObject,
+      opacity: tokens.isDark ? 0.6 : 0.35,
+    },
   });
 };

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Animated, Pressable, StyleProp, ViewStyle } from 'react-native';
+import { Animated, Pressable, StyleProp, ViewStyle, type AccessibilityRole } from 'react-native';
 
 type PressableScaleProps = {
   children: React.ReactNode;
@@ -7,6 +7,9 @@ type PressableScaleProps = {
   disabled?: boolean;
   scaleTo?: number;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityHint?: string;
 };
 
 export const PressableScale = ({
@@ -15,6 +18,9 @@ export const PressableScale = ({
   disabled,
   scaleTo = 0.97,
   style,
+  accessibilityLabel,
+  accessibilityRole = 'button',
+  accessibilityHint,
 }: PressableScaleProps) => {
   const scale = useRef(new Animated.Value(1)).current;
   const AnimatedPressable = useRef(Animated.createAnimatedComponent(Pressable)).current;
@@ -43,6 +49,9 @@ export const PressableScale = ({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityRole}
+      accessibilityHint={accessibilityHint}
       style={[style, { transform: [{ scale }] }]}
     >
       {children}

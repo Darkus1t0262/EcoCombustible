@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { TransactionItem, TransactionService } from '../../services/TransactionService';
 import { Skeleton } from '../../components/Skeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -58,8 +62,10 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function TransactionListScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -165,8 +171,13 @@ export default function TransactionListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -247,58 +258,67 @@ export default function TransactionListScreen({ navigation }: any) {
           renderItem={({ item, index }) => {
             const analysisColor = item.analysis?.status ? statusColor(item.analysis.status, colors) : colors.accent;
             const riskTone = riskColor(item.riskLabel, colors);
-            const revealDelay = index < 8 ? index * 40 : 0;
-            return (
-              <ScreenReveal delay={revealDelay}>
-                <PressableScale
-                  style={styles.card}
-                  onPress={() => navigation.navigate('TransactionDetail', { transactionId: item.id })}
-                >
-                  <View style={[styles.cardAccent, { backgroundColor: analysisColor }]} />
-                  <View style={styles.cardTop}>
-                    <View style={styles.cardLeft}>
-                      <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
-                      <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
-                      <Text style={styles.meta}>{formatDate(item.occurredAt)}</Text>
-                    </View>
-                    <View style={styles.amountBlock}>
-                      <Text style={styles.amount}>${item.totalAmount.toFixed(2)}</Text>
-                      <Text style={styles.amountSub}>{item.liters} L</Text>
-                    </View>
+            const content = (
+              <PressableScale
+                style={styles.card}
+                onPress={() => navigation.navigate('TransactionDetail', { transactionId: item.id })}
+              >
+                <LinearGradient
+                  colors={tokens.stripeColors}
+                  locations={[0, 0.45, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.cardStripes}
+                />
+                <View style={[styles.cardAccent, { backgroundColor: analysisColor }]} />
+                <View style={styles.cardTop}>
+                  <View style={styles.cardLeft}>
+                    <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
+                    <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
+                    <Text style={styles.meta}>{formatDate(item.occurredAt)}</Text>
                   </View>
-                  <View style={styles.badgeRow}>
-                    {!!item.analysis?.status && (
-                      <Text
-                        style={[
-                          styles.badge,
-                          {
-                            color: analysisColor,
-                            backgroundColor: `${analysisColor}1A`,
-                            borderColor: `${analysisColor}33`,
-                          },
-                        ]}
-                      >
-                        {item.analysis.status}
-                      </Text>
-                    )}
-                    {!!riskLabelText(item.riskLabel) && (
-                      <Text
-                        style={[
-                          styles.badge,
-                          {
-                            color: riskTone,
-                            backgroundColor: `${riskTone}1A`,
-                            borderColor: `${riskTone}33`,
-                          },
-                        ]}
-                      >
-                        {riskLabelText(item.riskLabel)}
-                      </Text>
-                    )}
+                  <View style={styles.amountBlock}>
+                    <Text style={styles.amount}>${item.totalAmount.toFixed(2)}</Text>
+                    <Text style={styles.amountSub}>{item.liters} L</Text>
                   </View>
-                </PressableScale>
-              </ScreenReveal>
+                </View>
+                <View style={styles.badgeRow}>
+                  {!!item.analysis?.status && (
+                    <Text
+                      style={[
+                        styles.badge,
+                        {
+                          color: analysisColor,
+                          backgroundColor: `${analysisColor}1A`,
+                          borderColor: `${analysisColor}33`,
+                        },
+                      ]}
+                    >
+                      {item.analysis.status}
+                    </Text>
+                  )}
+                  {!!riskLabelText(item.riskLabel) && (
+                    <Text
+                      style={[
+                        styles.badge,
+                        {
+                          color: riskTone,
+                          backgroundColor: `${riskTone}1A`,
+                          borderColor: `${riskTone}33`,
+                        },
+                      ]}
+                    >
+                      {riskLabelText(item.riskLabel)}
+                    </Text>
+                  )}
+                </View>
+              </PressableScale>
             );
+
+            if (index < 8) {
+              return <ScreenReveal delay={index * 40}>{content}</ScreenReveal>;
+            }
+            return content;
           }}
         />
       )}
@@ -306,18 +326,20 @@ export default function TransactionListScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -325,7 +347,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -335,23 +359,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
   },
   headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   input: { marginLeft: 10, flex: 1, color: colors.text },
   summaryCard: {
@@ -360,11 +384,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 6,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
@@ -384,19 +408,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   summaryLabel: { fontSize: 11, color: colors.textLight, marginTop: 4 },
   summaryFooter: { marginTop: 10, flexDirection: 'row', gap: 8 },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     paddingLeft: 20,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
     position: 'relative',
+    overflow: 'hidden',
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   cardAccent: {
     position: 'absolute',
@@ -431,10 +460,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
 });

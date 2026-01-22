@@ -18,39 +18,39 @@ export type ThemeColors = {
 };
 
 export const LIGHT_COLORS: ThemeColors = {
-  primary: '#2563EB',    // Azul principal
-  accent: '#22D3EE',     // Acento cyan
-  secondary: '#0B2E59',  // Azul institucional
-  success: '#22C55E',    // Verde cumplimiento
-  warning: '#FB923C',    // Naranja observación
-  error: '#EF4444',      // Rojo infracción
-  purple: '#8B5CF6',     // Morado auditorías/reportes
-  background: '#F5F7FB', // Fondo claro
+  primary: '#1F5AA6',    // Azul institucional amigable
+  accent: '#2FB7A5',     // Teal calmado
+  secondary: '#28385E',  // Azul profundo
+  success: '#2E9B72',    // Verde confiable
+  warning: '#F2A65A',    // Naranja suave
+  error: '#E05D5D',      // Rojo moderado
+  purple: '#6F6CCB',     // Indigo sobrio
+  background: '#F6F4F1', // Fondo calido
   surface: '#FFFFFF',
-  surfaceAlt: '#EEF2F8',
-  text: '#111827',
-  textLight: '#6B7280',
+  surfaceAlt: '#F1F3F2',
+  text: '#1B2430',
+  textLight: '#6C7A89',
   white: '#FFFFFF',
   inputBg: '#FFFFFF',
-  borderColor: '#E6EAF2',
+  borderColor: '#E2E6EE',
 };
 
 export const DARK_COLORS: ThemeColors = {
-  primary: '#3B82F6',
-  accent: '#2DD4BF',
-  secondary: '#1E3A8A',
-  success: '#22C55E',
-  warning: '#FB923C',
-  error: '#EF4444',
-  purple: '#A78BFA',
-  background: '#0F172A',
-  surface: '#111827',
-  surfaceAlt: '#1F2937',
-  text: '#F9FAFB',
-  textLight: '#CBD5F5',
+  primary: '#4C8BF5',
+  accent: '#3CD6C4',
+  secondary: '#223A5E',
+  success: '#35C48A',
+  warning: '#F6B26B',
+  error: '#F06B6B',
+  purple: '#8C8EEB',
+  background: '#0D1424',
+  surface: '#111B2E',
+  surfaceAlt: '#1C2740',
+  text: '#F6F8FC',
+  textLight: '#B8C2D8',
   white: '#FFFFFF',
   inputBg: '#0B1220',
-  borderColor: '#273449',
+  borderColor: '#25314A',
 };
 
 export const getThemeColors = (mode: 'light' | 'dark') => (mode === 'dark' ? DARK_COLORS : LIGHT_COLORS);

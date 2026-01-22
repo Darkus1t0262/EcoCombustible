@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/theme';
 import type { ThemeColors } from '../theme/colors';
+import type { PremiumTokens } from '../theme/premium';
+import { getPremiumTokens } from '../theme/premium';
 
 type Props = {
   label?: string;
@@ -10,15 +13,24 @@ type Props = {
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function LoadingScreen({ label }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
 
   return (
     <View style={styles.container}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
       <View style={styles.glowPrimary} />
       <View style={styles.glowSecondary} />
 
       <View style={styles.card}>
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardStripes}
+        />
         <View style={styles.iconWrap}>
           <Image source={require('../../assets/logo.jpg')} style={styles.logo} resizeMode="contain" />
         </View>
@@ -30,12 +42,15 @@ export default function LoadingScreen({ label }: Props) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  background: {
+    ...StyleSheet.absoluteFillObject,
   },
   glowPrimary: {
     position: 'absolute',
@@ -60,14 +75,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 28,
     paddingVertical: 24,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
+    overflow: 'hidden',
   },
   iconWrap: {
     width: 52,
@@ -75,9 +91,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   logo: { width: 36, height: 36 },
   title: {
@@ -88,4 +104,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontFamily: titleFont,
   },
   subtitle: { marginTop: 6, color: colors.textLight, fontSize: 12 },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
+  },
 });

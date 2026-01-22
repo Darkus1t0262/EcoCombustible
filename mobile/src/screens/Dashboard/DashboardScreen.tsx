@@ -1,5 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal, Image } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Platform,
+  Modal,
+  Image,
+  Animated,
+  Easing,
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +19,7 @@ import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
+import { CountUpText } from '../../components/CountUpText';
 import { AuthService } from '../../services/AuthService';
 import { StatsService } from '../../services/StatsService';
 
@@ -14,11 +27,12 @@ const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function DashboardScreen({ navigation }: any) {
   const { colors, resolvedMode, setMode } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const insets = useSafeAreaInsets();
   const [stats, setStats] = useState({ stations: 0, auditsThisMonth: 0, pendingComplaints: 0 });
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const pulse = useRef(new Animated.Value(0.7)).current;
 
   useEffect(() => {
     const load = async () => {
@@ -31,6 +45,25 @@ export default function DashboardScreen({ navigation }: any) {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.7,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulse]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -45,203 +78,361 @@ export default function DashboardScreen({ navigation }: any) {
   const isDark = resolvedMode === 'dark';
   const handleToggleTheme = () => setMode(isDark ? 'light' : 'dark');
 
-  const HeroStat = ({ label, value, icon, tone }: any) => (
-    <View style={[styles.heroStat, { borderColor: `${tone}40`, backgroundColor: `${tone}12` }]}>
-      <View style={[styles.heroStatIcon, { backgroundColor: `${tone}1A`, borderColor: `${tone}33` }]}>
-        {typeof icon === 'string' ? <Ionicons name={icon as any} size={16} color={tone} /> : icon}
-      </View>
-      <View style={styles.heroStatBody}>
-        <Text style={styles.heroStatValue}>{value}</Text>
-        <Text style={styles.heroStatLabel}>{label}</Text>
+  const gradientFor = (tone: string) =>
+    isDark ? [`${tone}55`, 'rgba(12, 16, 24, 0.92)'] : [`${tone}24`, 'rgba(255, 255, 255, 0.94)'];
+
+  const stripeColors = isDark
+    ? ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.08)']
+    : ['rgba(15, 23, 42, 0.08)', 'rgba(15, 23, 42, 0.02)', 'rgba(15, 23, 42, 0.08)'];
+
+  const backgroundColors = isDark ? ['#0B0F19', '#121A2C', '#0F172A'] : ['#F8FAFF', '#EEF2F8', '#F8FAFF'];
+
+  const actionGradients = useMemo(
+    () => ({
+      map: [colors.accent, colors.primary, colors.secondary],
+      complaints: [colors.error, colors.warning, colors.secondary],
+      stations: [colors.primary, colors.accent, colors.success],
+      reports: [colors.primary, colors.accent, colors.secondary],
+      audit: [colors.warning, colors.success, colors.accent],
+      transactions: [colors.success, colors.accent, colors.primary],
+      vehicles: [colors.primary, colors.accent, colors.success],
+      security: [colors.secondary, colors.primary, colors.accent],
+    }),
+    [colors]
+  );
+
+  const IlloIcon = ({ gradient, iconType, iconName, size = 52 }: any) => (
+    <View style={[styles.illoWrap, { width: size, height: size, borderRadius: size * 0.36 }]}>
+      <View style={[styles.illoGlow, { backgroundColor: gradient[0] }]} />
+      <LinearGradient colors={gradient} style={styles.illoGradient} />
+      <View
+        style={[
+          styles.illoInner,
+          { backgroundColor: isDark ? 'rgba(12, 16, 24, 0.86)' : 'rgba(255, 255, 255, 0.92)' },
+        ]}
+      />
+      <View style={styles.illoIcon}>
+        {renderIcon(iconType, iconName, Math.round(size * 0.42), isDark ? '#E6F0FF' : '#0F172A')}
       </View>
     </View>
   );
 
-  const AlertCard = ({ title, value, hint, icon, color, onPress }: any) => (
-    <PressableScale style={[styles.alertCard, { borderColor: `${color}33` }]} onPress={onPress}>
-      <View style={styles.alertTop}>
-        <View style={[styles.alertIcon, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
-          {typeof icon === 'string' ? <Ionicons name={icon as any} size={18} color={color} /> : icon}
+  const renderIcon = (type: 'ion' | 'mci', name: string, size: number, color: string) =>
+    type === 'mci' ? (
+      <MaterialCommunityIcons name={name as any} size={size} color={color} />
+    ) : (
+      <Ionicons name={name as any} size={size} color={color} />
+    );
+
+  const renderValue = (value: number | string, style: any) =>
+    typeof value === 'number' ? <CountUpText value={value} style={style} /> : <Text style={style}>{value}</Text>;
+
+  const QuickPrimaryCard = ({
+    title,
+    subtitle,
+    value,
+    valueLabel,
+    iconType,
+    iconName,
+    color,
+    gradient,
+    onPress,
+    pulseOpacity,
+  }: any) => (
+    <PressableScale style={[styles.quickPrimaryCard, { borderColor: `${color}30` }]} onPress={onPress}>
+      <Animated.View style={[styles.quickPrimaryGlowWrap, pulseOpacity ? { opacity: pulseOpacity } : null]}>
+        <LinearGradient
+          colors={gradientFor(color)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.quickPrimaryGlow}
+        />
+      </Animated.View>
+      <LinearGradient
+        colors={stripeColors}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardStripes}
+      />
+      <View style={styles.quickPrimaryTop}>
+        <IlloIcon gradient={gradient} iconType={iconType} iconName={iconName} size={54} />
+        <View style={[styles.quickPrimaryValuePill, { backgroundColor: `${color}12`, borderColor: `${color}33` }]}>
+          {renderValue(value, [styles.quickPrimaryValueText, { color }])}
         </View>
-        <Text style={[styles.alertValue, { color }]}>{value}</Text>
       </View>
-      <Text style={styles.alertTitle}>{title}</Text>
-      <Text style={styles.alertHint}>{hint}</Text>
+      <Text style={styles.quickPrimaryTitle}>{title}</Text>
+      <Text style={styles.quickPrimarySubtitle}>{subtitle}</Text>
+      <Text style={styles.quickPrimaryLabel}>{valueLabel}</Text>
     </PressableScale>
   );
 
-  const ActionCard = ({ title, sub, icon, color, onPress }: any) => (
-    <PressableScale style={styles.actionCard} onPress={onPress}>
-      <View style={[styles.actionIcon, { backgroundColor: `${color}1A`, borderColor: `${color}33` }]}>
-        {typeof icon === 'string' ? <Ionicons name={icon as any} size={20} color={color} /> : icon}
-      </View>
-      <View style={styles.actionBody}>
-        <Text style={styles.actionTitle}>{title}</Text>
-        <Text style={styles.actionSub}>{sub}</Text>
-      </View>
-      <View style={[styles.actionChevron, { borderColor: `${color}33` }]}>
-        <Ionicons name="arrow-forward" size={14} color={color} />
-      </View>
+  const QuickMiniCard = ({ title, subtitle, iconType, iconName, color, gradient, onPress }: any) => (
+    <PressableScale style={styles.quickMiniCard} onPress={onPress}>
+      <LinearGradient
+        colors={gradientFor(color)}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.quickMiniGlow}
+      />
+      <LinearGradient
+        colors={stripeColors}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardStripes}
+      />
+      <IlloIcon gradient={gradient} iconType={iconType} iconName={iconName} size={44} />
+      <Text style={styles.quickMiniTitle}>{title}</Text>
+      <Text style={styles.quickMiniSubtitle}>{subtitle}</Text>
+      <Ionicons name="chevron-forward" size={16} color={colors.textLight} style={styles.quickMiniChevron} />
     </PressableScale>
+  );
+
+  const SummaryCard = ({ title, value, note, tone, variant }: any) => (
+    <View style={styles.summaryCard}>
+      <LinearGradient
+        colors={gradientFor(tone)}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.summaryGlow}
+      />
+      <LinearGradient
+        colors={stripeColors}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardStripes}
+      />
+      <View style={styles.summaryRow}>
+        <View>
+          <Text style={styles.summaryTitle}>{title}</Text>
+          {renderValue(value, [styles.summaryValue, { color: tone }])}
+          <Text style={styles.summaryNote}>{note}</Text>
+        </View>
+        {variant === 'ring' ? (
+          <View style={[styles.summaryRing, { borderColor: tone }]}>
+            {renderValue(value, [styles.summaryRingText, { color: tone }])}
+          </View>
+        ) : (
+          <View style={styles.summarySpark}>
+            <View style={[styles.summarySparkLine, { width: 26, backgroundColor: tone }]} />
+            <View style={[styles.summarySparkLine, { width: 18, backgroundColor: tone }]} />
+            <View style={[styles.summarySparkLine, { width: 32, backgroundColor: tone }]} />
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const quickPrimary = useMemo(
+    () => [
+      {
+        key: 'map',
+        title: 'Mapa',
+        subtitle: 'Vista geográfica',
+        value: loading ? '--' : stats.stations,
+        valueLabel: 'estaciones activas',
+        route: 'Map',
+        color: colors.accent,
+        iconType: 'ion',
+        iconName: 'map',
+        gradient: actionGradients.map,
+        pulse: false,
+      },
+      {
+        key: 'complaints',
+        title: 'Denuncias',
+        subtitle: 'Bandeja de seguimiento',
+        value: loading ? '--' : stats.pendingComplaints,
+        valueLabel: 'pendientes',
+        route: 'Complaints',
+        color: colors.error,
+        iconType: 'ion',
+        iconName: 'alert-circle',
+        gradient: actionGradients.complaints,
+        pulse: !loading && stats.pendingComplaints > 0,
+      },
+    ],
+    [actionGradients, colors, loading, stats]
+  );
+
+  const quickMini = useMemo(
+    () => [
+      {
+        key: 'stations',
+        title: 'Estaciones',
+        subtitle: 'Control',
+        route: 'StationList',
+        color: colors.primary,
+        iconType: 'mci',
+        iconName: 'gas-station',
+        gradient: actionGradients.stations,
+      },
+      {
+        key: 'reports',
+        title: 'Reportes',
+        subtitle: 'Estadísticas',
+        route: 'Reports',
+        color: colors.secondary,
+        iconType: 'ion',
+        iconName: 'stats-chart',
+        gradient: actionGradients.reports,
+      },
+      {
+        key: 'audit',
+        title: 'Auditorías',
+        subtitle: 'Revisión',
+        route: 'Audit',
+        color: colors.warning,
+        iconType: 'mci',
+        iconName: 'clipboard-text',
+        gradient: actionGradients.audit,
+      },
+      {
+        key: 'transactions',
+        title: 'Transacciones',
+        subtitle: 'Consumo',
+        route: 'TransactionList',
+        color: colors.success,
+        iconType: 'ion',
+        iconName: 'list',
+        gradient: actionGradients.transactions,
+      },
+      {
+        key: 'vehicles',
+        title: 'Vehículos',
+        subtitle: 'Registro',
+        route: 'VehicleList',
+        color: colors.primary,
+        iconType: 'ion',
+        iconName: 'car',
+        gradient: actionGradients.vehicles,
+      },
+      {
+        key: 'security',
+        title: 'Seguridad',
+        subtitle: 'Cambiar clave',
+        route: 'ChangePassword',
+        color: colors.secondary,
+        iconType: 'ion',
+        iconName: 'key',
+        gradient: actionGradients.security,
+      },
+    ],
+    [actionGradients, colors]
+  );
+
+  const summaries = useMemo(
+    () => [
+      {
+        key: 'stations',
+        title: 'Estaciones activas',
+        value: loading ? '--' : stats.stations,
+        note: 'Cobertura nacional',
+        tone: colors.accent,
+        variant: 'spark',
+      },
+      {
+        key: 'audits',
+        title: 'Auditorías del mes',
+        value: loading ? '--' : stats.auditsThisMonth,
+        note: 'Validaciones en campo',
+        tone: colors.warning,
+        variant: 'ring',
+      },
+    ],
+    [colors, loading, stats]
   );
 
   return (
     <View style={styles.container}>
+      <LinearGradient colors={backgroundColors} style={styles.background} />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: Math.max(insets.top, 16) }]}>
+        <View style={styles.topBar}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandIcon}>
+              <Image source={require('../../../assets/logo.jpg')} style={styles.brandLogo} resizeMode="contain" />
+            </View>
+            <View style={styles.brandText}>
+              <Text style={styles.brandTitle} numberOfLines={1}>
+                EcoCombustible
+              </Text>
+              <Text style={styles.brandSubtitle}>Panel regulatorio</Text>
+            </View>
+          </View>
+          <View style={styles.topActions}>
+            <PressableScale style={styles.actionPill} onPress={handleToggleTheme} accessibilityLabel="Cambiar tema">
+              <Ionicons name={isDark ? 'moon' : 'sunny'} size={16} color={colors.accent} />
+              <Text style={styles.actionPillText}>{isDark ? 'Oscuro' : 'Claro'}</Text>
+            </PressableScale>
+            <PressableScale style={styles.logoutPill} onPress={handleLogout} accessibilityLabel="Cerrar sesión">
+              <Ionicons name="log-out-outline" size={16} color={colors.white} />
+              <Text style={styles.logoutText}>Salir</Text>
+            </PressableScale>
+          </View>
+        </View>
+
         <ScreenReveal delay={80}>
-          <View style={styles.hero}>
-            <LinearGradient
-              colors={[`${colors.accent}3D`, `${colors.primary}22`, `${colors.surface}00`]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroGradient}
-            />
-            <View style={styles.heroTop}>
-              <View style={styles.brandRow}>
-                <View style={styles.brandIcon}>
-                  <Image source={require('../../../assets/logo.jpg')} style={styles.brandLogo} resizeMode="contain" />
-                </View>
-                <View style={styles.brandText}>
-                  <Text style={styles.heroTitle} numberOfLines={1} ellipsizeMode="tail">
-                    EcoCombustible
-                  </Text>
-                  <Text style={styles.heroSubtitle}>Panel operativo en tiempo real</Text>
-                </View>
-              </View>
-              <View style={styles.heroActions}>
-                <PressableScale style={styles.themeToggle} onPress={handleToggleTheme}>
-                  <Ionicons name={isDark ? 'moon' : 'sunny'} size={16} color={colors.accent} />
-                  <Text style={styles.themeToggleText}>{isDark ? 'Oscuro' : 'Claro'}</Text>
-                </PressableScale>
-                <PressableScale style={styles.logoutBtn} onPress={handleLogout}>
-                  <Ionicons name="log-out-outline" size={16} color={colors.white} />
-                  <Text style={styles.logoutText}>Salir</Text>
-                </PressableScale>
-              </View>
-            </View>
-
-            <View style={styles.heroBullets}>
-              <View style={styles.heroBullet}>
-                <Ionicons name="flash-outline" size={14} color={colors.accent} />
-                <Text style={styles.heroBulletText}>Alertas IA y trazabilidad inmediata</Text>
-              </View>
-              <View style={styles.heroBullet}>
-                <Ionicons name="pulse-outline" size={14} color={colors.accent} />
-                <Text style={styles.heroBulletText}>Consumo y auditorías siempre visibles</Text>
-              </View>
-              <View style={styles.heroBullet}>
-                <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
-                <Text style={styles.heroBulletText}>Prioridades claras para tomar acción</Text>
-              </View>
-            </View>
-
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 12 }} />
-            ) : (
-              <View style={styles.heroStats}>
-                <HeroStat
-                  label="Estaciones activas"
-                  value={stats.stations}
-                  icon={<MaterialCommunityIcons name="gas-station" size={16} color={colors.accent} />}
-                  tone={colors.accent}
-                />
-                <HeroStat
-                  label="Auditorías del mes"
-                  value={stats.auditsThisMonth}
-                  icon="checkmark-circle"
-                  tone={colors.success}
-                />
-                <HeroStat
-                  label="Denuncias pendientes"
-                  value={stats.pendingComplaints}
-                  icon="alert-circle"
-                  tone={colors.error}
-                />
-              </View>
-            )}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Acciones rápidas</Text>
+            <Text style={styles.sectionNote}>Acceso inmediato</Text>
+          </View>
+          <View style={styles.quickPrimaryRow}>
+            {quickPrimary.map((item) => (
+              <QuickPrimaryCard
+                key={item.key}
+                title={item.title}
+                subtitle={item.subtitle}
+                value={item.value}
+                valueLabel={item.valueLabel}
+                iconType={item.iconType}
+                iconName={item.iconName}
+                color={item.color}
+                gradient={item.gradient}
+                pulseOpacity={item.pulse ? pulse : undefined}
+                onPress={() => navigation.navigate(item.route)}
+              />
+            ))}
+          </View>
+          <View style={styles.quickMiniRow}>
+            {quickMini.map((item) => (
+              <QuickMiniCard
+                key={item.key}
+                title={item.title}
+                subtitle={item.subtitle}
+                iconType={item.iconType}
+                iconName={item.iconName}
+                color={item.color}
+                gradient={item.gradient}
+                onPress={() => navigation.navigate(item.route)}
+              />
+            ))}
           </View>
         </ScreenReveal>
 
         <ScreenReveal delay={160}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Alertas activas</Text>
-            <Text style={styles.sectionNote}>Ir directo a lo importante</Text>
+            <Text style={styles.sectionTitle}>Resumen</Text>
+            <Text style={styles.sectionNote}>Indicadores clave</Text>
           </View>
-          <PressableScale style={styles.changePassBtn} onPress={() => navigation.navigate('ChangePassword')}>
-            <Ionicons name="key-outline" size={16} color={colors.primary} />
-            <Text style={styles.changePassText}>Cambiar contraseña</Text>
-          </PressableScale>
-          <View style={styles.alertGrid}>
-            <AlertCard
-              title="Denuncias pendientes"
-              value={loading ? '--' : stats.pendingComplaints}
-              hint="Revisar casos abiertos"
-              icon="alert-circle"
-              color={colors.error}
-              onPress={() => navigation.navigate('Complaints')}
-            />
-            <AlertCard
-              title="Auditorías del mes"
-              value={loading ? '--' : stats.auditsThisMonth}
-              hint="Inspecciones en proceso"
-              icon="checkmark-circle"
-              color={colors.warning}
-              onPress={() => navigation.navigate('Audit')}
-            />
+          <View style={styles.summaryGrid}>
+            {summaries.map((item) => (
+              <SummaryCard
+                key={item.key}
+                title={item.title}
+                value={item.value}
+                note={item.note}
+                tone={item.tone}
+                variant={item.variant}
+              />
+            ))}
           </View>
         </ScreenReveal>
 
-        <ScreenReveal delay={220}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-            <Text style={styles.sectionNote}>Entrar directo al punto</Text>
-          </View>
-          <View style={styles.actionGrid}>
-            <ActionCard
-              title="Mapa"
-              sub="Riesgo en tiempo real"
-              icon="map"
-              color={colors.accent}
-              onPress={() => navigation.navigate('Map')}
-            />
-            <ActionCard
-              title="Estaciones"
-              sub="Listado y control"
-              icon={<MaterialCommunityIcons name="gas-station" size={20} color={colors.primary} />}
-              color={colors.primary}
-              onPress={() => navigation.navigate('StationList')}
-            />
-            <ActionCard
-              title="Transacciones"
-              sub="Consumo y trazas"
-              icon="list"
-              color={colors.success}
-              onPress={() => navigation.navigate('TransactionList')}
-            />
-            <ActionCard
-              title="Reportes"
-              sub="Datos ejecutivos"
-              icon="stats-chart"
-              color={colors.secondary}
-              onPress={() => navigation.navigate('Reports')}
-            />
-            <ActionCard
-              title="Denuncias"
-              sub="Bandeja prioritaria"
-              icon="alert-circle"
-              color={colors.error}
-              onPress={() => navigation.navigate('Complaints')}
-            />
-            <ActionCard
-              title="Vehículos"
-              sub="Registro y control"
-              icon="car"
-              color={colors.primary}
-              onPress={() => navigation.navigate('VehicleList')}
-            />
-          </View>
-        </ScreenReveal>
+        {loading && <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 12 }} />}
       </ScrollView>
+
       <Modal
         transparent
         animationType="fade"
@@ -250,30 +441,14 @@ export default function DashboardScreen({ navigation }: any) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Ionicons
-              name="log-out-outline"
-              size={36}
-              color={colors.error}
-              style={{ marginBottom: 10 }}
-            />
-
+            <Ionicons name="log-out-outline" size={36} color={colors.error} style={{ marginBottom: 10 }} />
             <Text style={styles.modalTitle}>Salir de la aplicación?</Text>
-            <Text style={styles.modalText}>
-              Seguro que deseas cerrar sesión?
-            </Text>
-
+            <Text style={styles.modalText}>Seguro que deseas cerrar sesión?</Text>
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalBtnCancel}
-                onPress={() => setShowLogoutModal(false)}
-              >
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setShowLogoutModal(false)}>
                 <Text style={styles.modalBtnCancelText}>No</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalBtnConfirm}
-                onPress={confirmLogout}
-              >
+              <TouchableOpacity style={styles.modalBtnConfirm} onPress={confirmLogout}>
                 <Text style={styles.modalBtnConfirmText}>Si</Text>
               </TouchableOpacity>
             </View>
@@ -284,250 +459,247 @@ export default function DashboardScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: 36 },
-  hero: {
-    margin: 20,
-    padding: 18,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-    overflow: 'hidden',
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroTop: { gap: 12 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
-  brandIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-  },
-  brandLogo: { width: 36, height: 36 },
-  brandText: { flex: 1, minWidth: 0 },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: titleFont,
-    includeFontPadding: false,
-  },
-  heroSubtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
-  heroActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    alignSelf: 'flex-end',
-  },
-  themeToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-    backgroundColor: colors.surfaceAlt,
-  },
-  themeToggleText: { fontSize: 12, fontWeight: '600', color: colors.text },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.error,
-    backgroundColor: colors.error,
-  },
-  logoutText: { color: colors.white, fontWeight: '700', fontSize: 12 },
-  heroBullets: {
-    marginTop: 14,
-    gap: 6,
-  },
-  heroBullet: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heroBulletText: { fontSize: 11, color: colors.textLight },
-  heroStats: {
-    marginTop: 14,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  heroStat: {
-    width: '48%',
-    padding: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  heroStatIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroStatBody: { flex: 1 },
-  heroStatValue: { fontSize: 16, fontWeight: '700', color: colors.text },
-  heroStatLabel: { fontSize: 11, color: colors.textLight, marginTop: 2 },
-  sectionHeader: { marginHorizontal: 20, marginTop: 12, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.text, fontFamily: titleFont },
-  sectionNote: { fontSize: 11, color: colors.textLight, marginTop: 2 },
-  alertGrid: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
-  alertCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  alertTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  alertIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertValue: { fontSize: 18, fontWeight: '700' },
-  alertTitle: { marginTop: 10, fontSize: 13, fontWeight: '700', color: colors.text },
-  alertHint: { fontSize: 11, color: colors.textLight, marginTop: 4 },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    gap: 12,
-    paddingBottom: 12,
-  },
-  actionCard: {
-    width: '48%',
-    backgroundColor: colors.surface,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  actionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBody: { marginTop: 10 },
-  actionTitle: { fontWeight: '700', color: colors.text, fontSize: 13 },
-  actionSub: { fontSize: 11, color: colors.textLight, marginTop: 4 },
-  actionChevron: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    width: '85%',
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 6,
-    fontFamily: titleFont,
-  },
-  modalText: {
-    fontSize: 13,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalBtnCancel: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
-  },
-  modalBtnCancelText: {
-    color: colors.text,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  modalBtnConfirm: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    backgroundColor: `${colors.error}15`,
-    borderWidth: 1,
-    borderColor: `${colors.error}40`,
-  },
-  modalBtnConfirmText: {
-    color: colors.error,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  changePassBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: `${colors.primary}33`,
-    backgroundColor: `${colors.primary}12`,
-    alignSelf: 'flex-start',
-    marginHorizontal: 20,
-    marginBottom: 12,
-  },
-  changePassText: {
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 12,
-  },
-});
+const createStyles = (colors: ThemeColors, mode: 'light' | 'dark') => {
+  const isDark = mode === 'dark';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
+  const cardSurface = isDark ? 'rgba(13, 18, 28, 0.92)' : colors.surface;
+  const shadowOpacity = isDark ? 0.22 : 0.08;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    background: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    scroll: { paddingBottom: 36 },
+    topBar: {
+      marginHorizontal: 20,
+      marginBottom: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+    },
+    brandRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, flex: 1 },
+    brandIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: cardSurface,
+      borderWidth: 1,
+      borderColor: cardBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    brandLogo: { width: 30, height: 30 },
+    brandText: { flex: 1, minWidth: 0 },
+    brandTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      fontFamily: titleFont,
+      includeFontPadding: false,
+    },
+    brandSubtitle: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+    topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    actionPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: cardBorder,
+      backgroundColor: cardSurface,
+    },
+    actionPillText: { fontSize: 12, fontWeight: '600', color: colors.text },
+    logoutPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.error,
+      backgroundColor: colors.error,
+    },
+    logoutText: { color: colors.white, fontWeight: '700', fontSize: 12 },
+    sectionHeader: { marginHorizontal: 20, marginTop: 10, marginBottom: 10 },
+    sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.text, fontFamily: titleFont },
+    sectionNote: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+    quickPrimaryRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+    quickPrimaryCard: {
+      flex: 1,
+      padding: 14,
+      minHeight: 130,
+      borderRadius: 20,
+      backgroundColor: cardSurface,
+      borderWidth: 1,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOpacity,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    quickPrimaryGlowWrap: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    quickPrimaryGlow: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    cardStripes: {
+      ...StyleSheet.absoluteFillObject,
+      opacity: isDark ? 0.6 : 0.35,
+    },
+    illoWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    illoGlow: {
+      position: 'absolute',
+      width: '120%',
+      height: '120%',
+      borderRadius: 999,
+      opacity: isDark ? 0.28 : 0.18,
+      transform: [{ scale: 1.05 }],
+    },
+    illoGradient: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
+    },
+    illoInner: {
+      position: 'absolute',
+      width: '72%',
+      height: '72%',
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.18)',
+    },
+    illoIcon: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickPrimaryTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    quickPrimaryValuePill: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    quickPrimaryValueText: { fontSize: 12, fontWeight: '700' },
+    quickPrimaryTitle: { marginTop: 12, fontSize: 14, fontWeight: '700', color: colors.text },
+    quickPrimarySubtitle: { marginTop: 4, fontSize: 11, color: colors.textLight },
+    quickPrimaryLabel: { marginTop: 6, fontSize: 11, color: colors.textLight },
+    quickMiniRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      gap: 12,
+      marginTop: 12,
+    },
+    quickMiniCard: {
+      width: '48%',
+      padding: 12,
+      borderRadius: 16,
+      backgroundColor: cardSurface,
+      borderWidth: 1,
+      borderColor: cardBorder,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOpacity: isDark ? 0.18 : 0.05,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 1,
+    },
+    quickMiniGlow: { ...StyleSheet.absoluteFillObject },
+    quickMiniTitle: { marginTop: 8, fontSize: 12, fontWeight: '700', color: colors.text },
+    quickMiniSubtitle: { marginTop: 4, fontSize: 10, color: colors.textLight },
+    quickMiniChevron: { position: 'absolute', right: 10, top: 10 },
+    summaryGrid: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
+    summaryCard: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 18,
+      backgroundColor: cardSurface,
+      borderWidth: 1,
+      borderColor: cardBorder,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOpacity,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    summaryGlow: { ...StyleSheet.absoluteFillObject },
+    summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    summaryTitle: { fontSize: 12, fontWeight: '700', color: colors.text },
+    summaryValue: { marginTop: 6, fontSize: 20, fontWeight: '700' },
+    summaryNote: { marginTop: 4, fontSize: 10, color: colors.textLight },
+    summarySpark: { alignItems: 'flex-end', gap: 6 },
+    summarySparkLine: {
+      height: 4,
+      borderRadius: 999,
+      opacity: 0.8,
+    },
+    summaryRing: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      borderWidth: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    summaryRingText: { fontSize: 10, fontWeight: '700' },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalCard: {
+      width: '85%',
+      backgroundColor: cardSurface,
+      borderRadius: 20,
+      padding: 20,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: cardBorder,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 6,
+      fontFamily: titleFont,
+    },
+    modalText: {
+      fontSize: 13,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    modalActions: { flexDirection: 'row', gap: 12 },
+    modalBtnCancel: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      backgroundColor: colors.surfaceAlt,
+    },
+    modalBtnCancelText: { color: colors.text, fontWeight: '600', fontSize: 13 },
+    modalBtnConfirm: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      backgroundColor: `${colors.error}15`,
+      borderWidth: 1,
+      borderColor: `${colors.error}40`,
+    },
+    modalBtnConfirmText: { color: colors.error, fontWeight: '700', fontSize: 13 },
+  });
+};

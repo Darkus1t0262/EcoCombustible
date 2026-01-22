@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { ReportService, ReportItem } from '../../services/ReportService';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
@@ -12,8 +16,10 @@ const periods = ['Semana', 'Mes', 'Año'];
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function ReportsScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const formats = useMemo(
     () => [
       { label: 'PDF', color: colors.error },
@@ -73,8 +79,13 @@ export default function ReportsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -89,6 +100,13 @@ export default function ReportsScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <ScreenReveal delay={80}>
           <View style={styles.panel}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={styles.panelTitle}>Generar nuevo reporte</Text>
             <Text style={styles.label}>Período</Text>
             <View style={styles.pillRow}>
@@ -155,6 +173,13 @@ export default function ReportsScreen({ navigation }: any) {
                   onPress={() => handleShare(report)}
                   disabled={!canShare}
                 >
+                  <LinearGradient
+                    colors={tokens.stripeColors}
+                    locations={[0, 0.45, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cardStripes}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.fileTitle}>
                       {report.period} - {report.format}
@@ -181,18 +206,20 @@ export default function ReportsScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -200,7 +227,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -210,24 +239,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
   },
   headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   scroll: { padding: 20, paddingBottom: 30 },
   panel: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 18,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
   },
   panelTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10 },
   label: { marginTop: 10, marginBottom: 8, color: colors.textLight, fontWeight: '600', fontSize: 12 },
@@ -237,9 +267,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
   },
   pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   pillText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
@@ -251,8 +281,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.borderColor,
-    backgroundColor: colors.surfaceAlt,
+    borderColor: tokens.cardBorder,
+    backgroundColor: tokens.cardSurface,
   },
   formatText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
   formatTextActive: { color: colors.white },
@@ -273,16 +303,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text,
   },
   fileRow: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    overflow: 'hidden',
   },
   fileRowDisabled: { opacity: 0.6 },
   fileTitle: { fontWeight: '700', fontSize: 14, color: colors.text },
@@ -300,9 +331,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   shareChipDisabled: { backgroundColor: colors.surfaceAlt },
   shareText: { fontSize: 12, fontWeight: '700', color: colors.primary },
@@ -311,10 +342,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { fontSize: 12, color: colors.textLight },
   skeletonWrap: { gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
 });

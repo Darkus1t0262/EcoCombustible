@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
@@ -21,8 +25,10 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function ComplaintsScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const statusConfig = useMemo(
     () => ({
       pending: { label: 'Pendiente', color: colors.error },
@@ -140,36 +146,56 @@ export default function ComplaintsScreen({ navigation }: any) {
 
   const renderItem = ({ item, index }: { item: ComplaintItem; index: number }) => {
     const statusInfo = statusConfig[item.status as keyof typeof statusConfig] ?? { label: item.status, color: colors.warning };
-    return (
-      <ScreenReveal delay={Math.min(index * 40, 200)}>
-        <PressableScale
-          style={styles.card}
-          onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item.id })}
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>{item.type}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` }]}>
-              <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
-            </View>
+    const content = (
+      <PressableScale
+        style={styles.card}
+        onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item.id })}
+      >
+        <LinearGradient
+          colors={tokens.stripeColors}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardStripes}
+        />
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item.type}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` },
+            ]}
+          >
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
           </View>
-          <Text style={styles.subtitle}>{item.stationName}</Text>
-          {!!item.reporterName && (
-            <Text style={styles.metaText}>
-              Reporta: {item.reporterName}
-              {item.reporterRole ? ` (${item.reporterRole})` : ''}
-            </Text>
-          )}
-          {!!item.vehiclePlate && <Text style={styles.metaText}>Vehículo: {item.vehiclePlate}</Text>}
-          <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
-        </PressableScale>
-      </ScreenReveal>
+        </View>
+        <Text style={styles.subtitle}>{item.stationName}</Text>
+        {!!item.reporterName && (
+          <Text style={styles.metaText}>
+            Reporta: {item.reporterName}
+            {item.reporterRole ? ` (${item.reporterRole})` : ''}
+          </Text>
+        )}
+        {!!item.vehiclePlate && <Text style={styles.metaText}>Vehículo: {item.vehiclePlate}</Text>}
+        <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
+      </PressableScale>
     );
+
+    if (index < 8) {
+      return <ScreenReveal delay={index * 40}>{content}</ScreenReveal>;
+    }
+    return content;
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -177,10 +203,11 @@ export default function ComplaintsScreen({ navigation }: any) {
           <Text style={styles.subtitle}>Seguimiento y resolución</Text>
         </View>
         <View style={styles.headerActions}>
-          <PressableScale onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
-            <Ionicons name="add" size={18} color={colors.primary} />
-          </PressableScale>
-          <PressableScale onPress={() => loadData(1, true)} style={styles.iconBtn}>
+          <PressableScale
+            onPress={() => loadData(1, true)}
+            style={styles.iconBtn}
+            accessibilityLabel="Actualizar lista"
+          >
             <Ionicons name="refresh" size={18} color={colors.primary} />
           </PressableScale>
         </View>
@@ -189,14 +216,35 @@ export default function ComplaintsScreen({ navigation }: any) {
       <ScreenReveal delay={80}>
         <View style={styles.statsRow}>
           <View style={styles.stat}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={{ color: colors.success, fontWeight: '700', fontSize: 18 }}>{stats.resolved}</Text>
             <Text style={styles.statLabel}>Resueltas</Text>
           </View>
           <View style={styles.stat}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={{ color: colors.error, fontWeight: '700', fontSize: 18 }}>{stats.pending}</Text>
             <Text style={styles.statLabel}>Pendientes</Text>
           </View>
           <View style={styles.stat}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 18 }}>{stats.total}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
@@ -266,18 +314,20 @@ export default function ComplaintsScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -285,7 +335,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -295,37 +347,38 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, marginBottom: 12 },
   stat: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 15,
     borderRadius: 12,
     width: '31%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
+    overflow: 'hidden',
   },
   statLabel: { fontSize: 10, color: colors.textLight },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     marginHorizontal: 20,
     padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   searchInput: { marginLeft: 10, flex: 1, color: colors.text },
   filterRow: { flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, marginBottom: 6 },
@@ -333,25 +386,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   filterPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
   filterTextActive: { color: colors.white },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontWeight: '700', fontSize: 15, color: colors.text },
@@ -366,10 +424,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
 });

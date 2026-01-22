@@ -13,8 +13,8 @@ export const ScreenReveal = ({
   children,
   style,
   delay = 0,
-  distance = 12,
-  duration = 450,
+  distance = 16,
+  duration = 520,
 }: ScreenRevealProps) => {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(distance)).current;

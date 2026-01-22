@@ -1,18 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { AuditService, AuditItem } from '../../services/AuditService';
 import { Skeleton } from '../../components/Skeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function AuditScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,8 +69,13 @@ export default function AuditScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -103,70 +114,83 @@ export default function AuditScreen({ navigation }: any) {
               audit.status === 'approved' ? 'Aprobada' : audit.status === 'rejected' ? 'Rechazada' : 'Pendiente';
             const statusColor =
               audit.status === 'approved' ? colors.success : audit.status === 'rejected' ? colors.error : colors.warning;
-
-            return (
-              <ScreenReveal key={audit.id} delay={Math.min(index * 50, 200)}>
-                <View style={styles.card}>
-                  <View style={styles.cardTop}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.cardTitle}>{audit.stationName}</Text>
-                      <Text style={styles.cardMeta}>Código: {audit.code}</Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
-                      ]}
-                    >
-                      <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
-                    </View>
+            const content = (
+              <View style={styles.card}>
+                <LinearGradient
+                  colors={tokens.stripeColors}
+                  locations={[0, 0.45, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.cardStripes}
+                />
+                <View style={styles.cardTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.cardTitle}>{audit.stationName}</Text>
+                    <Text style={styles.cardMeta}>Código: {audit.code}</Text>
                   </View>
-
-                  <View style={styles.checkItem}>
-                    <View>
-                      <Text style={styles.checkTitle}>Precio de combustible</Text>
-                      <Text style={styles.checkMeta}>
-                        Esperado: ${audit.priceExpected} | Reportado: ${audit.priceReported}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name={audit.priceExpected === audit.priceReported ? 'checkmark-circle' : 'alert-circle'}
-                      size={22}
-                      color={audit.priceExpected === audit.priceReported ? colors.success : colors.error}
-                    />
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: `${statusColor}1A`, borderColor: `${statusColor}33` },
+                    ]}
+                  >
+                    <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
                   </View>
-
-                  <View style={styles.checkItem}>
-                    <View>
-                      <Text style={styles.checkTitle}>Calibración del dispensador</Text>
-                      <Text style={styles.checkMeta}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
-                    </View>
-                    <Ionicons
-                      name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
-                      size={22}
-                      color={audit.dispenserOk ? colors.success : colors.error}
-                    />
-                  </View>
-
-                  {audit.status === 'pending' && (
-                    <View style={styles.actions}>
-                      <PressableScale
-                        style={[styles.actionBtn, styles.approveBtn]}
-                        onPress={() => handleUpdate(audit.id, 'approved')}
-                      >
-                        <Text style={styles.actionText}>Aprobar</Text>
-                      </PressableScale>
-                      <PressableScale
-                        style={[styles.actionBtn, styles.rejectBtn]}
-                        onPress={() => handleUpdate(audit.id, 'rejected')}
-                      >
-                        <Text style={styles.actionText}>Rechazar</Text>
-                      </PressableScale>
-                    </View>
-                  )}
                 </View>
-              </ScreenReveal>
+
+                <View style={styles.checkItem}>
+                  <View>
+                    <Text style={styles.checkTitle}>Precio de combustible</Text>
+                    <Text style={styles.checkMeta}>
+                      Esperado: ${audit.priceExpected} | Reportado: ${audit.priceReported}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={audit.priceExpected === audit.priceReported ? 'checkmark-circle' : 'alert-circle'}
+                    size={22}
+                    color={audit.priceExpected === audit.priceReported ? colors.success : colors.error}
+                  />
+                </View>
+
+                <View style={styles.checkItem}>
+                  <View>
+                    <Text style={styles.checkTitle}>Calibración del dispensador</Text>
+                    <Text style={styles.checkMeta}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
+                  </View>
+                  <Ionicons
+                    name={audit.dispenserOk ? 'checkmark-circle' : 'alert-circle'}
+                    size={22}
+                    color={audit.dispenserOk ? colors.success : colors.error}
+                  />
+                </View>
+
+                {audit.status === 'pending' && (
+                  <View style={styles.actions}>
+                    <PressableScale
+                      style={[styles.actionBtn, styles.approveBtn]}
+                      onPress={() => handleUpdate(audit.id, 'approved')}
+                    >
+                      <Text style={styles.actionText}>Aprobar</Text>
+                    </PressableScale>
+                    <PressableScale
+                      style={[styles.actionBtn, styles.rejectBtn]}
+                      onPress={() => handleUpdate(audit.id, 'rejected')}
+                    >
+                      <Text style={styles.actionText}>Rechazar</Text>
+                    </PressableScale>
+                  </View>
+                )}
+              </View>
             );
+
+            if (index < 6) {
+              return (
+                <ScreenReveal key={audit.id} delay={index * 50}>
+                  {content}
+                </ScreenReveal>
+              );
+            }
+            return <View key={audit.id}>{content}</View>;
           })
         )}
       </ScrollView>
@@ -174,18 +198,20 @@ export default function AuditScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -193,7 +219,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -202,27 +230,32 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 10 },
   summaryCard: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
   },
   summaryValue: { fontSize: 18, fontWeight: '700' },
   summaryLabel: { fontSize: 11, color: colors.textLight, marginTop: 4 },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     marginBottom: 14,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   cardTitle: { fontWeight: '700', fontSize: 16, color: colors.text },
@@ -255,10 +288,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { fontSize: 12, color: colors.textLight },
   skeletonWrap: { gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
 });

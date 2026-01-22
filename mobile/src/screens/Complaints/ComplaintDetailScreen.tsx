@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { ComplaintItem, ComplaintService } from '../../services/ComplaintService';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
@@ -18,8 +22,10 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function ComplaintDetailScreen({ route, navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const statusLabels = useMemo(
     () => ({
       pending: { label: 'Pendiente', color: colors.error },
@@ -71,8 +77,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+        <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+          <PressableScale
+            onPress={() => navigation.goBack()}
+            style={styles.headerAction}
+            accessibilityLabel="Volver"
+          >
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </PressableScale>
           <View style={styles.headerText}>
@@ -82,11 +93,25 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Skeleton width="45%" height={14} />
             <Skeleton width="80%" height={10} style={{ marginTop: 12 }} />
             <Skeleton width="60%" height={10} style={{ marginTop: 8 }} />
           </View>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Skeleton width="40%" height={14} />
             <Skeleton width="70%" height={10} style={{ marginTop: 12 }} />
           </View>
@@ -114,8 +139,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -127,6 +157,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
       <ScrollView contentContainerStyle={styles.body}>
         <ScreenReveal delay={80}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>{complaint.type}</Text>
               <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}1A`, borderColor: `${statusInfo.color}33` }]}>
@@ -141,6 +178,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={120}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={styles.sectionTitle}>Detalle</Text>
             {!!complaint.detail && <Text style={styles.bodyText}>{complaint.detail}</Text>}
             {!complaint.detail && <Text style={styles.metaText}>Sin descripción adicional.</Text>}
@@ -149,6 +193,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={160}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={styles.sectionTitle}>Reportante</Text>
             <Text style={styles.metaText}>Usuario: {complaint.reporterName ?? 'No disponible'}</Text>
             <Text style={styles.metaText}>Rol: {complaint.reporterRole ?? 'No disponible'}</Text>
@@ -157,6 +208,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={200}>
           <View style={styles.card}>
+            <LinearGradient
+              colors={tokens.stripeColors}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardStripes}
+            />
             <Text style={styles.sectionTitle}>Consumo y vehículo</Text>
             <Text style={styles.metaText}>Vehículo: {complaint.vehiclePlate ?? 'No disponible'}</Text>
             {!!complaint.vehicleModel && <Text style={styles.metaText}>Modelo: {complaint.vehicleModel}</Text>}
@@ -171,6 +229,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
         {!!photoUri && (
           <ScreenReveal delay={240}>
             <View style={styles.card}>
+              <LinearGradient
+                colors={tokens.stripeColors}
+                locations={[0, 0.45, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardStripes}
+              />
               <Text style={styles.sectionTitle}>Evidencia</Text>
               <Image source={{ uri: photoUri }} style={styles.photo} />
             </View>
@@ -180,6 +245,13 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
         {!!complaint.resolutionNote && (
           <ScreenReveal delay={260}>
             <View style={styles.card}>
+              <LinearGradient
+                colors={tokens.stripeColors}
+                locations={[0, 0.45, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardStripes}
+              />
               <Text style={styles.sectionTitle}>Resolución</Text>
               <Text style={styles.metaText}>{complaint.resolutionNote}</Text>
               {!!complaint.resolvedAt && <Text style={styles.metaText}>Resuelta: {formatDate(complaint.resolvedAt)}</Text>}
@@ -229,18 +301,20 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -248,24 +322,31 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
   body: { padding: 20, paddingBottom: 30 },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontWeight: '700', fontSize: 15, color: colors.text },

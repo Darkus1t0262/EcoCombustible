@@ -1,18 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
 import { VehicleItem, VehicleService } from '../../services/VehicleService';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function VehicleListScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
+  const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<VehicleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -91,8 +97,13 @@ export default function VehicleListScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <PressableScale onPress={() => navigation.goBack()} style={styles.headerAction}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={styles.headerAction}
+          accessibilityLabel="Volver"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
@@ -142,12 +153,19 @@ export default function VehicleListScreen({ navigation }: any) {
               <Text style={styles.emptyText}>No hay vehículos con ese filtro.</Text>
             </View>
           }
-          renderItem={({ item, index }) => (
-            <ScreenReveal delay={Math.min(index * 40, 200)}>
+          renderItem={({ item, index }) => {
+            const content = (
               <PressableScale
                 style={styles.card}
                 onPress={() => navigation.navigate('VehicleDetail', { vehicleId: item.id })}
               >
+                <LinearGradient
+                  colors={tokens.stripeColors}
+                  locations={[0, 0.45, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.cardStripes}
+                />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={styles.plate}>{item.plate}</Text>
                   <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
@@ -158,26 +176,32 @@ export default function VehicleListScreen({ navigation }: any) {
                   <Text style={styles.meta}>Capacidad: {item.capacityLiters} L</Text>
                 </View>
               </PressableScale>
-            </ScreenReveal>
-          )}
+            );
+            if (index < 8) {
+              return <ScreenReveal delay={index * 40}>{content}</ScreenReveal>;
+            }
+            return content;
+          }}
         />
       )}
     </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   header: {
-    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    borderBottomColor: tokens.cardBorder,
   },
   headerAction: {
     width: 36,
@@ -185,7 +209,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
   },
   headerText: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
@@ -195,37 +221,42 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     alignItems: 'center',
   },
   headerBadgeText: { fontSize: 12, fontWeight: '700', color: colors.text },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     marginHorizontal: 20,
     marginTop: 16,
     marginBottom: 10,
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   input: { marginLeft: 10, flex: 1, color: colors.text },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+  },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
   },
   plate: { fontWeight: '700', fontSize: 16, color: colors.text },
   model: { color: colors.textLight, fontSize: 12, marginBottom: 10 },
@@ -238,10 +269,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: { color: colors.textLight, fontSize: 12 },
   skeletonWrap: { padding: 20, gap: 12 },
   skeletonCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
 });

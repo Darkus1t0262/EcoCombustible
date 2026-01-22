@@ -12,8 +12,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
 import type { ThemeColors } from '../../theme/colors';
+import type { PremiumTokens } from '../../theme/premium';
+import { getPremiumTokens } from '../../theme/premium';
 import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { AuthService } from '../../services/AuthService';
@@ -22,8 +25,9 @@ import { PushService } from '../../services/PushService';
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function LoginScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, resolvedMode } = useTheme();
+  const tokens = useMemo(() => getPremiumTokens(colors, resolvedMode), [colors, resolvedMode]);
+  const styles = useMemo(() => createStyles(colors, tokens), [colors, tokens]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,10 +54,18 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient colors={tokens.backgroundColors} style={styles.background} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <ScreenReveal delay={60}>
             <View style={styles.hero}>
+              <LinearGradient
+                colors={tokens.stripeColors}
+                locations={[0, 0.45, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardStripes}
+              />
               <View style={styles.heroGlow} />
               <View style={styles.heroGlowAlt} />
 
@@ -78,6 +90,13 @@ export default function LoginScreen({ navigation }: any) {
 
           <ScreenReveal delay={140}>
             <View style={styles.card}>
+              <LinearGradient
+                colors={tokens.stripeColors}
+                locations={[0, 0.45, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardStripes}
+              />
               <Text style={styles.cardTitle}>Inicio de sesión</Text>
 
               <Text style={styles.label}>Usuario</Text>
@@ -133,15 +152,18 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   hero: {
     padding: 18,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     marginBottom: 20,
     overflow: 'hidden',
   },
@@ -170,10 +192,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     marginRight: 12,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   brandLogo: { width: 36, height: 36 },
   brandText: { flex: 1, minWidth: 0 },
@@ -191,35 +213,36 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
   },
   heroBadgeText: { fontSize: 11, color: colors.textLight, fontWeight: '600' },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: tokens.cardSurface,
     padding: 20,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: tokens.shadowOpacity,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
+    overflow: 'hidden',
   },
   cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 12 },
   label: { marginTop: 10, marginBottom: 6, fontWeight: '600', color: colors.textLight, fontSize: 12 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: tokens.cardSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.borderColor,
+    borderColor: tokens.cardBorder,
     paddingHorizontal: 12,
   },
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, color: colors.text },
@@ -238,4 +261,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   flagStripe: { height: '100%' },
   govText: { fontSize: 10, fontWeight: '700', color: colors.textLight },
   errorText: { color: colors.error, marginTop: 8 },
+  cardStripes: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: tokens.isDark ? 0.6 : 0.35,
+  },
 });
