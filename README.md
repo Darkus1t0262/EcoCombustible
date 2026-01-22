@@ -99,9 +99,9 @@ npm run mobile:start -- -c
 ```
 ## Si solo modificaste schema.prisma y quieres reflejar los cambios sin borrar nada:
 ```bash
-npx prisma migrate dev --name tu_cambio
-npx prisma generate
-npm run seed   # si quieres llenar datos
+npx prisma migrate reset --force
+npm run db:seed
+    # si quieres llenar datos
 ```
 
 

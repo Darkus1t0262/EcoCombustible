@@ -41,7 +41,7 @@ const seed = async () => {
   const geojsonPath = path.join(__dirname, '..', 'export.geojson');
   const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));
   const stations = geojsonData.features
-    .map((feature: any) => {
+    .map((feature: any, index: number) => {
       const props = feature.properties ?? {};
       const coords = feature.geometry?.coordinates ?? [];
       const lng = Number(coords[0]);
@@ -53,15 +53,17 @@ const seed = async () => {
       const osmId = props['@id'] ?? feature.id;
       const name = rawName || (osmId ? `Sin nombre ${osmId}` : 'Sin nombre');
       const address = buildAddress(props) || rawName || name;
+      const isBorder = (lat > 0 || lat < -3) && (index % 4 === 0); // Solo algunas estaciones en fronteras norte (Colombia) y sur (Perú), cada 4ta para simular algo sospechoso
+      const isObservation = !isBorder && (index % 3 === 0); // Cada 3ra estación no frontera en observación
       return {
         name,
         address,
         lat,
         lng,
-        stock: 10000, // Valor por defecto
-        price: 2.55, // Valor por defecto
+        stock: isBorder ? 2000 : 10000, // Inventario drásticamente bajo para frontera
+        price: isBorder ? 2.60 : 2.55, // Precio significativamente sobre oficial para infracción
         officialPrice: 2.55, // Valor por defecto
-        history: [], // Array vacío por defecto
+        history: isBorder ? [] : (isObservation ? [] : [1000, 1100, 1050]), // History vacío para observación en algunas no frontera
         lastAudit: null,
         status: 'Cumplimiento', // Estado por defecto
       };
