@@ -135,7 +135,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
               {Array.isArray(station.history) && station.history.length > 0
                 ? `${Math.round(
                     station.history.reduce((acc: number, val: number) => acc + Number(val), 0) / station.history.length
-                  )} gal/dia`
+                  )} gal/día`
                 : 'Sin historial'}
             </Text>
             <Text style={styles.label}>Promedio de ventas recientes</Text>

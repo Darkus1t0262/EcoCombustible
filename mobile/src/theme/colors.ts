@@ -22,9 +22,9 @@ export const LIGHT_COLORS: ThemeColors = {
   accent: '#22D3EE',     // Acento cyan
   secondary: '#0B2E59',  // Azul institucional
   success: '#22C55E',    // Verde cumplimiento
-  warning: '#FB923C',    // Naranja observacion
-  error: '#EF4444',      // Rojo infraccion
-  purple: '#8B5CF6',     // Morado auditorias/reportes
+  warning: '#FB923C',    // Naranja observación
+  error: '#EF4444',      // Rojo infracción
+  purple: '#8B5CF6',     // Morado auditorías/reportes
   background: '#F5F7FB', // Fondo claro
   surface: '#FFFFFF',
   surfaceAlt: '#EEF2F8',
@@ -82,7 +82,7 @@ export const STATIONS_DB = [
     stock: 45000,
     price: 2.58,
     officialPrice: 2.55,
-    history: [300, 200, 4500, 100, 300], // Anomalia
+    history: [300, 200, 4500, 100, 300], // Anomalía
     lastAudit: '2025-11-25',
     status: 'Observación',
     mlStatus: 'Anomalía detectada',

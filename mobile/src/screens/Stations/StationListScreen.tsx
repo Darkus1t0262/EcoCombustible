@@ -151,7 +151,6 @@ export default function StationListScreen({ navigation }: any) {
           />
         </View>
       </ScreenReveal>
-
       <ScreenReveal delay={120}>
         <View style={styles.filterContainer}>
           <PressableScale style={[styles.filterButton, statusFilter === 'all' && styles.filterButtonActive]} onPress={() => setStatusFilter('all')}>
