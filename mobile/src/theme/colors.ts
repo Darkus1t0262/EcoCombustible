@@ -22,7 +22,7 @@ export const LIGHT_COLORS: ThemeColors = {
   accent: '#22D3EE',     // Acento cyan
   secondary: '#0B2E59',  // Azul institucional
   success: '#22C55E',    // Verde cumplimiento
-  warning: '#F59E0B',    // Amarillo observacion
+  warning: '#FB923C',    // Naranja observacion
   error: '#EF4444',      // Rojo infraccion
   purple: '#8B5CF6',     // Morado auditorias/reportes
   background: '#F5F7FB', // Fondo claro
@@ -40,7 +40,7 @@ export const DARK_COLORS: ThemeColors = {
   accent: '#2DD4BF',
   secondary: '#1E3A8A',
   success: '#22C55E',
-  warning: '#F59E0B',
+  warning: '#FB923C',
   error: '#EF4444',
   purple: '#A78BFA',
   background: '#0F172A',

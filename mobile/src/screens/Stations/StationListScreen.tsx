@@ -19,6 +19,7 @@ export default function StationListScreen({ navigation }: any) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Cumplimiento' | 'Observación' | 'Infracción'>('all');
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -75,8 +76,12 @@ export default function StationListScreen({ navigation }: any) {
   };
 
   const filteredStations = useMemo(
-    () => stations.filter((s) => `${s.name} ${s.address}`.toLowerCase().includes(search.toLowerCase())),
-    [stations, search]
+    () => stations.filter((s) => {
+      const matchesSearch = `${s.name} ${s.address}`.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || s.analysis?.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }),
+    [stations, search, statusFilter]
   );
 
   const renderSkeleton = () => (
@@ -144,6 +149,23 @@ export default function StationListScreen({ navigation }: any) {
             value={search}
             onChangeText={setSearch}
           />
+        </View>
+      </ScreenReveal>
+
+      <ScreenReveal delay={120}>
+        <View style={styles.filterContainer}>
+          <PressableScale style={[styles.filterButton, statusFilter === 'all' && styles.filterButtonActive]} onPress={() => setStatusFilter('all')}>
+            <Text style={[styles.filterButtonText, statusFilter === 'all' && styles.filterButtonTextActive]}>Todos</Text>
+          </PressableScale>
+          <PressableScale style={[styles.filterButton, statusFilter === 'Cumplimiento' && styles.filterButtonActive]} onPress={() => setStatusFilter('Cumplimiento')}>
+            <Text style={[styles.filterButtonText, statusFilter === 'Cumplimiento' && styles.filterButtonTextActive]}>Cumplimiento</Text>
+          </PressableScale>
+          <PressableScale style={[styles.filterButton, statusFilter === 'Observación' && styles.filterButtonActive]} onPress={() => setStatusFilter('Observación')}>
+            <Text style={[styles.filterButtonText, statusFilter === 'Observación' && styles.filterButtonTextActive]}>Observación</Text>
+          </PressableScale>
+          <PressableScale style={[styles.filterButton, statusFilter === 'Infracción' && styles.filterButtonActive]} onPress={() => setStatusFilter('Infracción')}>
+            <Text style={[styles.filterButtonText, statusFilter === 'Infracción' && styles.filterButtonTextActive]}>Infracción</Text>
+          </PressableScale>
         </View>
       </ScreenReveal>
 
@@ -266,5 +288,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.borderColor,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  filterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  filterButtonTextActive: {
+    color: colors.surface,
   },
 });
