@@ -183,7 +183,7 @@ export default function TransactionListScreen({ navigation }: any) {
           <Ionicons name="search" size={20} color={colors.textLight} />
           <TextInput
             style={styles.input}
-            placeholder="Buscar por estacion o placa..."
+            placeholder="Buscar por estación o placa..."
             placeholderTextColor={colors.textLight}
             value={search}
             onChangeText={setSearch}
@@ -195,7 +195,7 @@ export default function TransactionListScreen({ navigation }: any) {
         <ScreenReveal delay={140}>
           <View style={styles.summaryCard}>
             <View style={styles.summaryTop}>
-              <Text style={styles.summaryTitle}>Resumen rapido</Text>
+              <Text style={styles.summaryTitle}>Resumen rápido</Text>
               <View style={[styles.summaryChip, { borderColor: `${colors.error}40`, backgroundColor: `${colors.error}15` }]}>
                 <Text style={[styles.summaryChipText, { color: colors.error }]}>{summary.alerts} alertas</Text>
               </View>
@@ -257,7 +257,7 @@ export default function TransactionListScreen({ navigation }: any) {
                   <View style={[styles.cardAccent, { backgroundColor: analysisColor }]} />
                   <View style={styles.cardTop}>
                     <View style={styles.cardLeft}>
-                      <Text style={styles.station}>{item.stationName ?? 'Estacion'}</Text>
+                      <Text style={styles.station}>{item.stationName ?? 'Estación'}</Text>
                       <Text style={styles.meta}>Placa: {item.vehiclePlate ?? '--'}</Text>
                       <Text style={styles.meta}>{formatDate(item.occurredAt)}</Text>
                     </View>

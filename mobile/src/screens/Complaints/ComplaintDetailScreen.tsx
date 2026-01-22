@@ -98,7 +98,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
   if (!complaint) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>No se encontro la denuncia.</Text>
+        <Text style={{ color: colors.error }}>No se encontró la denuncia.</Text>
         <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
         </PressableScale>
@@ -143,7 +143,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Detalle</Text>
             {!!complaint.detail && <Text style={styles.bodyText}>{complaint.detail}</Text>}
-            {!complaint.detail && <Text style={styles.metaText}>Sin descripcion adicional.</Text>}
+            {!complaint.detail && <Text style={styles.metaText}>Sin descripción adicional.</Text>}
           </View>
         </ScreenReveal>
 
@@ -157,14 +157,14 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={200}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Consumo y vehiculo</Text>
-            <Text style={styles.metaText}>Vehiculo: {complaint.vehiclePlate ?? 'No disponible'}</Text>
+            <Text style={styles.sectionTitle}>Consumo y vehículo</Text>
+            <Text style={styles.metaText}>Vehículo: {complaint.vehiclePlate ?? 'No disponible'}</Text>
             {!!complaint.vehicleModel && <Text style={styles.metaText}>Modelo: {complaint.vehicleModel}</Text>}
             {!!complaint.fuelType && <Text style={styles.metaText}>Combustible: {complaint.fuelType}</Text>}
             {!!complaint.liters && <Text style={styles.metaText}>Litros: {complaint.liters}</Text>}
             {!!complaint.unitPrice && <Text style={styles.metaText}>Precio unitario: ${complaint.unitPrice}</Text>}
             {!!complaint.totalAmount && <Text style={styles.metaText}>Total: ${complaint.totalAmount}</Text>}
-            {!!complaint.occurredAt && <Text style={styles.metaText}>Ocurrio: {formatDate(complaint.occurredAt)}</Text>}
+            {!!complaint.occurredAt && <Text style={styles.metaText}>Ocurrió: {formatDate(complaint.occurredAt)}</Text>}
           </View>
         </ScreenReveal>
 
@@ -180,7 +180,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
         {!!complaint.resolutionNote && (
           <ScreenReveal delay={260}>
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Resolucion</Text>
+              <Text style={styles.sectionTitle}>Resolución</Text>
               <Text style={styles.metaText}>{complaint.resolutionNote}</Text>
               {!!complaint.resolvedAt && <Text style={styles.metaText}>Resuelta: {formatDate(complaint.resolvedAt)}</Text>}
             </View>
@@ -194,7 +194,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
                 style={[styles.actionBtn, { backgroundColor: colors.primary }]}
                 onPress={() => navigation.navigate('StationDetail', { stationId: complaint.stationId })}
               >
-                <Text style={styles.actionText}>Ver estacion</Text>
+                <Text style={styles.actionText}>Ver estación</Text>
               </PressableScale>
             )}
             {!!complaint.vehicleId && (
@@ -202,7 +202,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
                 style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
                 onPress={() => navigation.navigate('VehicleDetail', { vehicleId: complaint.vehicleId })}
               >
-                <Text style={styles.actionText}>Ver vehiculo</Text>
+                <Text style={styles.actionText}>Ver vehículo</Text>
               </PressableScale>
             )}
             {!!complaint.transactionId && (
@@ -210,7 +210,7 @@ export default function ComplaintDetailScreen({ route, navigation }: any) {
                 style={[styles.actionBtn, { backgroundColor: colors.purple }]}
                 onPress={() => navigation.navigate('TransactionDetail', { transactionId: complaint.transactionId })}
               >
-                <Text style={styles.actionText}>Ver transaccion</Text>
+                <Text style={styles.actionText}>Ver transacción</Text>
               </PressableScale>
             )}
             {complaint.status !== 'resolved' && (

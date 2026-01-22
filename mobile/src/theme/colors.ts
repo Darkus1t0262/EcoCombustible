@@ -61,7 +61,7 @@ export const COLORS = LIGHT_COLORS;
 export const STATIONS_DB = [
   {
     id: 1,
-    name: 'Estacion Petroecuador Norte',
+    name: 'Estación Petroecuador Norte',
     address: 'Av. 6 de Diciembre, Quito',
     lat: -0.1807,
     lng: -78.4678,
@@ -84,12 +84,12 @@ export const STATIONS_DB = [
     officialPrice: 2.55,
     history: [300, 200, 4500, 100, 300], // Anomalia
     lastAudit: '2025-11-25',
-    status: 'Observacion',
-    mlStatus: 'Anomalia Detectada',
+    status: 'Observación',
+    mlStatus: 'Anomalía detectada',
   },
   {
     id: 3,
-    name: 'Estacion Primax Centro',
+    name: 'Estación Primax Centro',
     address: 'Guayaquil',
     lat: -2.1962,
     lng: -79.8862,
@@ -98,7 +98,7 @@ export const STATIONS_DB = [
     officialPrice: 2.55,
     history: [0, 0, 0, 0, 0],
     lastAudit: '2025-11-30',
-    status: 'Infraccion',
-    mlStatus: 'Critico',
+    status: 'Infracción',
+    mlStatus: 'Crítico',
   },
 ];

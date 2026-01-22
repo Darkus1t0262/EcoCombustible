@@ -33,7 +33,7 @@ export default function NewComplaintScreen({ navigation }: any) {
   const handleSave = async () => {
     setError('');
     if (!stationName.trim() || !type.trim()) {
-      setError('Estacion y tipo son obligatorios.');
+      setError('Estación y tipo son obligatorios.');
       return;
     }
 
@@ -67,7 +67,7 @@ export default function NewComplaintScreen({ navigation }: any) {
         </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Nueva denuncia</Text>
-          <Text style={styles.subtitle}>Registra una observacion o irregularidad</Text>
+          <Text style={styles.subtitle}>Registra una observación o irregularidad</Text>
         </View>
       </View>
 
@@ -75,10 +75,10 @@ export default function NewComplaintScreen({ navigation }: any) {
         <ScreenReveal delay={80}>
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Datos principales</Text>
-            <Text style={styles.label}>Estacion *</Text>
+            <Text style={styles.label}>Estación *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nombre de la estacion"
+              placeholder="Nombre de la estación"
               placeholderTextColor={colors.textLight}
               value={stationName}
               onChangeText={setStationName}
@@ -129,7 +129,7 @@ export default function NewComplaintScreen({ navigation }: any) {
 
         <ScreenReveal delay={160}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Vehiculo (opcional)</Text>
+            <Text style={styles.sectionTitle}>Vehículo (opcional)</Text>
             <Text style={styles.label}>Placa</Text>
             <TextInput
               style={styles.input}
@@ -149,7 +149,7 @@ export default function NewComplaintScreen({ navigation }: any) {
             <Text style={styles.label}>Combustible</Text>
             <TextInput
               style={styles.input}
-              placeholder="Diesel"
+              placeholder="Diésel"
               placeholderTextColor={colors.textLight}
               value={fuelType}
               onChangeText={setFuelType}

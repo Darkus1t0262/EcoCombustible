@@ -75,7 +75,7 @@ export default function StationsMap() {
       <ScreenReveal delay={80}>
         <View style={styles.overlay}>
           <Text style={styles.title}>Mapa de monitoreo inteligente</Text>
-          <Text style={styles.subtitle}>Deteccion de anomalias en tiempo real</Text>
+          <Text style={styles.subtitle}>Detección de anomalías en tiempo real</Text>
         </View>
       </ScreenReveal>
 

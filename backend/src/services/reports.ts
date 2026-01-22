@@ -31,7 +31,7 @@ const buildPdf = async (
     doc.fontSize(12).text(`Generado: ${createdAt}`);
     doc.moveDown();
     doc.text(`Estaciones: ${summary.stations}`);
-    doc.text(`Auditorias del mes: ${summary.auditsThisMonth}`);
+    doc.text(`Auditorías del mes: ${summary.auditsThisMonth}`);
     doc.text(`Quejas pendientes: ${summary.pendingComplaints}`);
     doc.end();
     stream.on('finish', () => resolve());

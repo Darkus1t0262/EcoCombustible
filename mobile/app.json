@@ -18,7 +18,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Necesitamos acceder a la camara para adjuntar evidencia.",
         "NSPhotoLibraryUsageDescription": "Necesitamos acceder a tus fotos para adjuntar evidencia.",
-        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicacion para mostrar estaciones cercanas."
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrar estaciones cercanas."
       }
     },
     "android": {
@@ -52,7 +52,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Permite mostrar tu ubicacion en el mapa."
+          "locationWhenInUsePermission": "Permite mostrar tu ubicación en el mapa."
         }
       ]
     ],

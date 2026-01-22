@@ -89,7 +89,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </PressableScale>
           <View style={styles.headerText}>
-            <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculo</Text>
+            <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
             <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
           </View>
         </View>
@@ -111,7 +111,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
   if (!vehicle) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Vehiculo no encontrado.</Text>
+        <Text style={{ color: colors.error }}>Vehículo no encontrado.</Text>
         <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
         </PressableScale>
@@ -126,7 +126,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculo</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículo</Text>
           <Text style={styles.subtitle}>Ficha y actividad reciente</Text>
         </View>
       </View>
@@ -134,7 +134,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
       <ScrollView contentContainerStyle={styles.body}>
         <ScreenReveal delay={80}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Ficha tecnica</Text>
+            <Text style={styles.sectionTitle}>Ficha técnica</Text>
             <Text style={styles.metaText}>Placa: {vehicle.plate}</Text>
             <Text style={styles.metaText}>Modelo: {vehicle.model}</Text>
             <Text style={styles.metaText}>Combustible: {vehicle.fuelType}</Text>
@@ -160,7 +160,7 @@ export default function VehicleDetailScreen({ route, navigation }: any) {
                     onPress={() => navigation.navigate('TransactionDetail', { transactionId: tx.id })}
                   >
                     <View>
-                      <Text style={styles.txTitle}>{tx.stationName ?? 'Estacion'}</Text>
+                      <Text style={styles.txTitle}>{tx.stationName ?? 'Estación'}</Text>
                       <Text style={styles.txMeta}>
                         {tx.liters} L | ${tx.totalAmount.toFixed(2)}
                       </Text>

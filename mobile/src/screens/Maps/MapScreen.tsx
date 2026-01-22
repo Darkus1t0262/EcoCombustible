@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useTheme } from '../../theme/theme';
@@ -18,9 +18,9 @@ export default function MapScreen({ navigation }: any) {
   const filters = useMemo(
     () => [
       { label: 'Todas', value: 'Todas', color: colors.primary },
-      { label: 'OK', value: 'Cumplimiento', color: colors.success },
-      { label: 'Obs', value: 'Observacion', color: colors.warning },
-      { label: 'Alerta', value: 'Infraccion', color: colors.error },
+      { label: 'Normal', value: 'Normal', color: colors.success },
+      { label: 'Observación', value: 'Observación', color: colors.warning },
+      { label: 'Infracción', value: 'Infracción', color: colors.error },
     ],
     [colors]
   );
@@ -100,10 +100,24 @@ export default function MapScreen({ navigation }: any) {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
 
+  const getFilterKey = (status: string) => {
+    const normalized = normalizeStatus(status);
+    if (normalized.includes('infrac')) {
+      return 'infraccion';
+    }
+    if (normalized.includes('observa')) {
+      return 'observacion';
+    }
+    if (normalized.includes('cumpl')) {
+      return 'normal';
+    }
+    return 'normal';
+  };
+
   const filteredStations =
     filter === 'Todas'
       ? stations
-      : stations.filter((s) => normalizeStatus(s.analysis.status) === normalizeStatus(filter));
+      : stations.filter((s) => getFilterKey(s.analysis.status) === normalizeStatus(filter));
 
   return (
     <View style={styles.container}>
@@ -113,7 +127,7 @@ export default function MapScreen({ navigation }: any) {
         </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Mapa de estaciones</Text>
-          <Text style={styles.subtitle}>Monitoreo geografico en tiempo real</Text>
+          <Text style={styles.subtitle}>Monitoreo geográfico en tiempo real</Text>
         </View>
       </View>
 
@@ -138,51 +152,47 @@ export default function MapScreen({ navigation }: any) {
                   <Text style={[styles.calloutStatus, { color: s.analysis.color }]}>{s.analysis.status}</Text>
                   <Text style={styles.calloutText}>Stock: {s.stock} gal</Text>
                   <Text style={styles.calloutText}>Precio: ${s.price}</Text>
-                  <Text style={styles.calloutText}>Analisis: {s.analysis.message}</Text>
+                  <Text style={styles.calloutText}>Análisis: {s.analysis.message}</Text>
                 </View>
               </Callout>
             </Marker>
           ))}
         </MapView>
 
-        <ScreenReveal delay={80}>
-          <View style={styles.filterBar}>
-            <Text style={styles.filterLabel}>Filtro</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-              {filters.map((item) => (
-                <PressableScale
-                  key={item.value}
-                  onPress={() => setFilter(item.value)}
-                  style={[
-                    styles.filterPill,
-                    {
-                      backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
-                      borderColor: filter === item.value ? item.color : colors.borderColor,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.filterText, filter === item.value && styles.filterTextActive]}>{item.label}</Text>
-                </PressableScale>
-              ))}
-            </ScrollView>
+        <ScreenReveal delay={80} style={styles.filterBar}>
+          <Text style={styles.filterLabel}>Filtro</Text>
+          <View style={styles.filterRow}>
+            {filters.map((item) => (
+              <PressableScale
+                key={item.value}
+                onPress={() => setFilter(item.value)}
+                style={[
+                  styles.filterPill,
+                  {
+                    backgroundColor: filter === item.value ? item.color : colors.surfaceAlt,
+                    borderColor: filter === item.value ? item.color : colors.borderColor,
+                  },
+                ]}
+              >
+                <Text style={[styles.filterText, filter === item.value && styles.filterTextActive]}>{item.label}</Text>
+              </PressableScale>
+            ))}
           </View>
         </ScreenReveal>
 
-        <ScreenReveal delay={120}>
-          <View style={styles.legend}>
-            <Text style={styles.legendTitle}>Leyenda IA</Text>
-            <View style={styles.row}>
-              <View style={[styles.dot, { backgroundColor: colors.success }]} />
-              <Text style={styles.legText}>Normal</Text>
-            </View>
-            <View style={styles.row}>
-              <View style={[styles.dot, { backgroundColor: colors.warning }]} />
-              <Text style={styles.legText}>Observacion</Text>
-            </View>
-            <View style={styles.row}>
-              <View style={[styles.dot, { backgroundColor: colors.error }]} />
-              <Text style={styles.legText}>Infraccion</Text>
-            </View>
+        <ScreenReveal delay={120} style={styles.legend}>
+          <Text style={styles.legendTitle}>Leyenda IA</Text>
+          <View style={styles.row}>
+            <View style={[styles.dot, { backgroundColor: colors.success }]} />
+            <Text style={styles.legText}>Normal</Text>
+          </View>
+          <View style={styles.row}>
+            <View style={[styles.dot, { backgroundColor: colors.warning }]} />
+            <Text style={styles.legText}>Observación</Text>
+          </View>
+          <View style={styles.row}>
+            <View style={[styles.dot, { backgroundColor: colors.error }]} />
+            <Text style={styles.legText}>Infracción</Text>
           </View>
         </ScreenReveal>
 
@@ -203,32 +213,30 @@ export default function MapScreen({ navigation }: any) {
         )}
 
         {!!selectedStation && (
-          <ScreenReveal delay={40}>
-            <View style={styles.detailCard}>
-              <View style={styles.detailHeader}>
-                <Text style={styles.detailTitle}>{selectedStation.name}</Text>
-                <PressableScale onPress={handleDeselectStation}>
-                  <Ionicons name="close" size={18} color={colors.textLight} />
-                </PressableScale>
-              </View>
-              <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
-                {selectedStation.analysis.status}
-              </Text>
-              <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
-              {typeof selectedStation.analysis.score === 'number' && (
-                <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
-              )}
-              <View style={styles.detailRow}>
-                <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
-                <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
-              </View>
-              <PressableScale
-                style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
-                onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
-              >
-                <Text style={styles.detailBtnText}>Ver detalle</Text>
+          <ScreenReveal delay={40} style={styles.detailCard}>
+            <View style={styles.detailHeader}>
+              <Text style={styles.detailTitle}>{selectedStation.name}</Text>
+              <PressableScale onPress={handleDeselectStation}>
+                <Ionicons name="close" size={18} color={colors.textLight} />
               </PressableScale>
             </View>
+            <Text style={[styles.detailStatus, { color: selectedStation.analysis.color }]}>
+              {selectedStation.analysis.status}
+            </Text>
+            <Text style={styles.detailText}>{selectedStation.analysis.message}</Text>
+            {typeof selectedStation.analysis.score === 'number' && (
+              <Text style={styles.detailText}>Puntaje IA: {selectedStation.analysis.score}</Text>
+            )}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailMeta}>Stock: {selectedStation.stock} gal</Text>
+              <Text style={styles.detailMeta}>Precio: ${selectedStation.price}</Text>
+            </View>
+            <PressableScale
+              style={[styles.detailBtn, { backgroundColor: selectedStation.analysis.color }]}
+              onPress={() => navigation.navigate('StationDetail', { stationId: selectedStation.id })}
+            >
+              <Text style={styles.detailBtnText}>Ver detalle</Text>
+            </PressableScale>
           </ScreenReveal>
         )}
       </View>
@@ -262,31 +270,37 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
     headerText: { flex: 1 },
     title: { fontSize: 20, fontWeight: '700', color: colors.text },
     subtitle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
-    mapWrap: { flex: 1 },
+    mapWrap: { flex: 1, position: 'relative' },
     map: { flex: 1 },
     filterBar: {
       position: 'absolute',
       top: 14,
       left: 16,
       right: 16,
-      padding: 12,
+      padding: 10,
       borderRadius: 16,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.borderColor,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: 6,
+      zIndex: 10,
+      elevation: 8,
     },
     filterLabel: { fontSize: 12, fontWeight: '600', color: colors.textLight },
-    filterScroll: { paddingRight: 6, gap: 8 },
+    filterRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
     filterPill: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
       borderRadius: 999,
       borderWidth: 1,
     },
-    filterText: { fontSize: 11, fontWeight: '700', color: colors.textLight },
+    filterText: { fontSize: 10, fontWeight: '700', color: colors.textLight },
     filterTextActive: { color: colors.white },
     legend: {
       position: 'absolute',
@@ -297,6 +311,8 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.borderColor,
+      zIndex: 10,
+      elevation: 8,
     },
     legendTitle: { fontWeight: '700', fontSize: 11, marginBottom: 6, color: colors.text },
     row: { flexDirection: 'row', alignItems: 'center', marginVertical: 2 },
@@ -328,6 +344,7 @@ const createStyles = (colors: ThemeColors, resolvedMode: 'light' | 'dark') => {
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
       elevation: 4,
+      zIndex: 12,
     },
     detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
     detailTitle: { fontWeight: '700', fontSize: 16, color: colors.text, flex: 1 },

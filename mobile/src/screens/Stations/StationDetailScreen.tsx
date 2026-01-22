@@ -38,7 +38,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
             <Ionicons name="arrow-back" size={20} color={colors.white} />
           </PressableScale>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Cargando estacion</Text>
+            <Text style={styles.headerTitle}>Cargando estación</Text>
             <Text style={styles.headerSubtitle}>Resumen operativo</Text>
           </View>
         </View>
@@ -67,7 +67,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
   if (!station) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Estacion no encontrada.</Text>
+        <Text style={{ color: colors.error }}>Estación no encontrada.</Text>
         <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
         </PressableScale>
@@ -83,7 +83,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
         </PressableScale>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{station.name}</Text>
-          <Text style={styles.headerSubtitle}>Estacion regulada</Text>
+          <Text style={styles.headerSubtitle}>Estación regulada</Text>
         </View>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>{station.analysis.status}</Text>
@@ -93,7 +93,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
       <ScrollView contentContainerStyle={styles.body}>
         <ScreenReveal delay={80}>
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Diagnostico IA</Text>
+            <Text style={styles.sectionTitle}>Diagnóstico IA</Text>
             <View style={styles.analysisRow}>
               <Ionicons name="analytics" size={22} color={station.analysis.color} />
               <Text style={[styles.analysisStatus, { color: station.analysis.color }]}>{station.analysis.status}</Text>
@@ -144,7 +144,7 @@ export default function StationDetailScreen({ route, navigation }: any) {
 
         <ScreenReveal delay={200}>
           <PressableScale style={[styles.btn, { backgroundColor: colors.warning }]} onPress={() => navigation.navigate('Audit')}>
-            <Text style={styles.btnText}>Iniciar auditoria manual</Text>
+            <Text style={styles.btnText}>Iniciar auditoría manual</Text>
           </PressableScale>
         </ScreenReveal>
       </ScrollView>

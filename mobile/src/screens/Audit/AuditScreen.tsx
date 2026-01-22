@@ -30,7 +30,7 @@ export default function AuditScreen({ navigation }: any) {
   const handleUpdate = (auditId: number, status: 'approved' | 'rejected') => {
     Alert.alert(
       'Confirmar',
-      `Marcar auditoria como ${status === 'approved' ? 'aprobada' : 'rechazada'}?`,
+      `Marcar auditoría como ${status === 'approved' ? 'aprobada' : 'rechazada'}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -68,8 +68,8 @@ export default function AuditScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Auditorias</Text>
-          <Text style={styles.subtitle}>Revision remota y validacion en campo</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Auditorías</Text>
+          <Text style={styles.subtitle}>Revisión remota y validación en campo</Text>
         </View>
       </View>
 
@@ -95,7 +95,7 @@ export default function AuditScreen({ navigation }: any) {
           renderSkeleton()
         ) : audits.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No hay auditorias registradas.</Text>
+            <Text style={styles.emptyText}>No hay auditorías registradas.</Text>
           </View>
         ) : (
           audits.map((audit, index) => {
@@ -110,7 +110,7 @@ export default function AuditScreen({ navigation }: any) {
                   <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.cardTitle}>{audit.stationName}</Text>
-                      <Text style={styles.cardMeta}>Codigo: {audit.code}</Text>
+                      <Text style={styles.cardMeta}>Código: {audit.code}</Text>
                     </View>
                     <View
                       style={[
@@ -138,7 +138,7 @@ export default function AuditScreen({ navigation }: any) {
 
                   <View style={styles.checkItem}>
                     <View>
-                      <Text style={styles.checkTitle}>Calibracion del dispensador</Text>
+                      <Text style={styles.checkTitle}>Calibración del dispensador</Text>
                       <Text style={styles.checkMeta}>Estado: {audit.dispenserOk ? 'OK' : 'Falla'}</Text>
                     </View>
                     <Ionicons

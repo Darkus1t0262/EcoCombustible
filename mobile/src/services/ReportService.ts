@@ -73,9 +73,9 @@ const buildHtml = (summary: { stations: number; auditsThisMonth: number; pending
         <h2>EcoCombustible Reporte</h2>
         <p>Generado: ${createdAt}</p>
         <table style="border-collapse: collapse; width: 100%;">
-          <tr><th style="border: 1px solid #ddd; padding: 8px;">Metrica</th><th style="border: 1px solid #ddd; padding: 8px;">Valor</th></tr>
+          <tr><th style="border: 1px solid #ddd; padding: 8px;">Métrica</th><th style="border: 1px solid #ddd; padding: 8px;">Valor</th></tr>
           <tr><td style="border: 1px solid #ddd; padding: 8px;">Estaciones</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.stations}</td></tr>
-          <tr><td style="border: 1px solid #ddd; padding: 8px;">Auditorias del mes</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.auditsThisMonth}</td></tr>
+          <tr><td style="border: 1px solid #ddd; padding: 8px;">Auditorías del mes</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.auditsThisMonth}</td></tr>
           <tr><td style="border: 1px solid #ddd; padding: 8px;">Quejas pendientes</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.pendingComplaints}</td></tr>
         </table>
       </body>

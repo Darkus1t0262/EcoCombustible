@@ -127,11 +127,11 @@ export default function DashboardScreen({ navigation }: any) {
               </View>
               <View style={styles.heroBullet}>
                 <Ionicons name="pulse-outline" size={14} color={colors.accent} />
-                <Text style={styles.heroBulletText}>Consumo y auditorias siempre visibles</Text>
+                <Text style={styles.heroBulletText}>Consumo y auditorías siempre visibles</Text>
               </View>
               <View style={styles.heroBullet}>
                 <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
-                <Text style={styles.heroBulletText}>Prioridades claras para tomar accion</Text>
+                <Text style={styles.heroBulletText}>Prioridades claras para tomar acción</Text>
               </View>
             </View>
 
@@ -146,7 +146,7 @@ export default function DashboardScreen({ navigation }: any) {
                   tone={colors.accent}
                 />
                 <HeroStat
-                  label="Auditorias del mes"
+                  label="Auditorías del mes"
                   value={stats.auditsThisMonth}
                   icon="checkmark-circle"
                   tone={colors.success}
@@ -169,7 +169,7 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
           <PressableScale style={styles.changePassBtn} onPress={() => navigation.navigate('ChangePassword')}>
             <Ionicons name="key-outline" size={16} color={colors.primary} />
-            <Text style={styles.changePassText}>Cambiar contrasena</Text>
+            <Text style={styles.changePassText}>Cambiar contraseña</Text>
           </PressableScale>
           <View style={styles.alertGrid}>
             <AlertCard
@@ -181,7 +181,7 @@ export default function DashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Complaints')}
             />
             <AlertCard
-              title="Auditorias del mes"
+              title="Auditorías del mes"
               value={loading ? '--' : stats.auditsThisMonth}
               hint="Inspecciones en proceso"
               icon="checkmark-circle"
@@ -193,7 +193,7 @@ export default function DashboardScreen({ navigation }: any) {
 
         <ScreenReveal delay={220}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Acciones rapidas</Text>
+            <Text style={styles.sectionTitle}>Acciones rápidas</Text>
             <Text style={styles.sectionNote}>Entrar directo al punto</Text>
           </View>
           <View style={styles.actionGrid}>
@@ -233,7 +233,7 @@ export default function DashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Complaints')}
             />
             <ActionCard
-              title="Vehiculos"
+              title="Vehículos"
               sub="Registro y control"
               icon="car"
               color={colors.primary}
@@ -257,9 +257,9 @@ export default function DashboardScreen({ navigation }: any) {
               style={{ marginBottom: 10 }}
             />
 
-            <Text style={styles.modalTitle}>Salir de la aplicacion?</Text>
+            <Text style={styles.modalTitle}>Salir de la aplicación?</Text>
             <Text style={styles.modalText}>
-              Seguro que deseas cerrar sesion?
+              Seguro que deseas cerrar sesión?
             </Text>
 
             <View style={styles.modalActions}>

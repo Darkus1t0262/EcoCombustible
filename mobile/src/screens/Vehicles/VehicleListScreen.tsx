@@ -45,7 +45,7 @@ export default function VehicleListScreen({ navigation }: any) {
       setHasMore(nextTotal ? nextCount < nextTotal : response.items.length === PAGE_SIZE);
       setPage(pageToLoad);
     } catch (err) {
-      setError('No se pudieron cargar los vehiculos.');
+      setError('No se pudieron cargar los vehículos.');
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -96,7 +96,7 @@ export default function VehicleListScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehiculos</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Vehículos</Text>
           <Text style={styles.subtitle}>Flota registrada y consumo</Text>
         </View>
         <View style={styles.headerBadge}>
@@ -139,7 +139,7 @@ export default function VehicleListScreen({ navigation }: any) {
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>No hay vehiculos con ese filtro.</Text>
+              <Text style={styles.emptyText}>No hay vehículos con ese filtro.</Text>
             </View>
           }
           renderItem={({ item, index }) => (

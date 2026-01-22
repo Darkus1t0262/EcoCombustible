@@ -8,7 +8,7 @@ import { PressableScale } from '../../components/PressableScale';
 import { ScreenReveal } from '../../components/ScreenReveal';
 import { Skeleton } from '../../components/Skeleton';
 
-const periods = ['Semana', 'Mes', 'Ano'];
+const periods = ['Semana', 'Mes', 'Año'];
 const titleFont = Platform.select({ ios: 'Avenir Next', android: 'serif' });
 
 export default function ReportsScreen({ navigation }: any) {
@@ -79,7 +79,7 @@ export default function ReportsScreen({ navigation }: any) {
         </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Reportes</Text>
-          <Text style={styles.subtitle}>Exportacion automatica y manual</Text>
+          <Text style={styles.subtitle}>Exportación automática y manual</Text>
         </View>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>{reports.length}</Text>
@@ -90,7 +90,7 @@ export default function ReportsScreen({ navigation }: any) {
         <ScreenReveal delay={80}>
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Generar nuevo reporte</Text>
-            <Text style={styles.label}>Periodo</Text>
+            <Text style={styles.label}>Período</Text>
             <View style={styles.pillRow}>
               {periods.map((p) => (
                 <PressableScale
@@ -103,7 +103,7 @@ export default function ReportsScreen({ navigation }: any) {
               ))}
             </View>
 
-            <Text style={styles.label}>Formato de exportacion</Text>
+            <Text style={styles.label}>Formato de exportación</Text>
             <View style={styles.formatRow}>
               {formats.map((f) => (
                 <PressableScale
@@ -134,7 +134,7 @@ export default function ReportsScreen({ navigation }: any) {
           renderSkeleton()
         ) : reports.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>Aun no hay reportes disponibles.</Text>
+            <Text style={styles.emptyText}>Aún no hay reportes disponibles.</Text>
           </View>
         ) : (
           reports.map((report, index) => {

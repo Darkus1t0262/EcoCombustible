@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     setError('');
     if (!username || !password) {
-      setError('Ingresa usuario y contrasena.');
+      setError('Ingresa usuario y contraseña.');
       return;
     }
 
@@ -42,7 +42,7 @@ export default function LoginScreen({ navigation }: any) {
       navigation.replace('Dashboard');
       void PushService.registerDevice().catch(() => undefined);
     } catch (err) {
-      setError('Credenciales invalidas.');
+      setError('Credenciales inválidas.');
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function LoginScreen({ navigation }: any) {
 
           <ScreenReveal delay={140}>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Inicio de sesion</Text>
+              <Text style={styles.cardTitle}>Inicio de sesión</Text>
 
               <Text style={styles.label}>Usuario</Text>
               <View style={styles.inputRow}>
@@ -93,12 +93,12 @@ export default function LoginScreen({ navigation }: any) {
                 />
               </View>
 
-              <Text style={styles.label}>Contrasena</Text>
+              <Text style={styles.label}>Contraseña</Text>
               <View style={styles.inputRow}>
                 <MaterialCommunityIcons name="lock" size={20} color={colors.textLight} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Ingresa tu contrasena"
+                  placeholder="Ingresa tu contraseña"
                   placeholderTextColor={colors.textLight}
                   secureTextEntry
                   value={password}

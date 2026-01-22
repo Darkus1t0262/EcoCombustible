@@ -91,8 +91,8 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </PressableScale>
           <View style={styles.headerText}>
-            <Text style={[styles.title, { fontFamily: titleFont }]}>Transaccion</Text>
-            <Text style={styles.subtitle}>Detalle y evaluacion IA</Text>
+            <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
+            <Text style={styles.subtitle}>Detalle y evaluación IA</Text>
           </View>
         </View>
         <ScrollView contentContainerStyle={styles.body}>
@@ -118,7 +118,7 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
   if (!transaction) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: colors.error }}>Transaccion no encontrada.</Text>
+        <Text style={{ color: colors.error }}>Transacción no encontrada.</Text>
         <PressableScale onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={{ color: colors.white }}>Volver</Text>
         </PressableScale>
@@ -136,8 +136,8 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </PressableScale>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { fontFamily: titleFont }]}>Transaccion</Text>
-          <Text style={styles.subtitle}>Detalle y evaluacion IA</Text>
+          <Text style={[styles.title, { fontFamily: titleFont }]}>Transacción</Text>
+          <Text style={styles.subtitle}>Detalle y evaluación IA</Text>
         </View>
       </View>
 
@@ -145,8 +145,8 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
         <ScreenReveal delay={80}>
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Resumen</Text>
-            <Text style={styles.metaText}>Estacion: {transaction.stationName ?? 'No disponible'}</Text>
-            <Text style={styles.metaText}>Vehiculo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
+            <Text style={styles.metaText}>Estación: {transaction.stationName ?? 'No disponible'}</Text>
+            <Text style={styles.metaText}>Vehículo: {transaction.vehiclePlate ?? 'No disponible'}</Text>
             <Text style={styles.metaText}>Fecha: {formatDate(transaction.occurredAt)}</Text>
           </View>
         </ScreenReveal>
@@ -165,7 +165,7 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
         {!!transaction.analysis && (
           <ScreenReveal delay={160}>
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Analisis</Text>
+              <Text style={styles.sectionTitle}>Análisis</Text>
               <View style={[styles.pill, { backgroundColor: `${analysisTone}1A`, borderColor: `${analysisTone}33` }]}>
                 <Text style={[styles.pillText, { color: analysisTone }]}>{transaction.analysis.status}</Text>
               </View>
@@ -191,13 +191,13 @@ export default function TransactionDetailScreen({ route, navigation }: any) {
               style={[styles.actionBtn, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('StationDetail', { stationId: transaction.stationId })}
             >
-              <Text style={styles.actionText}>Ver estacion</Text>
+              <Text style={styles.actionText}>Ver estación</Text>
             </PressableScale>
             <PressableScale
               style={[styles.actionBtn, { backgroundColor: colors.secondary }]}
               onPress={() => navigation.navigate('VehicleDetail', { vehicleId: transaction.vehicleId })}
             >
-              <Text style={styles.actionText}>Ver vehiculo</Text>
+              <Text style={styles.actionText}>Ver vehículo</Text>
             </PressableScale>
           </View>
         </ScreenReveal>

@@ -159,7 +159,7 @@ export default function ComplaintsScreen({ navigation }: any) {
               {item.reporterRole ? ` (${item.reporterRole})` : ''}
             </Text>
           )}
-          {!!item.vehiclePlate && <Text style={styles.metaText}>Vehiculo: {item.vehiclePlate}</Text>}
+          {!!item.vehiclePlate && <Text style={styles.metaText}>Vehículo: {item.vehiclePlate}</Text>}
           <Text style={styles.dateText}>Registrado: {formatDate(item.createdAt)}</Text>
         </PressableScale>
       </ScreenReveal>
@@ -174,7 +174,7 @@ export default function ComplaintsScreen({ navigation }: any) {
         </PressableScale>
         <View style={styles.headerText}>
           <Text style={[styles.title, { fontFamily: titleFont }]}>Denuncias</Text>
-          <Text style={styles.subtitle}>Seguimiento y resolucion</Text>
+          <Text style={styles.subtitle}>Seguimiento y resolución</Text>
         </View>
         <View style={styles.headerActions}>
           <PressableScale onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
@@ -208,7 +208,7 @@ export default function ComplaintsScreen({ navigation }: any) {
           <Ionicons name="search" size={20} color={colors.textLight} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por estacion, usuario o vehiculo..."
+            placeholder="Buscar por estación, usuario o vehículo..."
             placeholderTextColor={colors.textLight}
             value={search}
             onChangeText={setSearch}
