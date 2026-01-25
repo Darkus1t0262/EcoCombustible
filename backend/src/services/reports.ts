@@ -7,18 +7,18 @@ import { estimateSizeMb, REPORTS_DIR, safeFilename } from '../config/storage.js'
 import { reportQueue } from '../lib/queue.js';
 import { storeLocalFile } from './storage.js';
 
-const buildCsv = (summary: { stations: number; auditsThisMonth: number; pendingComplaints: number }, createdAt: string) => {
+const buildCsv = (summary: { stations: number; auditsTotal: number; pendingComplaints: number }, createdAt: string) => {
   return [
     'metric,value',
     `stations,${summary.stations}`,
-    `audits_this_month,${summary.auditsThisMonth}`,
+    `audits_total,${summary.auditsTotal}`,
     `pending_complaints,${summary.pendingComplaints}`,
     `generated_at,${createdAt}`,
   ].join('\n');
 };
 
 const buildPdf = async (
-  summary: { stations: number; auditsThisMonth: number; pendingComplaints: number },
+  summary: { stations: number; auditsTotal: number; pendingComplaints: number },
   createdAt: string,
   filePath: string
 ) => {
@@ -31,7 +31,7 @@ const buildPdf = async (
     doc.fontSize(12).text(`Generado: ${createdAt}`);
     doc.moveDown();
     doc.text(`Estaciones: ${summary.stations}`);
-    doc.text(`Auditorías del mes: ${summary.auditsThisMonth}`);
+    doc.text(`Auditorías totales: ${summary.auditsTotal}`);
     doc.text(`Quejas pendientes: ${summary.pendingComplaints}`);
     doc.end();
     stream.on('finish', () => resolve());
@@ -52,11 +52,9 @@ export const generateReport = async (reportId: number) => {
 
   try {
     const stations = await prisma.station.count();
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const auditsThisMonth = await prisma.audit.count({ where: { createdAt: { gte: start } } });
+    const auditsTotal = await prisma.audit.count();
     const pendingComplaints = await prisma.complaint.count({ where: { status: 'pending' } });
-    const summary = { stations, auditsThisMonth, pendingComplaints };
+    const summary = { stations, auditsTotal, pendingComplaints };
 
     const createdAt = new Date().toISOString();
     const baseName = safeFilename(`reporte_${report.period}_${report.format}_${Date.now()}`);

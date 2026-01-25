@@ -16,7 +16,7 @@ export default function DashboardScreen({ navigation }: any) {
   const { colors, resolvedMode, setMode } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const [stats, setStats] = useState({ stations: 0, auditsThisMonth: 0, pendingComplaints: 0 });
+  const [stats, setStats] = useState({ stations: 0, auditsTotal: 0, pendingAudits: 0, pendingComplaints: 0 });
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -149,16 +149,10 @@ export default function DashboardScreen({ navigation }: any) {
                   tone={colors.accent}
                 />
                 <HeroStat
-                  label="Auditorías del mes"
-                  value={stats.auditsThisMonth}
+                  label="Auditorías totales"
+                  value={stats.auditsTotal}
                   icon="checkmark-circle"
                   tone={colors.success}
-                />
-                <HeroStat
-                  label="Denuncias pendientes"
-                  value={stats.pendingComplaints}
-                  icon="alert-circle"
-                  tone={colors.error}
                 />
               </View>
             )}
@@ -184,9 +178,9 @@ export default function DashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Complaints')}
             />
             <AlertCard
-              title="Auditorías del mes"
-              value={loading ? '--' : stats.auditsThisMonth}
-              hint="Inspecciones en proceso"
+              title="Auditorías pendientes"
+              value={loading ? '--' : stats.pendingAudits}
+              hint="Inspecciones en seguimiento"
               icon="checkmark-circle"
               color={colors.warning}
               onPress={() => navigation.navigate('Audit')}
