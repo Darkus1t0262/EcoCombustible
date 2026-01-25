@@ -22,6 +22,7 @@ import { initDatabase } from '../services/Database';
 import { AuthService } from '../services/AuthService';
 import { useTheme } from '../theme/theme';
 import ChangePasswordScreen from '../screens/Auth/ChangePasswordScreen';
+import NotificationsScreen from '../screens/Notification/NotificationScreen';
 
 const Stack = createStackNavigator();
 
@@ -91,6 +92,7 @@ export default function AppNavigator() {
         <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
          <Stack.Screen   name="ChangePassword"   component={ChangePasswordScreen}   options={{ title: 'Cambiar contraseña' }} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notificaciones' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

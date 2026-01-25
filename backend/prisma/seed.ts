@@ -37,6 +37,22 @@ const seed = async () => {
       },
     });
   }
+  const existingSupervisor = await prisma.user.findFirst({ where: { username: 'supervisor' } });
+  if (!existingSupervisor) {
+    const supervisorPasswordHash = await bcrypt.hash('supervisor123', 10);
+    await prisma.user.create({
+      data: {
+        username: 'supervisor',
+        passwordHash: supervisorPasswordHash,
+        name: 'Supervisor',
+        role: 'supervisor',
+        active: true,
+        failedLoginAttempts: 0,
+      },
+    });
+    console.log('✅ Supervisor creado: username "supervisor" / password "supervisor123"');
+  }
+
 
   const geojsonPath = path.join(__dirname, '..', 'export.geojson');
   const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));

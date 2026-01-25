@@ -9,45 +9,41 @@ export type PushPayload = {
   data?: Record<string, unknown>;
 };
 
+/* =========================================================
+   🔔 NOTIFICAR A SUPERVISOR ESPECÍFICO (NO A TODOS)
+   ========================================================= */
 export const notifySupervisors = async (payload: PushPayload) => {
-  const supervisors = await prisma.user.findMany({
-    where: { role: 'supervisor' },
-    select: { id: true },
-  });
-  const userIds = supervisors.map((user) => user.id);
-  if (userIds.length === 0) {
+  const targetUserId = payload.data?.targetUserId as number | undefined;
+
+  if (!targetUserId) {
+    console.warn('[Notification] ⚠️ targetUserId no definido');
     return;
   }
 
+  // Buscar tokens del supervisor asignado
   const tokens = await prisma.deviceToken.findMany({
-    where: { userId: { in: userIds }, active: true },
+    where: {
+      userId: targetUserId,
+      active: true,
+    },
   });
+
+  // Guardar notificación en BD (aunque no tenga tokens)
+  const notification = await prisma.notification.create({
+    data: {
+      userId: targetUserId,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data ?? {},
+      status: 'queued',
+    },
+  });
+
   if (tokens.length === 0) {
     return;
   }
 
-  const userIdsWithTokens = Array.from(new Set(tokens.map((token) => token.userId)));
-  const notifications = await Promise.all(
-    userIdsWithTokens.map((userId) =>
-      prisma.notification.create({
-        data: {
-          userId,
-          title: payload.title,
-          body: payload.body,
-          data: payload.data ?? {},
-          status: 'queued',
-        },
-      })
-    )
-  );
-
-  const notificationIdByUser = new Map<number, number>();
-  for (const item of notifications) {
-    if (item.userId) {
-      notificationIdByUser.set(item.userId, item.id);
-    }
-  }
-
+  // Enviar push notification
   const results = await sendExpoPushNotifications({
     messages: tokens.map((token) => ({
       to: token.token,
@@ -59,53 +55,24 @@ export const notifySupervisors = async (payload: PushPayload) => {
     apiUrl: EXPO_PUSH_URL,
   });
 
-  const successTokens = new Set(
-    results.filter((result) => result.status === 'ok').map((result) => result.token)
-  );
+  const success = results.some((r) => r.status === 'ok');
 
-  const successUserIds = new Set<number>();
-  for (const token of tokens) {
-    if (successTokens.has(token.token)) {
-      successUserIds.add(token.userId);
-    }
-  }
+  await prisma.notification.update({
+    where: { id: notification.id },
+    data: success
+      ? { status: 'sent', sentAt: new Date() }
+      : { status: 'failed', error: 'Push delivery failed' },
+  });
 
-  const successNotificationIds = userIdsWithTokens
-    .filter((userId) => successUserIds.has(userId))
-    .map((userId) => notificationIdByUser.get(userId))
-    .filter((id): id is number => Boolean(id));
-
-  const failedNotificationIds = userIdsWithTokens
-    .filter((userId) => !successUserIds.has(userId))
-    .map((userId) => notificationIdByUser.get(userId))
-    .filter((id): id is number => Boolean(id));
-
-  if (successNotificationIds.length > 0) {
-    await prisma.notification.updateMany({
-      where: { id: { in: successNotificationIds } },
-      data: { status: 'sent', sentAt: new Date() },
-    });
-  }
-
-  if (failedNotificationIds.length > 0) {
-    await prisma.notification.updateMany({
-      where: { id: { in: failedNotificationIds } },
-      data: { status: 'failed', error: 'Push delivery failed' },
-    });
-  }
-
+  // Invalidar tokens rotos
   const invalidTokens = results
-    .filter((result) => {
-      if (result.status !== 'error') {
-        return false;
-      }
-      if (!result.details || typeof result.details !== 'object') {
-        return false;
-      }
-      const details = result.details as { error?: string };
-      return details.error === 'DeviceNotRegistered';
-    })
-    .map((result) => result.token);
+    .filter(
+      (r) =>
+        r.status === 'error' &&
+        typeof r.details === 'object' &&
+        (r.details as any)?.error === 'DeviceNotRegistered'
+    )
+    .map((r) => r.token);
 
   if (invalidTokens.length > 0) {
     await prisma.deviceToken.updateMany({
@@ -115,8 +82,98 @@ export const notifySupervisors = async (payload: PushPayload) => {
   }
 };
 
+/* =========================================================
+   📥 ENCOLAR NOTIFICACIÓN A SUPERVISOR
+   ========================================================= */
 export const enqueueSupervisorNotification = async (payload: PushPayload) => {
   await notificationQueue.add('notify-supervisors', payload, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 5000 },
+    removeOnComplete: 100,
+    removeOnFail: 100,
+  });
+};
+
+/* =========================================================
+   🔔 NOTIFICAR AL ADMIN (UNO SOLO)
+   ========================================================= */
+export const notifyAdmin = async (payload: PushPayload) => {
+  const admin = await prisma.user.findFirst({
+    where: { role: 'admin' },
+    select: { id: true },
+  });
+
+  if (!admin) {
+    console.warn('[Notification] ⚠️ No se encontró admin');
+    return;
+  }
+
+  const tokens = await prisma.deviceToken.findMany({
+    where: {
+      userId: admin.id,
+      active: true,
+    },
+  });
+
+  // Crear notificación en BD
+  const notification = await prisma.notification.create({
+    data: {
+      userId: admin.id,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data ?? {},
+      status: 'queued',
+    },
+  });
+
+  if (tokens.length === 0) {
+    return;
+  }
+
+  // Enviar push
+  const results = await sendExpoPushNotifications({
+    messages: tokens.map((token) => ({
+      to: token.token,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data,
+    })),
+    accessToken: EXPO_ACCESS_TOKEN,
+    apiUrl: EXPO_PUSH_URL,
+  });
+
+  const success = results.some((r) => r.status === 'ok');
+
+  await prisma.notification.update({
+    where: { id: notification.id },
+    data: success
+      ? { status: 'sent', sentAt: new Date() }
+      : { status: 'failed', error: 'Push delivery failed' },
+  });
+
+  // Invalidar tokens rotos
+  const invalidTokens = results
+    .filter(
+      (r) =>
+        r.status === 'error' &&
+        typeof r.details === 'object' &&
+        (r.details as any)?.error === 'DeviceNotRegistered'
+    )
+    .map((r) => r.token);
+
+  if (invalidTokens.length > 0) {
+    await prisma.deviceToken.updateMany({
+      where: { token: { in: invalidTokens } },
+      data: { active: false },
+    });
+  }
+};
+
+/* =========================================================
+   📥 ENCOLAR NOTIFICACIÓN AL ADMIN
+   ========================================================= */
+export const enqueueAdminNotification = async (payload: PushPayload) => {
+  await notificationQueue.add('notify-admin', payload, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
     removeOnComplete: 100,

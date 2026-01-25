@@ -33,15 +33,25 @@ export const AuditService = {
     }));
   },
 
-  updateAuditStatus: async (auditId: number, status: 'approved' | 'rejected'): Promise<void> => {
+  updateAuditStatus: async (
+    auditId: number,
+    status: 'approved' | 'rejected',
+    role: 'admin' | 'supervisor' // 🔹 agregamos el rol
+  ): Promise<void> => {
     if (USE_REMOTE_AUTH) {
-      await apiFetch(`/audits/${auditId}`, {
+      // 🔹 endpoint según rol
+      const endpoint =
+        role === 'admin' ? `/audits/${auditId}/admin-review` : `/audits/${auditId}`;
+
+      await apiFetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
       return;
     }
+
+    // 🔹 lógica local sin backend
     const db = await getDb();
     await db.runAsync('UPDATE audits SET status = ? WHERE id = ?;', status, auditId);
 

@@ -174,6 +174,10 @@ export default function DashboardScreen({ navigation }: any) {
             <Ionicons name="key-outline" size={16} color={colors.primary} />
             <Text style={styles.changePassText}>Cambiar contraseña</Text>
           </PressableScale>
+          <PressableScale style={styles.changePassBtn} onPress={() => navigation.navigate('Notifications')} >
+            <Ionicons name="notifications-outline" size={16} color={colors.primary} />
+            <Text style={styles.changePassText}>Notificaciones</Text>
+          </PressableScale>
           <View style={styles.alertGrid}>
             <AlertCard
               title="Denuncias pendientes"

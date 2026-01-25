@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { authenticate, requireRole } from '../lib/auth.js';
 import { isValidExpoPushToken } from '../push.js';
 import { enqueueSupervisorNotification } from '../services/notifications.js';
+import { enqueueAdminNotification } from '../services/notifications.js';
 
 export const registerNotificationRoutes = async (fastify: FastifyInstance) => {
   fastify.post('/devices/register', { preHandler: [authenticate] }, async (request, reply) => {
@@ -69,6 +70,74 @@ export const registerNotificationRoutes = async (fastify: FastifyInstance) => {
       } catch (error) {
         request.log.error({ error }, 'Push notification failed');
         return reply.code(500).send({ error: 'Push notification failed' });
+      }
+    }
+  );
+
+  // ============================================
+  // 🔥 AGREGAR ESTOS 2 ENDPOINTS:
+  // ============================================
+
+  /**
+   * GET /notifications
+   * Obtener todas las notificaciones del usuario
+   */
+  fastify.get(
+    '/notifications',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      try {
+        const user = request.user as { id: number };
+
+        const notifications = await prisma.notification.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        });
+
+        return reply.send(notifications);
+      } catch (error) {
+        request.log.error(error);
+        return reply
+          .code(500)
+          .send({ error: 'Error fetching notifications' });
+      }
+    }
+  );
+
+  /**
+   * DELETE /notifications/:id
+   * Eliminar una notificación
+   */
+  fastify.delete(
+    '/notifications/:id',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const user = request.user as { id: number };
+
+        // Verificar que la notificación pertenece al usuario
+        const notification = await prisma.notification.findUnique({
+          where: { id: parseInt(id) },
+        });
+
+        if (!notification) {
+          return reply.code(404).send({ error: 'Notification not found' });
+        }
+
+        if (notification.userId !== user.id) {
+          return reply.code(403).send({ error: 'Unauthorized' });
+        }
+
+        await prisma.notification.delete({
+          where: { id: parseInt(id) },
+        });
+
+        return reply.send({ success: true });
+      } catch (error) {
+        request.log.error(error);
+        return reply.code(500).send({ error: 'Error deleting notification' });
       }
     }
   );
