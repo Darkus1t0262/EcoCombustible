@@ -29,7 +29,7 @@ export default function DashboardScreen({ navigation }: any) {
   const { colors, resolvedMode, setMode } = useTheme();
   const styles = useMemo(() => createStyles(colors, resolvedMode), [colors, resolvedMode]);
   const insets = useSafeAreaInsets();
-  const [stats, setStats] = useState({ stations: 0, auditsThisMonth: 0, pendingComplaints: 0 });
+  const [stats, setStats] = useState({ stations: 0, auditsTotal: 0, pendingAudits: 0, pendingComplaints: 0 });
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const pulse = useRef(new Animated.Value(0.7)).current;
@@ -335,9 +335,9 @@ export default function DashboardScreen({ navigation }: any) {
       },
       {
         key: 'audits',
-        title: 'Auditorías del mes',
-        value: loading ? '--' : stats.auditsThisMonth,
-        note: 'Validaciones en campo',
+        title: 'Auditorías totales',
+        value: loading ? '--' : stats.auditsTotal,
+        note: 'Historial completo',
         tone: colors.warning,
         variant: 'ring',
       },
