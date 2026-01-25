@@ -43,6 +43,12 @@ export type ComplaintCreateInput = {
   occurredAt?: string | null;
 };
 
+export type ComplaintQuery = {
+  q?: string;
+  status?: 'pending' | 'resolved';
+  stationId?: number;
+};
+
 const normalizeComplaint = (item: any): ComplaintItem => ({
   id: item.id,
   stationName: item.stationName,
@@ -82,24 +88,63 @@ const calcTotalAmount = (liters?: number | null, unitPrice?: number | null, tota
 export const ComplaintService = {
   getComplaintsPage: async (
     page: number,
-    limit: number
+    limit: number,
+    query?: ComplaintQuery
   ): Promise<{ items: ComplaintItem[]; total?: number }> => {
     if (USE_REMOTE_AUTH) {
-      const response = await apiFetchWithMeta<any[]>(`/complaints?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (query?.status) {
+        params.set('status', query.status);
+      }
+      if (typeof query?.stationId === 'number') {
+        params.set('stationId', String(query.stationId));
+      }
+      const normalizedQuery = query?.q?.trim();
+      if (normalizedQuery) {
+        params.set('q', normalizedQuery);
+      }
+      const response = await apiFetchWithMeta<any[]>(`/complaints?${params.toString()}`);
       return {
         items: response.data.map((item) => normalizeComplaint({ ...item, photoUri: item.photoUri ?? item.photoUrl ?? null })),
         total: response.meta.total,
       };
     }
     const db = await getDb();
-    const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM complaints;');
+    const clauses: string[] = [];
+    const args: any[] = [];
+    if (query?.status) {
+      clauses.push('status = ?');
+      args.push(query.status);
+    }
+    if (typeof query?.stationId === 'number') {
+      clauses.push('stationId = ?');
+      args.push(query.stationId);
+    }
+    const normalizedQuery = query?.q?.trim().toLowerCase();
+    if (normalizedQuery) {
+      const like = `%${normalizedQuery}%`;
+      clauses.push(
+        `(lower(stationName) LIKE ? OR lower(type) LIKE ? OR lower(reporterName) LIKE ? OR lower(vehiclePlate) LIKE ? OR lower(vehicleModel) LIKE ?)`
+      );
+      args.push(like, like, like, like, like);
+    }
+    const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const totalRow = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) as count FROM complaints ${whereClause};`,
+      ...args
+    );
     const rows = await db.getAllAsync<any>(
       `SELECT id, stationName, stationId, type, detail, source, reporterName, reporterRole,
               vehiclePlate, vehicleModel, fuelType, vehicleId, liters, unitPrice, totalAmount, occurredAt,
               transactionId, photoUri, status, createdAt, resolvedAt, resolutionNote
        FROM complaints
+       ${whereClause}
        ORDER BY createdAt DESC
        LIMIT ? OFFSET ?;`,
+      ...args,
       limit,
       (page - 1) * limit
     );

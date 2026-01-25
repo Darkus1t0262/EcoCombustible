@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
+  APP_NAME: z.string().optional(),
+  APP_VERSION: z.string().optional(),
+  APP_STAGE: z.string().optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   HOST: z.string().default('0.0.0.0'),
@@ -34,6 +37,9 @@ const envSchema = z.object({
 
 export const env = envSchema.parse(process.env);
 
+export const APP_NAME = env.APP_NAME?.trim() || 'EcoCombustible';
+export const APP_VERSION = env.APP_VERSION?.trim() || 'dev';
+export const APP_STAGE = env.APP_STAGE?.trim() || 'demo';
 export const NODE_ENV = env.NODE_ENV;
 export const PORT = env.PORT;
 export const HOST = env.HOST;

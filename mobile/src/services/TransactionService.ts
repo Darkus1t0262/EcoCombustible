@@ -28,6 +28,13 @@ export type TransactionItem = {
   };
 };
 
+export type TransactionQuery = {
+  q?: string;
+  stationId?: number;
+  vehicleId?: number;
+  riskLabel?: 'low' | 'medium' | 'high' | 'unknown';
+};
+
 const buildAnalysis = (liters: number, capacity: number | null, history: number[]) => {
   if (capacity && liters > capacity * 1.05) {
     return {
@@ -92,13 +99,57 @@ const normalizeTransaction = (item: any): TransactionItem => ({
 });
 
 export const TransactionService = {
-  getTransactionsPage: async (page: number, limit: number): Promise<{ items: TransactionItem[]; total?: number }> => {
+  getTransactionsPage: async (
+    page: number,
+    limit: number,
+    query?: TransactionQuery
+  ): Promise<{ items: TransactionItem[]; total?: number }> => {
     if (USE_REMOTE_AUTH) {
-      const response = await apiFetchWithMeta<any[]>(`/transactions?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (typeof query?.stationId === 'number') {
+        params.set('stationId', String(query.stationId));
+      }
+      if (typeof query?.vehicleId === 'number') {
+        params.set('vehicleId', String(query.vehicleId));
+      }
+      if (query?.riskLabel) {
+        params.set('riskLabel', query.riskLabel);
+      }
+      const normalizedQuery = query?.q?.trim();
+      if (normalizedQuery) {
+        params.set('q', normalizedQuery);
+      }
+      const response = await apiFetchWithMeta<any[]>(`/transactions?${params.toString()}`);
       return { items: response.data.map(normalizeTransaction), total: response.meta.total };
     }
     const db = await getDb();
-    const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM transactions;');
+    const clauses: string[] = [];
+    const args: any[] = [];
+    if (typeof query?.stationId === 'number') {
+      clauses.push('t.stationId = ?');
+      args.push(query.stationId);
+    }
+    if (typeof query?.vehicleId === 'number') {
+      clauses.push('t.vehicleId = ?');
+      args.push(query.vehicleId);
+    }
+    const normalizedQuery = query?.q?.trim().toLowerCase();
+    if (normalizedQuery) {
+      const like = `%${normalizedQuery}%`;
+      clauses.push('(lower(s.name) LIKE ? OR lower(v.plate) LIKE ?)');
+      args.push(like, like);
+    }
+    const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const totalRow = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) as count FROM transactions t
+       JOIN stations s ON s.id = t.stationId
+       JOIN vehicles v ON v.id = t.vehicleId
+       ${whereClause};`,
+      ...args
+    );
     const rows = await db.getAllAsync<any>(
       `SELECT t.id, t.stationId, s.name as stationName, t.vehicleId, v.plate as vehiclePlate,
               v.model as vehicleModel, v.fuelType as vehicleFuelType, v.capacityLiters as capacityLiters,
@@ -106,8 +157,10 @@ export const TransactionService = {
        FROM transactions t
        JOIN stations s ON s.id = t.stationId
        JOIN vehicles v ON v.id = t.vehicleId
+       ${whereClause}
        ORDER BY t.occurredAt DESC
        LIMIT ? OFFSET ?;`,
+      ...args,
       limit,
       (page - 1) * limit
     );

@@ -17,14 +17,43 @@ const formatComplaint = (complaint: any) => ({
 
 export const registerComplaintRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/complaints', { preHandler: [authenticate] }, async (request, reply) => {
+    const querySchema = z.object({
+      status: z.enum(['pending', 'resolved']).optional(),
+      stationId: optionalNumber(),
+      q: optionalString(),
+    });
+    const queryResult = querySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      return reply.code(400).send({ error: 'Invalid query' });
+    }
+    const query = queryResult.data;
+    const normalizedQuery = query.q?.trim();
+    const where: Record<string, any> = {};
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (typeof query.stationId === 'number') {
+      where.stationId = Math.trunc(query.stationId);
+    }
+    if (normalizedQuery) {
+      where.OR = [
+        { stationName: { contains: normalizedQuery, mode: 'insensitive' } },
+        { type: { contains: normalizedQuery, mode: 'insensitive' } },
+        { reporterName: { contains: normalizedQuery, mode: 'insensitive' } },
+        { reporterRole: { contains: normalizedQuery, mode: 'insensitive' } },
+        { vehiclePlate: { contains: normalizedQuery, mode: 'insensitive' } },
+        { vehicleModel: { contains: normalizedQuery, mode: 'insensitive' } },
+      ];
+    }
     const pagination = parsePagination((request as any).query);
     if (pagination) {
-      const total = await prisma.complaint.count();
+      const total = await prisma.complaint.count({ where });
       reply.header('X-Total-Count', total);
       reply.header('X-Page', pagination.page);
       reply.header('X-Limit', pagination.limit);
     }
     const complaints = await prisma.complaint.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     });

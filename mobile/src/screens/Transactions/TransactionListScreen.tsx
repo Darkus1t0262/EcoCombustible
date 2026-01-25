@@ -71,6 +71,7 @@ export default function TransactionListScreen({ navigation }: any) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -124,13 +125,16 @@ export default function TransactionListScreen({ navigation }: any) {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) {
-      return transactions;
-    }
-    return transactions.filter((tx) =>
-      `${tx.stationName ?? ''} ${tx.vehiclePlate ?? ''}`.toLowerCase().includes(query)
-    );
-  }, [search, transactions]);
+    return transactions.filter((tx) => {
+      if (riskFilter !== 'all' && tx.riskLabel !== riskFilter) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      return `${tx.stationName ?? ''} ${tx.vehiclePlate ?? ''}`.toLowerCase().includes(query);
+    });
+  }, [riskFilter, search, transactions]);
 
   const summary = useMemo(() => {
     let totalAmount = 0;
@@ -202,8 +206,30 @@ export default function TransactionListScreen({ navigation }: any) {
         </View>
       </ScreenReveal>
 
+      <ScreenReveal delay={120}>
+        <View style={styles.filterRow}>
+          {([
+            { key: 'all', label: 'Todas' },
+            { key: 'high', label: 'Alto' },
+            { key: 'medium', label: 'Medio' },
+            { key: 'low', label: 'Bajo' },
+          ] as const).map((item) => {
+            const isActive = riskFilter === item.key;
+            return (
+              <PressableScale
+                key={item.key}
+                onPress={() => setRiskFilter(item.key)}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
+              >
+                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{item.label}</Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </ScreenReveal>
+
       {!loading && !error && (
-        <ScreenReveal delay={140}>
+        <ScreenReveal delay={180}>
           <View style={styles.summaryCard}>
             <View style={styles.summaryTop}>
               <Text style={styles.summaryTitle}>Resumen rápido</Text>
@@ -377,6 +403,18 @@ const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.
     borderWidth: 1,
     borderColor: tokens.cardBorder,
   },
+  filterRow: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 6, flexWrap: 'wrap' },
+  filterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
+  },
+  filterPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
+  filterTextActive: { color: colors.white },
   input: { marginLeft: 10, flex: 1, color: colors.text },
   summaryCard: {
     marginHorizontal: 20,

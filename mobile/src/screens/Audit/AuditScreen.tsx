@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/theme';
@@ -21,6 +21,9 @@ export default function AuditScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const loadAudits = async () => {
     setLoading(true);
@@ -54,6 +57,26 @@ export default function AuditScreen({ navigation }: any) {
   const approved = audits.filter((a) => a.status === 'approved').length;
   const pending = audits.filter((a) => a.status === 'pending').length;
 
+  const filtered = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    return audits.filter((audit) => {
+      if (filter !== 'all' && audit.status !== filter) {
+        return false;
+      }
+      if (!normalized) {
+        return true;
+      }
+      const haystack = `${audit.stationName} ${audit.code}`.toLowerCase();
+      return haystack.includes(normalized);
+    });
+  }, [audits, filter, search]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadAudits();
+    setRefreshing(false);
+  };
+
   const renderSkeleton = () => (
     <View style={styles.skeletonWrap}>
       {Array.from({ length: 3 }).map((_, index) => (
@@ -84,7 +107,10 @@ export default function AuditScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      >
         <ScreenReveal delay={80}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryCard}>
@@ -102,14 +128,46 @@ export default function AuditScreen({ navigation }: any) {
           </View>
         </ScreenReveal>
 
+        <ScreenReveal delay={120}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={18} color={colors.textLight} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por estación o código..."
+              placeholderTextColor={colors.textLight}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+        </ScreenReveal>
+
+        <ScreenReveal delay={160}>
+          <View style={styles.filterRow}>
+            {(['all', 'pending', 'approved', 'rejected'] as const).map((value) => {
+              const label =
+                value === 'all' ? 'Todas' : value === 'pending' ? 'Pendientes' : value === 'approved' ? 'Aprobadas' : 'Rechazadas';
+              const isActive = filter === value;
+              return (
+                <PressableScale
+                  key={value}
+                  onPress={() => setFilter(value)}
+                  style={[styles.filterPill, isActive && styles.filterPillActive]}
+                >
+                  <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{label}</Text>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </ScreenReveal>
+
         {loading ? (
           renderSkeleton()
-        ) : audits.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No hay auditorías registradas.</Text>
+            <Text style={styles.emptyText}>No hay auditorías con ese filtro.</Text>
           </View>
         ) : (
-          audits.map((audit, index) => {
+          filtered.map((audit, index) => {
             const statusLabel =
               audit.status === 'approved' ? 'Aprobada' : audit.status === 'rejected' ? 'Rechazada' : 'Pendiente';
             const statusColor =
@@ -286,6 +344,30 @@ const createStyles = (colors: ThemeColors, tokens: PremiumTokens) => StyleSheet.
   actionText: { color: colors.white, fontWeight: '700', fontSize: 13 },
   emptyBox: { paddingVertical: 30, alignItems: 'center' },
   emptyText: { fontSize: 12, color: colors.textLight },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.cardSurface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
+    marginBottom: 10,
+  },
+  searchInput: { marginLeft: 10, flex: 1, color: colors.text },
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
+  filterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: tokens.cardSurface,
+    borderWidth: 1,
+    borderColor: tokens.cardBorder,
+  },
+  filterPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  filterText: { fontSize: 12, color: colors.textLight, fontWeight: '600' },
+  filterTextActive: { color: colors.white },
   skeletonWrap: { gap: 12 },
   skeletonCard: {
     backgroundColor: tokens.cardSurface,

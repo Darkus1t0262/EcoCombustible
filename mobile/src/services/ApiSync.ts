@@ -38,15 +38,40 @@ const mapStation = (row: any): StationRow => ({
 });
 
 export const StationService = {
-  getStationsPage: async (page: number, limit: number): Promise<{ items: StationRow[]; total?: number }> => {
+  getStationsPage: async (
+    page: number,
+    limit: number,
+    query?: { q?: string }
+  ): Promise<{ items: StationRow[]; total?: number }> => {
     if (USE_REMOTE_AUTH) {
-      const response = await apiFetchWithMeta<StationRow[]>(`/stations?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      const normalizedQuery = query?.q?.trim();
+      if (normalizedQuery) {
+        params.set('q', normalizedQuery);
+      }
+      const response = await apiFetchWithMeta<StationRow[]>(`/stations?${params.toString()}`);
       return { items: response.data, total: response.meta.total };
     }
     const db = await getDb();
-    const totalRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM stations;');
+    const clauses: string[] = [];
+    const args: any[] = [];
+    const normalizedQuery = query?.q?.trim().toLowerCase();
+    if (normalizedQuery) {
+      const like = `%${normalizedQuery}%`;
+      clauses.push('(lower(name) LIKE ? OR lower(address) LIKE ?)');
+      args.push(like, like);
+    }
+    const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const totalRow = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) as count FROM stations ${whereClause};`,
+      ...args
+    );
     const rows = await db.getAllAsync<any>(
-      'SELECT * FROM stations ORDER BY name LIMIT ? OFFSET ?;',
+      `SELECT * FROM stations ${whereClause} ORDER BY name LIMIT ? OFFSET ?;`,
+      ...args,
       limit,
       (page - 1) * limit
     );

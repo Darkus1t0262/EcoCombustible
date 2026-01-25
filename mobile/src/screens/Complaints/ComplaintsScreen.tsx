@@ -50,6 +50,14 @@ export default function ComplaintsScreen({ navigation }: any) {
 
   const PAGE_SIZE = 20;
 
+  const query = useMemo(
+    () => ({
+      status: filter === 'all' ? undefined : filter,
+      q: search,
+    }),
+    [filter, search]
+  );
+
   const loadData = useCallback(async (pageToLoad: number, replace: boolean, showLoader = true) => {
     try {
       setError('');
@@ -61,7 +69,7 @@ export default function ComplaintsScreen({ navigation }: any) {
         setLoadingMore(true);
       }
       const [pageResponse, summary] = await Promise.all([
-        ComplaintService.getComplaintsPage(pageToLoad, PAGE_SIZE),
+        ComplaintService.getComplaintsPage(pageToLoad, PAGE_SIZE, query),
         replace ? ComplaintService.getStats() : Promise.resolve(null),
       ]);
       let nextCount = 0;
@@ -82,11 +90,14 @@ export default function ComplaintsScreen({ navigation }: any) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [PAGE_SIZE, query]);
 
   useEffect(() => {
-    loadData(1, true);
-  }, [loadData]);
+    const debounce = setTimeout(() => {
+      loadData(1, true, false);
+    }, 250);
+    return () => clearTimeout(debounce);
+  }, [loadData, query]);
 
   useFocusEffect(
     useCallback(() => {

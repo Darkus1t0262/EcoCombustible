@@ -16,15 +16,44 @@ const formatTransaction = (transaction: any, analysis: any) => ({
 
 export const registerTransactionRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/transactions', { preHandler: [authenticate] }, async (request, reply) => {
+    const querySchema = z.object({
+      stationId: optionalNumber(),
+      vehicleId: optionalNumber(),
+      riskLabel: z.enum(['low', 'medium', 'high', 'unknown']).optional(),
+      q: optionalString(),
+    });
+    const queryResult = querySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      return reply.code(400).send({ error: 'Invalid query' });
+    }
+    const query = queryResult.data;
+    const normalizedQuery = query.q?.trim();
+    const where: Record<string, any> = {};
+    if (typeof query.stationId === 'number') {
+      where.stationId = Math.trunc(query.stationId);
+    }
+    if (typeof query.vehicleId === 'number') {
+      where.vehicleId = Math.trunc(query.vehicleId);
+    }
+    if (query.riskLabel) {
+      where.riskLabel = query.riskLabel;
+    }
+    if (normalizedQuery) {
+      where.OR = [
+        { station: { name: { contains: normalizedQuery, mode: 'insensitive' } } },
+        { vehicle: { plate: { contains: normalizedQuery, mode: 'insensitive' } } },
+      ];
+    }
     const pagination = parsePagination((request as any).query);
     if (pagination) {
-      const total = await prisma.transaction.count();
+      const total = await prisma.transaction.count({ where });
       reply.header('X-Total-Count', total);
       reply.header('X-Page', pagination.page);
       reply.header('X-Limit', pagination.limit);
     }
 
     const transactions = await prisma.transaction.findMany({
+      where,
       include: { station: true, vehicle: true },
       orderBy: { occurredAt: 'desc' },
       ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
