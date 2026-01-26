@@ -83,7 +83,7 @@ export const registerAuditRoutes = async (fastify: FastifyInstance) => {
       void enqueueAdminNotification({
         title: `📋 Auditoría ${
           body.status === 'approved' ? '✅ Aprobada' : '❌ Rechazada'
-        } por supervisor`,
+        } por ${supervisorUser.username}`,
         body: `${audit.code} - ${audit.station.name}`,
         data: {
           auditId: audit.id,
@@ -92,6 +92,9 @@ export const registerAuditRoutes = async (fastify: FastifyInstance) => {
           stationName: audit.station.name,
           supervisorId: supervisorUser.id,
           supervisorUsername: supervisorUser.username,
+          priceExpected: audit.priceExpected,
+          priceReported: audit.priceReported,
+
           type: 'audit_status_changed_by_supervisor',
         },
       }).catch((error) => {

@@ -37,14 +37,14 @@ const seed = async () => {
       },
     });
   }
-  const existingSupervisor = await prisma.user.findFirst({ where: { username: 'supervisor' } });
+  const existingSupervisor = await prisma.user.findFirst({ where: { username: 'maria' } });
   if (!existingSupervisor) {
     const supervisorPasswordHash = await bcrypt.hash('supervisor123', 10);
     await prisma.user.create({
       data: {
-        username: 'supervisor',
+        username: 'maria',
         passwordHash: supervisorPasswordHash,
-        name: 'Supervisor',
+        name: 'Supervisor Maria',
         role: 'supervisor',
         active: true,
         failedLoginAttempts: 0,
@@ -52,7 +52,21 @@ const seed = async () => {
     });
     console.log('✅ Supervisor creado: username "supervisor" / password "supervisor123"');
   }
-
+  const existingSupervisor2 = await prisma.user.findFirst({ where: { username: 'juan' } });
+  if (!existingSupervisor2) {
+    const supervisorPasswordHash = await bcrypt.hash('supervisor1234', 10);
+    await prisma.user.create({
+      data: {
+        username: 'juan',
+        passwordHash: supervisorPasswordHash,
+        name: 'Supervisor Juan',
+        role: 'supervisor',
+        active: true,
+        failedLoginAttempts: 0,
+      },
+    });
+    console.log('✅ Supervisor creado: username "supervisor" / password "supervisor123"');
+  }
 
   const geojsonPath = path.join(__dirname, '..', 'export.geojson');
   const geojsonData = JSON.parse(fs.readFileSync(geojsonPath, 'utf-8'));

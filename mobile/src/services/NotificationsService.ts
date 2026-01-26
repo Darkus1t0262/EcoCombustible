@@ -9,7 +9,17 @@ export type NotificationItem = {
   type: 'AUDIT_APPROVED' | 'AUDIT_REJECTED';
   createdAt: string;
   readAt?: string | null;
+
+  data?: {
+    priceExpected?: number;
+    priceReported?: number;
+    supervisorUsername?: string;
+    stationName?: string;
+    auditId?: number;
+    newStatus?: string;
+  };
 };
+
 
 export const NotificationsService = {
   /**

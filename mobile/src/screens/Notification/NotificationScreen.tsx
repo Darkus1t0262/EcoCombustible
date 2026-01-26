@@ -57,12 +57,36 @@ export default function NotificationsScreen({ navigation }: any) {
                   color={colors.primary}
                 />
                 <View style={styles.notificationContent}>
-                  <Text style={styles.notificationTitle}>{item.title}</Text>
-                  <Text style={styles.notificationBody}>{item.body}</Text>
-                  <Text style={styles.notificationDate}>
-                    {new Date(item.createdAt).toLocaleString()}
-                  </Text>
-                </View>
+                    <Text style={styles.notificationTitle}>{item.title}</Text>
+                    <Text style={styles.notificationBody}>{item.body}</Text>
+
+                    {item.data?.priceExpected !== undefined &&
+                      item.data?.priceReported !== undefined && (
+                        <View style={{ marginTop: 6 }}>
+                          <Text style={styles.notificationExtra}>
+                            Precio esperado: ${item.data.priceExpected.toFixed(2)}
+                          </Text>
+                          <Text style={styles.notificationExtra}>
+                            Precio reportado: ${item.data.priceReported.toFixed(2)}
+                          </Text>
+                      
+                          {item.data.priceReported > item.data.priceExpected ? (
+                            <Text style={[styles.notificationExtra, { color: colors.error }]}>
+                              ❌ Precio mayor al autorizado
+                            </Text>
+                          ) : (
+                            <Text style={[styles.notificationExtra, { color: colors.success }]}>
+                              ✅ Precio dentro de lo permitido
+                            </Text>
+                          )}
+                        </View>
+                      )}
+
+                    <Text style={styles.notificationDate}>
+                      {new Date(item.createdAt).toLocaleString()}
+                    </Text>
+                  </View>
+  
               </View>
             )}
           />
@@ -152,4 +176,10 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.error,
       fontWeight: '600',
     },
-  });
+    notificationExtra: {
+  fontSize: 11,
+  color: colors.textLight,
+  marginTop: 2,
+  },
+
+});
