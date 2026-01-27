@@ -112,10 +112,6 @@ export default function LoginScreen({ navigation }: any) {
                 {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Ingresar</Text>}
               </PressableScale>
 
-              <View style={styles.demoRow}>
-                <MaterialCommunityIcons name="information-outline" size={16} color={colors.textLight} />
-                <Text style={styles.demoText}>Usuario demo: admin / admin123</Text>
-              </View>
             </View>
           </ScreenReveal>
 
@@ -231,8 +227,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 16,
   },
   buttonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-  demoRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  demoText: { fontSize: 12, color: colors.textLight },
   flagContainer: { marginTop: 28, alignItems: 'center' },
   flag: { flexDirection: 'row', height: 20, width: 70, borderRadius: 6, overflow: 'hidden', marginBottom: 6 },
   flagStripe: { height: '100%' },
