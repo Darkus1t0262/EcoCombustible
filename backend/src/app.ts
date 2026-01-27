@@ -11,6 +11,7 @@ import { ensureStorageDirs, STORAGE_DIR } from './config/storage.js';
 import { registerHealthRoutes } from './modules/health.js';
 import { registerAuthRoutes } from './modules/auth.js';
 import { registerDashboardRoutes } from './modules/dashboard.js';
+import { registerInsightRoutes } from './modules/insights.js';
 import { registerStationRoutes } from './modules/stations.js';
 import { registerVehicleRoutes } from './modules/vehicles.js';
 import { registerTransactionRoutes } from './modules/transactions.js';
@@ -75,6 +76,7 @@ export const buildApp = async () => {
   await fastify.register(registerHealthRoutes);
   await fastify.register(registerAuthRoutes);
   await fastify.register(registerDashboardRoutes);
+  await fastify.register(registerInsightRoutes);
   await fastify.register(registerStationRoutes);
   await fastify.register(registerVehicleRoutes);
   await fastify.register(registerTransactionRoutes);

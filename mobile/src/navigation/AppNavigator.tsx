@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { createStackNavigator } from '@react-navigation/stack';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 
@@ -73,23 +74,30 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="StationList" component={StationListScreen} />
-        <Stack.Screen name="StationDetail" component={StationDetailScreen} />
-        <Stack.Screen name="Map" component={MapScreen} />
-        <Stack.Screen name="Audit" component={AuditScreen} />
-        <Stack.Screen name="Complaints" component={ComplaintsScreen} />
-        <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} />
-        <Stack.Screen name="VehicleList" component={VehicleListScreen} />
-        <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
-        <Stack.Screen name="TransactionList" component={TransactionListScreen} />
-        <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
-        <Stack.Screen name="Reports" component={ReportsScreen} />
-         <Stack.Screen   name="ChangePassword"   component={ChangePasswordScreen}   options={{ title: 'Cambiar contraseña' }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+      <NavigationContainer theme={navigationTheme}>
+        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen name="StationList" component={StationListScreen} />
+          <Stack.Screen name="StationDetail" component={StationDetailScreen} />
+          <Stack.Screen name="Map" component={MapScreen} />
+          <Stack.Screen name="Audit" component={AuditScreen} />
+          <Stack.Screen name="Complaints" component={ComplaintsScreen} />
+          <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} />
+          <Stack.Screen name="VehicleList" component={VehicleListScreen} />
+          <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
+          <Stack.Screen name="TransactionList" component={TransactionListScreen} />
+          <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
+          <Stack.Screen name="Reports" component={ReportsScreen} />
+          <Stack.Screen
+            name="ChangePassword"
+            component={ChangePasswordScreen}
+            options={{ title: 'Cambiar contraseña' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
   );
 }
