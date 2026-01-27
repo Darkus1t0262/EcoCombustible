@@ -28,9 +28,9 @@ const buildSummary = async (db: any) => {
   const stationsRow = (await db.getFirstAsync('SELECT COUNT(*) as count FROM stations;')) as
     | { count: number }
     | null;
-  const auditsRow = (await db.getFirstAsync(
-    "SELECT COUNT(*) as count FROM audits WHERE strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now');"
-  )) as { count: number } | null;
+  const auditsRow = (await db.getFirstAsync('SELECT COUNT(*) as count FROM audits;')) as
+    | { count: number }
+    | null;
   const complaintsRow = (await db.getFirstAsync(
     "SELECT COUNT(*) as count FROM complaints WHERE status = 'pending';"
   )) as { count: number } | null;
@@ -60,7 +60,7 @@ const buildCsv = (summary: { stations: number; auditsThisMonth: number; pendingC
   return [
     'metric,value',
     `stations,${summary.stations}`,
-    `audits_this_month,${summary.auditsThisMonth}`,
+    `audits_total,${summary.auditsThisMonth}`,
     `pending_complaints,${summary.pendingComplaints}`,
     `generated_at,${createdAt}`,
   ].join('\n');
@@ -75,7 +75,7 @@ const buildHtml = (summary: { stations: number; auditsThisMonth: number; pending
         <table style="border-collapse: collapse; width: 100%;">
           <tr><th style="border: 1px solid #ddd; padding: 8px;">Métrica</th><th style="border: 1px solid #ddd; padding: 8px;">Valor</th></tr>
           <tr><td style="border: 1px solid #ddd; padding: 8px;">Estaciones</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.stations}</td></tr>
-          <tr><td style="border: 1px solid #ddd; padding: 8px;">Auditorías del mes</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.auditsThisMonth}</td></tr>
+          <tr><td style="border: 1px solid #ddd; padding: 8px;">Auditorías registradas</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.auditsThisMonth}</td></tr>
           <tr><td style="border: 1px solid #ddd; padding: 8px;">Quejas pendientes</td><td style="border: 1px solid #ddd; padding: 8px;">${summary.pendingComplaints}</td></tr>
         </table>
       </body>

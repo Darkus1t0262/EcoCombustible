@@ -370,7 +370,7 @@ const seedComplaints: SeedComplaint[] = [
   {
     stationName: 'Estación Sierra Norte',
     stationId: 6,
-    type: 'Dispensador sin calibracion',
+    type: 'Dispensador sin calibración',
     detail: 'La bomba 3 reporta menos volumen.',
     source: 'despachador',
     reporterName: 'Mario C.',
@@ -461,7 +461,7 @@ const seedReports = [
   { period: 'Semana', format: 'CSV', createdAt: '2025-12-02T18:00:00.000Z', sizeMb: 1.1 },
   { period: 'Mes', format: 'Excel', createdAt: '2025-12-03T18:00:00.000Z', sizeMb: 3.2 },
   { period: 'Semana', format: 'PDF', createdAt: '2025-12-07T18:00:00.000Z', sizeMb: 1.6 },
-  { period: 'Anio', format: 'CSV', createdAt: '2025-12-08T18:00:00.000Z', sizeMb: 4.2 },
+  { period: 'Año', format: 'CSV', createdAt: '2025-12-08T18:00:00.000Z', sizeMb: 4.2 },
 ];
 
 const createTablesSql = `

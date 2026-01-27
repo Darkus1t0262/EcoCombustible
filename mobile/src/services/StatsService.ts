@@ -9,9 +9,7 @@ export const StatsService = {
     }
     const db = await getDb();
     const stationsRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM stations;');
-    const auditsRow = await db.getFirstAsync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM audits WHERE strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now');"
-    );
+    const auditsRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM audits;');
     const complaintsRow = await db.getFirstAsync<{ count: number }>(
       "SELECT COUNT(*) as count FROM complaints WHERE status = 'pending';"
     );

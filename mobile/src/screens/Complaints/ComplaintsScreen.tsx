@@ -177,9 +177,6 @@ export default function ComplaintsScreen({ navigation }: any) {
           <Text style={styles.subtitle}>Seguimiento y resolución</Text>
         </View>
         <View style={styles.headerActions}>
-          <PressableScale onPress={() => navigation.navigate('NewComplaint')} style={styles.iconBtn}>
-            <Ionicons name="add" size={18} color={colors.primary} />
-          </PressableScale>
           <PressableScale onPress={() => loadData(1, true)} style={styles.iconBtn}>
             <Ionicons name="refresh" size={18} color={colors.primary} />
           </PressableScale>

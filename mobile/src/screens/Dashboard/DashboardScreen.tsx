@@ -149,7 +149,7 @@ export default function DashboardScreen({ navigation }: any) {
                   tone={colors.accent}
                 />
                 <HeroStat
-                  label="Auditorías del mes"
+                  label="Auditorías registradas"
                   value={stats.auditsThisMonth}
                   icon="checkmark-circle"
                   tone={colors.success}
@@ -188,7 +188,7 @@ export default function DashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Complaints')}
             />
             <AlertCard
-              title="Auditorías del mes"
+              title="Auditorías registradas"
               value={loading ? '--' : stats.auditsThisMonth}
               hint="Inspecciones en proceso"
               icon="checkmark-circle"
@@ -264,9 +264,9 @@ export default function DashboardScreen({ navigation }: any) {
               style={{ marginBottom: 10 }}
             />
 
-            <Text style={styles.modalTitle}>Salir de la aplicación?</Text>
+            <Text style={styles.modalTitle}>¿Salir de la aplicación?</Text>
             <Text style={styles.modalText}>
-              Seguro que deseas cerrar sesión?
+              ¿Seguro que deseas cerrar sesión?
             </Text>
 
             <View style={styles.modalActions}>
@@ -281,7 +281,7 @@ export default function DashboardScreen({ navigation }: any) {
                 style={styles.modalBtnConfirm}
                 onPress={confirmLogout}
               >
-                <Text style={styles.modalBtnConfirmText}>Si</Text>
+                <Text style={styles.modalBtnConfirmText}>Sí</Text>
               </TouchableOpacity>
             </View>
           </View>

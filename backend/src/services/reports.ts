@@ -11,7 +11,7 @@ const buildCsv = (summary: { stations: number; auditsThisMonth: number; pendingC
   return [
     'metric,value',
     `stations,${summary.stations}`,
-    `audits_this_month,${summary.auditsThisMonth}`,
+    `audits_total,${summary.auditsThisMonth}`,
     `pending_complaints,${summary.pendingComplaints}`,
     `generated_at,${createdAt}`,
   ].join('\n');
@@ -31,7 +31,7 @@ const buildPdf = async (
     doc.fontSize(12).text(`Generado: ${createdAt}`);
     doc.moveDown();
     doc.text(`Estaciones: ${summary.stations}`);
-    doc.text(`Auditorías del mes: ${summary.auditsThisMonth}`);
+    doc.text(`Auditorías registradas: ${summary.auditsThisMonth}`);
     doc.text(`Quejas pendientes: ${summary.pendingComplaints}`);
     doc.end();
     stream.on('finish', () => resolve());
@@ -52,9 +52,7 @@ export const generateReport = async (reportId: number) => {
 
   try {
     const stations = await prisma.station.count();
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const auditsThisMonth = await prisma.audit.count({ where: { createdAt: { gte: start } } });
+    const auditsThisMonth = await prisma.audit.count();
     const pendingComplaints = await prisma.complaint.count({ where: { status: 'pending' } });
     const summary = { stations, auditsThisMonth, pendingComplaints };
 
